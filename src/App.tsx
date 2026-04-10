@@ -4,10 +4,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { DealerSettingsProvider } from "@/contexts/DealerSettingsContext";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import Admin from "./pages/Admin.tsx";
 import SavedAddendums from "./pages/SavedAddendums.tsx";
+import BuyersGuide from "./pages/BuyersGuide.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import MobileSigning from "./pages/MobileSigning.tsx";
 
@@ -19,16 +21,19 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/saved" element={<SavedAddendums />} />
-            <Route path="/sign/:token" element={<MobileSigning />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <DealerSettingsProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/saved" element={<SavedAddendums />} />
+              <Route path="/buyers-guide" element={<BuyersGuide />} />
+              <Route path="/sign/:token" element={<MobileSigning />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </DealerSettingsProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

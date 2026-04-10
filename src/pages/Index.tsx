@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDealerSettings } from "@/contexts/DealerSettingsContext";
+import { useProductRules, VehicleContext } from "@/hooks/useProductRules";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -14,10 +16,14 @@ import Disclosures from "@/components/addendum/Disclosures";
 import SignaturePad from "@/components/addendum/SignaturePad";
 import AddendumFooter from "@/components/addendum/AddendumFooter";
 import QRCodeModal from "@/components/addendum/QRCodeModal";
+import LeadCaptureModal from "@/components/addendum/LeadCaptureModal";
+import VinBarcode from "@/components/addendum/VinBarcode";
 
 const Index = () => {
   const { data: products, isLoading } = useProducts();
   const { user, isAdmin } = useAuth();
+  const { settings } = useDealerSettings();
+  const { rules, getMatchingProducts } = useProductRules();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const viewId = searchParams.get("id");
@@ -31,6 +37,11 @@ const Index = () => {
   // Vehicle info
   const [vehicle, setVehicle] = useState({ ymm: "", stock: "", vin: "", date: "" });
 
+  // Decoded vehicle context for rules
+  const [vehicleContext, setVehicleContext] = useState<VehicleContext>({
+    year: "", make: "", model: "", trim: "", bodyStyle: "",
+  });
+
   // Initials & optional selections
   const [initials, setInitials] = useState<Record<string, string>>({});
   const [optionalSelections, setOptionalSelections] = useState<Record<string, string>>({});
@@ -40,7 +51,7 @@ const Index = () => {
   const [cobuyerSig, setCobuyerSig] = useState({ data: "", type: "draw" as "draw" | "type" });
   const [employeeSig, setEmployeeSig] = useState({ data: "", type: "draw" as "draw" | "type" });
 
-  // QR modal
+  // QR / Lead capture modal
   const [qrOpen, setQrOpen] = useState(false);
   const [signingUrl, setSigningUrl] = useState("");
 
@@ -94,13 +105,30 @@ const Index = () => {
     loadAddendum();
   }, [viewId]);
 
-  const displayProducts = viewMode && loadedProducts ? loadedProducts : products;
+  // Apply product rules when vehicle context or products change
+  const baseProducts = viewMode && loadedProducts ? loadedProducts : products;
+  const displayProducts = settings.feature_product_rules && rules.length > 0 && !viewMode
+    ? getMatchingProducts(vehicleContext, baseProducts || [])
+    : baseProducts;
+
   const installed = displayProducts?.filter((p) => p.badge_type === "installed") || [];
   const optional = displayProducts?.filter((p) => p.badge_type === "optional") || [];
   const installedTotal = installed.reduce((sum, p) => sum + p.price, 0);
   const acceptedOptional = optional.filter((p) => optionalSelections[p.id] === "accept");
   const optionalTotal = acceptedOptional.reduce((sum, p) => sum + p.price, 0);
   const grandTotal = installedTotal + optionalTotal;
+
+  const iconMap = JSON.parse(localStorage.getItem("product_icons") || "{}");
+
+  const handleVinDecoded = (result: { year: string; make: string; model: string; trim: string; bodyStyle: string }) => {
+    setVehicleContext({
+      year: result.year,
+      make: result.make,
+      model: result.model,
+      trim: result.trim,
+      bodyStyle: result.bodyStyle,
+    });
+  };
 
   const handlePrint = () => window.print();
 
@@ -117,7 +145,7 @@ const Index = () => {
       const pdfHeight = (canvas.height / canvas.width) * pdfWidth;
       const pdf = new jsPDF({ unit: "in", format: [pdfWidth, pdfHeight], orientation: "portrait" });
       pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save("Dealer-Addendum-Harte-Auto-Group.pdf");
+      pdf.save(`Dealer-Addendum-${settings.dealer_name.replace(/\s+/g, "-")}.pdf`);
     } catch (err) {
       console.error("PDF generation failed:", err);
       toast.error("PDF generation failed");
@@ -221,46 +249,76 @@ const Index = () => {
         )}
         {user && isAdmin && (
           <button onClick={() => navigate("/admin")} className="font-semibold text-[13px] px-5 py-2 rounded-md bg-gold text-navy tracking-[0.4px] hover:opacity-85">
-            ⚙️ Admin Panel
+            Admin Panel
           </button>
         )}
         {user && (
           <button onClick={() => navigate("/saved")} className="font-semibold text-[13px] px-5 py-2 rounded-md bg-blue text-primary-foreground tracking-[0.4px] hover:opacity-85">
-            📋 Saved Addendums
+            Saved Addendums
+          </button>
+        )}
+        {settings.feature_buyers_guide && user && (
+          <button onClick={() => navigate("/buyers-guide")} className="font-semibold text-[13px] px-5 py-2 rounded-md bg-navy text-primary-foreground tracking-[0.4px] hover:opacity-85">
+            Buyers Guide
           </button>
         )}
         {!user && (
           <button onClick={() => navigate("/login")} className="font-semibold text-[13px] px-5 py-2 rounded-md bg-navy text-primary-foreground tracking-[0.4px] hover:opacity-85">
-            🔑 Admin Login
+            Admin Login
           </button>
         )}
         {user && !viewMode && (
           <button onClick={handleSave} disabled={saving} className="font-semibold text-[13px] px-5 py-2 rounded-md bg-teal text-primary-foreground tracking-[0.4px] hover:opacity-85 disabled:opacity-50">
-            {saving ? "Saving..." : "💾 Save Addendum"}
+            {saving ? "Saving..." : "Save Addendum"}
           </button>
         )}
         {user && !viewMode && (
           <button onClick={handleSendToCustomer} disabled={saving} className="font-semibold text-[13px] px-5 py-2 rounded-md bg-action text-primary-foreground tracking-[0.4px] hover:opacity-85 disabled:opacity-50">
-            📱 Send to Customer
+            Send to Customer
           </button>
         )}
         <button onClick={handlePrint} className="font-semibold text-[13px] px-5 py-2 rounded-md bg-navy text-primary-foreground tracking-[0.4px] hover:opacity-85">
-          🖨️ Print
+          Print
         </button>
         <button onClick={handleDownloadPdf} disabled={generating} className="font-semibold text-[13px] px-5 py-2 rounded-md bg-navy text-primary-foreground tracking-[0.4px] hover:opacity-85 disabled:opacity-50">
-          {generating ? "⏳ Generating…" : "📄 Download PDF"}
+          {generating ? "Generating..." : "Download PDF"}
         </button>
-        <label className="flex items-center gap-1 text-[11px] text-muted-foreground cursor-pointer">
-          <input type="checkbox" checked={inkSaving} onChange={(e) => setInkSaving(e.target.checked)} />
-          🖨️ Ink-Saving Mode
-        </label>
+        {settings.feature_ink_saving && (
+          <label className="flex items-center gap-1 text-[11px] text-muted-foreground cursor-pointer">
+            <input type="checkbox" checked={inkSaving} onChange={(e) => setInkSaving(e.target.checked)} />
+            Ink-Saving Mode
+          </label>
+        )}
       </div>
-      <QRCodeModal open={qrOpen} signingUrl={signingUrl} onClose={() => setQrOpen(false)} />
+
+      {/* QR / Lead Capture Modal */}
+      {settings.feature_lead_capture ? (
+        <LeadCaptureModal open={qrOpen} signingUrl={signingUrl} vehicleInfo={vehicle.ymm} onClose={() => setQrOpen(false)} />
+      ) : (
+        <QRCodeModal open={qrOpen} signingUrl={signingUrl} onClose={() => setQrOpen(false)} />
+      )}
+
+      {/* Rules notification */}
+      {settings.feature_product_rules && rules.length > 0 && vehicleContext.make && !viewMode && (
+        <div className="max-w-[8.5in] mx-auto mb-2 no-print">
+          <div className="bg-teal/10 border border-teal/30 rounded-md px-3 py-1.5 text-[11px] text-teal font-semibold">
+            Product rules active — showing {displayProducts?.length || 0} products matching {vehicleContext.year} {vehicleContext.make} {vehicleContext.model}
+          </div>
+        </div>
+      )}
 
       {/* Addendum Card */}
       <div ref={cardRef} className="addendum-card max-w-[8.5in] mx-auto bg-card shadow-lg rounded-lg overflow-hidden border border-border-custom">
         <AddendumHeader inkSaving={inkSaving} />
-        <VehicleStrip vehicle={vehicle} onChange={setVehicle} inkSaving={inkSaving} />
+        <VehicleStrip vehicle={vehicle} onChange={setVehicle} onVinDecoded={handleVinDecoded} inkSaving={inkSaving} />
+
+        {/* VIN Barcode */}
+        {settings.feature_vin_barcode && vehicle.vin.trim().length === 17 && (
+          <div className="px-3 py-1 border-b border-border-custom flex justify-center">
+            <VinBarcode vin={vehicle.vin.trim()} />
+          </div>
+        )}
+
         <div className="px-3 py-2 space-y-2">
           <IntentBox inkSaving={inkSaving} />
 
@@ -294,6 +352,7 @@ const Index = () => {
               disclosure={p.disclosure || ""}
               isOptional={p.badge_type === "optional"}
               inkSaving={inkSaving}
+              iconType={iconMap[p.id] || ""}
             />
           ))}
 
@@ -320,7 +379,9 @@ const Index = () => {
           {/* Signature Section */}
           <div className="space-y-3 pt-2">
             <SignaturePad label="Customer Signature" subtitle="Buyer acknowledges receipt of this addendum" value={customerSig.data} type={customerSig.type} onChange={(data, type) => setCustomerSig({ data, type })} />
-            <SignaturePad label="Co-Buyer Signature (if applicable)" subtitle="Co-Buyer acknowledges receipt" value={cobuyerSig.data} type={cobuyerSig.type} onChange={(data, type) => setCobuyerSig({ data, type })} />
+            {settings.feature_cobuyer_signature && (
+              <SignaturePad label="Co-Buyer Signature (if applicable)" subtitle="Co-Buyer acknowledges receipt" value={cobuyerSig.data} type={cobuyerSig.type} onChange={(data, type) => setCobuyerSig({ data, type })} />
+            )}
             <SignaturePad label="Dealer Representative" subtitle="Sales / Finance representative signature & date" value={employeeSig.data} type={employeeSig.type} onChange={(data, type) => setEmployeeSig({ data, type })} />
           </div>
 
