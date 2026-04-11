@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PRODUCT_ICONS } from "@/components/addendum/ProductRow";
+import { STATE_DOC_FEES } from "@/data/docFees";
 
 interface Product {
   id: string;
@@ -60,6 +61,14 @@ const FEATURE_TOGGLES: { key: keyof DealerSettings; label: string; description: 
   { key: "feature_ink_saving", label: "Ink-Saving Mode", description: "Show ink-saving toggle for lighter print output" },
   { key: "feature_url_scrape", label: "Website URL Import", description: "Paste a vehicle listing URL from your website to auto-fill vehicle details (VIN, stock #, mileage, color, price)" },
   { key: "feature_custom_branding", label: "Custom Branding", description: "Use custom dealer logo and branding on addendums" },
+  { key: "feature_inventory", label: "Inventory Management", description: "Import and manage vehicle inventory via CSV or manual entry" },
+  { key: "feature_invoicing", label: "Installer Invoicing", description: "Create and manage invoices for product installations with RO/PO numbers" },
+  { key: "feature_warranty", label: "Warranty Tracking", description: "Track product warranty registrations and expirations" },
+  { key: "feature_payroll", label: "Payroll Tracking", description: "Track installer piece-work pay per invoice" },
+  { key: "feature_analytics", label: "Analytics Dashboard", description: "View addendum stats, product acceptance rates, and revenue metrics" },
+  { key: "feature_sms", label: "SMS Delivery", description: "Send signing links via SMS text message (requires Twilio)" },
+  { key: "feature_ai_descriptions", label: "AI Descriptions", description: "Generate vehicle descriptions automatically" },
+  { key: "feature_blackbook", label: "Black Book Data", description: "Pull factory equipment and live market data from Black Book (requires API key)" },
 ];
 
 const Admin = () => {
@@ -296,6 +305,123 @@ const Admin = () => {
               </p>
             </div>
 
+            {/* Paper Size Settings */}
+            <div className="bg-card rounded-lg p-4 shadow-sm mb-3">
+              <h4 className="text-sm font-bold text-foreground mb-2">Addendum Paper Size</h4>
+              <p className="text-xs text-muted-foreground mb-3">Window sticker addendum scales to this paper size. (FTC Buyers Guide remains fixed per federal regulation.)</p>
+              <div className="flex gap-2 flex-wrap">
+                {(["letter", "legal", "half-sheet", "custom"] as const).map(size => (
+                  <button
+                    key={size}
+                    onClick={() => updateSettings({ addendum_paper_size: size })}
+                    className={`text-xs px-3 py-1.5 rounded border ${settings.addendum_paper_size === size ? "bg-navy text-primary-foreground border-navy" : "bg-card text-foreground border-border-custom"}`}
+                  >
+                    {size === "letter" && "Letter (8.5×11)"}
+                    {size === "legal" && "Legal (8.5×14)"}
+                    {size === "half-sheet" && "Half Sheet (5.5×8.5)"}
+                    {size === "custom" && "Custom"}
+                  </button>
+                ))}
+              </div>
+              {settings.addendum_paper_size === "custom" && (
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground">Width (in)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={settings.addendum_custom_width}
+                      onChange={(e) => updateSettings({ addendum_custom_width: e.target.value })}
+                      className="w-full px-3 py-2 border border-border-custom rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground">Height (in)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={settings.addendum_custom_height}
+                      onChange={(e) => updateSettings({ addendum_custom_height: e.target.value })}
+                      className="w-full px-3 py-2 border border-border-custom rounded text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Product Default Mode */}
+            <div className="bg-card rounded-lg p-4 shadow-sm mb-3">
+              <h4 className="text-sm font-bold text-foreground mb-2">Product Default Mode</h4>
+              <p className="text-xs text-muted-foreground mb-3">Choose how products appear on every addendum by default. Employees can override per-product at signing if enabled.</p>
+              <div className="flex gap-2 flex-wrap">
+                {(["selective", "all_installed", "all_optional"] as const).map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => updateSettings({ product_default_mode: mode })}
+                    className={`text-xs px-3 py-1.5 rounded border ${settings.product_default_mode === mode ? "bg-navy text-primary-foreground border-navy" : "bg-card text-foreground border-border-custom"}`}
+                  >
+                    {mode === "selective" && "Selective (per product)"}
+                    {mode === "all_installed" && "All as Installed"}
+                    {mode === "all_optional" && "All as Optional"}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border-custom">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Allow Type Override at Signing</p>
+                  <p className="text-xs text-muted-foreground">Employee can toggle installed ↔ optional live with the customer</p>
+                </div>
+                <button
+                  onClick={() => updateSettings({ allow_type_override_at_signing: !settings.allow_type_override_at_signing })}
+                  className={`relative w-12 h-7 rounded-full transition-colors ${settings.allow_type_override_at_signing ? "bg-teal" : "bg-muted"}`}
+                >
+                  <span className={`absolute top-1 w-5 h-5 rounded-full bg-card shadow transition-transform ${settings.allow_type_override_at_signing ? "translate-x-6" : "translate-x-1"}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Dealer Documentation Fee */}
+            <div className="bg-card rounded-lg p-4 shadow-sm mb-3">
+              <h4 className="text-sm font-bold text-foreground mb-2">Dealer Documentation Fee</h4>
+              <p className="text-xs text-muted-foreground mb-3">Add a state-compliant documentation fee to every addendum. The correct terminology auto-applies based on your state.</p>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-foreground">Enable Doc Fee</span>
+                <button
+                  onClick={() => updateSettings({ doc_fee_enabled: !settings.doc_fee_enabled })}
+                  className={`relative w-12 h-7 rounded-full transition-colors ${settings.doc_fee_enabled ? "bg-teal" : "bg-muted"}`}
+                >
+                  <span className={`absolute top-1 w-5 h-5 rounded-full bg-card shadow transition-transform ${settings.doc_fee_enabled ? "translate-x-6" : "translate-x-1"}`} />
+                </button>
+              </div>
+              {settings.doc_fee_enabled && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground">State</label>
+                    <select
+                      value={settings.doc_fee_state}
+                      onChange={(e) => updateSettings({ doc_fee_state: e.target.value })}
+                      className="w-full px-3 py-2 border border-border-custom rounded text-sm"
+                    >
+                      {STATE_DOC_FEES.map(s => (
+                        <option key={s.stateCode} value={s.stateCode}>{s.state} — "{s.terminology}"{s.maxFee ? ` (max $${s.maxFee})` : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground">Amount ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={settings.doc_fee_amount}
+                      onChange={(e) => updateSettings({ doc_fee_amount: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-border-custom rounded text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Feature Toggle list */}
             <div className="space-y-2">
               {FEATURE_TOGGLES.map((ft) => (
                 <div key={ft.key} className="bg-card rounded-lg p-4 shadow-sm flex items-center justify-between">

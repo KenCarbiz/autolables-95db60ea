@@ -168,6 +168,8 @@ const Index = () => {
   const acceptedOptional = optional.filter((p) => optionalSelections[p.id] === "accept");
   const optionalTotal = acceptedOptional.reduce((sum, p) => sum + p.price, 0);
   const grandTotal = installedTotal + optionalTotal;
+  const docFeeAmount = settings.doc_fee_enabled ? (settings.doc_fee_amount || 0) : 0;
+  const grandTotalWithFee = grandTotal + docFeeAmount;
 
   const iconMap = JSON.parse(localStorage.getItem("product_icons") || "{}");
 
@@ -240,7 +242,7 @@ const Index = () => {
       initials: {},
       optional_selections: {},
       total_installed: installedTotal,
-      total_with_optional: grandTotal,
+      total_with_optional: grandTotalWithFee,
       status: "draft" as const,
       signing_token: token,
     };
@@ -299,7 +301,7 @@ const Index = () => {
       employee_signature_type: employeeSig.type,
       employee_signed_at: employeeSig.data ? now : null,
       total_installed: installedTotal,
-      total_with_optional: grandTotal,
+      total_with_optional: grandTotalWithFee,
       status: customerSig.data && employeeSig.data ? "signed" : "draft",
       signing_token: token,
     };
