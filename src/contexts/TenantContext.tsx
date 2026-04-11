@@ -29,12 +29,12 @@ const STORES_KEY = "wl_stores";
 const CURRENT_STORE_KEY = "wl_current_store";
 
 const DEFAULT_TENANT: Tenant = {
-  id: "default",
-  name: "Clear Deal",
-  slug: "clear-deal",
-  logo_url: "",
-  primary_color: "#192f54",
-  secondary_color: "#2563eb",
+  id: "autocurb",
+  name: "Autocurb",
+  slug: "autocurb",
+  logo_url: "/logo-mark.svg",
+  primary_color: "#0F1E3C",
+  secondary_color: "#2563EB",
   created_at: new Date().toISOString(),
   is_active: true,
 };

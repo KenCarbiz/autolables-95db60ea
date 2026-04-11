@@ -20,6 +20,8 @@ import NotFound from "./pages/NotFound.tsx";
 import MobileSigning from "./pages/MobileSigning.tsx";
 import Onboarding from "./pages/Onboarding.tsx";
 import TradeUpSticker from "./pages/TradeUpSticker.tsx";
+import About from "./pages/About.tsx";
+import BrandGuide from "./pages/BrandGuide.tsx";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,8 @@ const App = () => (
                     <Route path="/login" element={<Login />} />
                     <Route path="/sign/:token" element={<MobileSigning />} />
                     <Route path="/onboarding" element={<Onboarding />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/brand" element={<BrandGuide />} />
 
                     {/* Signed-in routes — wrapped in AppShell */}
                     <Route path="/" element={<AppShell><Index /></AppShell>} />

@@ -32,6 +32,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { useDealerSettings } from "@/contexts/DealerSettingsContext";
 import { useAudit } from "@/contexts/AuditContext";
+import Logo from "@/components/brand/Logo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -182,15 +183,17 @@ const AppShell = ({ children }: AppShellProps) => {
         {/* Sidebar header */}
         <div className="flex items-center justify-between h-14 px-4 border-b border-sidebar-border/50 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-gradient-to-br from-blue to-action flex items-center justify-center shadow-sm">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
+            {tenant?.logo_url && tenant.logo_url !== "/logo-mark.svg" ? (
+              <img src={tenant.logo_url} alt={tenant.name} className="w-8 h-8 rounded-md object-contain bg-white p-1" />
+            ) : (
+              <Logo variant="mark" size={32} />
+            )}
             <div>
               <p className="text-sm font-semibold text-sidebar-foreground leading-none tracking-tight">
-                {tenant?.name || "Clear Deal"}
+                {tenant?.name || "Autocurb"}
               </p>
               <p className="text-[10px] text-sidebar-foreground/50 mt-0.5 uppercase tracking-wider">
-                Addendum Platform
+                {tenant?.slug === "autocurb" ? "Dealer OS" : "Addendum Platform"}
               </p>
             </div>
           </div>
@@ -309,7 +312,7 @@ const AppShell = ({ children }: AppShellProps) => {
               {tenant?.name?.toUpperCase() || "CLEAR DEAL"}
             </p>
             <p className="text-[9px] text-sidebar-foreground/30 mt-0.5">
-              Powered by {tenant?.name || "Clear Deal"}
+              Powered by Autocurb.io
             </p>
           </div>
         </div>
