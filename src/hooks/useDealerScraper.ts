@@ -28,10 +28,15 @@ export const useDealerScraper = () => {
     setScraping(true);
     setError(null);
 
+    let formattedUrl = url.trim();
+    if (!/^https?:\/\//i.test(formattedUrl)) {
+      formattedUrl = `https://${formattedUrl}`;
+    }
+
     let html = "";
     for (const proxy of CORS_PROXIES) {
       try {
-        const res = await fetch(proxy(url.trim()), { signal: AbortSignal.timeout(15000) });
+        const res = await fetch(proxy(formattedUrl), { signal: AbortSignal.timeout(15000) });
         if (res.ok) { html = await res.text(); if (html.length > 500) break; }
       } catch { continue; }
     }
