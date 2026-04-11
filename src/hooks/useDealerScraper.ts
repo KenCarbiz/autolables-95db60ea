@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface DealerProfile {
   name: string;
@@ -22,26 +23,22 @@ export interface DealerProfile {
   };
 }
 
-// Multiple CORS proxy strategies with automatic fallback.
-// In production, a Supabase Edge Function (or HarteCash's own backend proxy)
-// should fetch server-side to avoid CORS entirely.
-const CORS_PROXIES = [
-  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-];
-
 const normalizeUrl = (input: string): string => {
   let url = input.trim();
   if (!url) return url;
-  // Strip trailing slashes
   url = url.replace(/\/+$/, "");
-  // Add protocol if missing
   if (!/^https?:\/\//i.test(url)) {
     url = `https://${url}`;
   }
   return url;
 };
+
+// CORS proxy fallbacks (used if edge function also fails)
+const CORS_PROXIES = [
+  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+];
 
 export const useDealerScraper = () => {
   const [scraping, setScraping] = useState(false);
@@ -67,26 +64,44 @@ export const useDealerScraper = () => {
     setLastSource(null);
 
     let html = "";
-    let successfulProxy: string | null = null;
+    let sourceUrl = normalized;
+    let source: string | null = null;
 
-    for (let i = 0; i < CORS_PROXIES.length; i++) {
-      const proxy = CORS_PROXIES[i];
-      try {
-        const proxyUrl = proxy(normalized);
-        const res = await fetch(proxyUrl, {
-          signal: AbortSignal.timeout(15000),
-          headers: { Accept: "text/html,application/xhtml+xml,*/*" },
-        });
-        if (res.ok) {
-          const text = await res.text();
-          if (text.length > 500) {
-            html = text;
-            successfulProxy = ["allorigins", "corsproxy.io", "codetabs"][i];
-            break;
+    // Strategy 1: Edge function (server-side, no CORS issues)
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("dealer-scrape", {
+        body: { url: normalized },
+      });
+      if (!fnError && data?.success && data?.html?.length > 500) {
+        html = data.html;
+        sourceUrl = data.sourceUrl || normalized;
+        source = "edge-function";
+      }
+    } catch {
+      // Edge function unavailable, fall through to CORS proxies
+    }
+
+    // Strategy 2: CORS proxies
+    if (!html) {
+      for (let i = 0; i < CORS_PROXIES.length; i++) {
+        const proxy = CORS_PROXIES[i];
+        try {
+          const proxyUrl = proxy(normalized);
+          const res = await fetch(proxyUrl, {
+            signal: AbortSignal.timeout(15000),
+            headers: { Accept: "text/html,application/xhtml+xml,*/*" },
+          });
+          if (res.ok) {
+            const text = await res.text();
+            if (text.length > 500) {
+              html = text;
+              source = ["allorigins", "corsproxy.io", "codetabs"][i];
+              break;
+            }
           }
+        } catch {
+          continue;
         }
-      } catch {
-        continue;
       }
     }
 
@@ -96,13 +111,12 @@ export const useDealerScraper = () => {
       return null;
     }
 
-    setLastSource(successfulProxy);
-    const profile = parseDealerSite(html, normalized);
+    setLastSource(source);
+    const profile = parseDealerSite(html, sourceUrl);
     setScraping(false);
 
-    // Validate we got something useful
     if (!profile.name && !profile.address && !profile.phone) {
-      setError("Fetched the page but couldn't extract dealer info. Try a specific dealer website (not a general home page).");
+      setError("Fetched the page but couldn't extract dealer info. Try a specific dealer website.");
       return null;
     }
 
@@ -125,28 +139,14 @@ function parseDealerSite(html: string, sourceUrl: string): DealerProfile {
     social: {},
   };
 
-  // 1. JSON-LD (schema.org AutoDealer / LocalBusiness / Organization)
   const jsonLdBlocks = extractJsonLd(html);
-  for (const block of jsonLdBlocks) {
-    applyJsonLd(block, profile);
-  }
-
-  // 2. Meta tags (Open Graph, Twitter, standard)
+  for (const block of jsonLdBlocks) applyJsonLd(block, profile);
   applyMetaTags(html, profile);
-
-  // 3. HTML pattern matching (title, phone, address regexes)
   applyHtmlPatterns(html, profile);
-
-  // 4. OEM brand detection
   detectOemBrands(html, profile);
-
-  // 5. Value proposition extraction
   extractValueProps(html, profile);
-
-  // 6. Social links
   extractSocialLinks(html, profile);
 
-  // 7. Normalize / resolve relative logo URL
   if (profile.logo_url && !profile.logo_url.startsWith("http")) {
     try {
       const base = new URL(sourceUrl);
@@ -159,9 +159,7 @@ function parseDealerSite(html: string, sourceUrl: string): DealerProfile {
   return profile;
 }
 
-// ───────────────────────────────────────────────────────────
-// JSON-LD extraction
-// ───────────────────────────────────────────────────────────
+// ─── JSON-LD ────────────────────────────────────────────────
 
 interface JsonLdValue {
   "@type"?: string | string[];
@@ -192,37 +190,24 @@ function extractJsonLd(html: string): JsonLdValue[] {
   while ((match = regex.exec(html)) !== null) {
     try {
       const parsed = JSON.parse(match[1]);
-      if (Array.isArray(parsed)) {
-        results.push(...parsed);
-      } else {
-        results.push(parsed);
-      }
-    } catch {
-      // Skip malformed JSON-LD
-    }
+      if (Array.isArray(parsed)) results.push(...parsed);
+      else results.push(parsed);
+    } catch { /* skip */ }
   }
   return results;
 }
 
 function applyJsonLd(obj: JsonLdValue, profile: DealerProfile) {
   if (!obj || typeof obj !== "object") return;
-
-  // @graph contains nested entities
   if (obj["@graph"]) {
-    for (const item of obj["@graph"]) {
-      applyJsonLd(item, profile);
-    }
+    for (const item of obj["@graph"]) applyJsonLd(item, profile);
     return;
   }
 
   const types = Array.isArray(obj["@type"]) ? obj["@type"] : [obj["@type"] || ""];
   const typeStr = types.join(" ").toLowerCase();
-  const isDealer =
-    typeStr.includes("autodealer") ||
-    typeStr.includes("automotivebusiness") ||
-    typeStr.includes("localbusiness") ||
-    typeStr.includes("organization") ||
-    typeStr.includes("store");
+  const isDealer = typeStr.includes("autodealer") || typeStr.includes("automotivebusiness") ||
+    typeStr.includes("localbusiness") || typeStr.includes("organization") || typeStr.includes("store");
 
   if (!isDealer && !obj.name) return;
 
@@ -231,11 +216,8 @@ function applyJsonLd(obj: JsonLdValue, profile: DealerProfile) {
   if (obj.telephone && !profile.phone) profile.phone = String(obj.telephone);
   if (obj.email && !profile.email) profile.email = String(obj.email);
   if (obj.slogan && !profile.tagline) profile.tagline = String(obj.slogan);
-  if (obj.description && !profile.tagline) {
-    profile.tagline = String(obj.description).slice(0, 200);
-  }
+  if (obj.description && !profile.tagline) profile.tagline = String(obj.description).slice(0, 200);
 
-  // Logo can be string or { url }
   if (obj.logo && !profile.logo_url) {
     profile.logo_url = typeof obj.logo === "string" ? obj.logo : (obj.logo.url || "");
   }
@@ -243,42 +225,35 @@ function applyJsonLd(obj: JsonLdValue, profile: DealerProfile) {
     profile.logo_url = typeof obj.image === "string" ? obj.image : (obj.image.url || "");
   }
 
-  // Address can be string or PostalAddress object
   if (obj.address && !profile.address) {
     if (typeof obj.address === "object") {
       profile.address = obj.address.streetAddress || "";
       profile.city = obj.address.addressLocality || "";
       profile.state = obj.address.addressRegion || "";
       profile.zip = obj.address.postalCode || "";
-    } else if (typeof obj.address === "string") {
+    } else {
       profile.address = obj.address;
     }
   }
 
-  // Opening hours
   if (obj.openingHours && !profile.hours) {
     const hours = Array.isArray(obj.openingHours) ? obj.openingHours.join(", ") : obj.openingHours;
     profile.hours = String(hours);
   }
 
-  // Social links via sameAs
   if (obj.sameAs) {
     const links = Array.isArray(obj.sameAs) ? obj.sameAs : [obj.sameAs];
     for (const link of links) {
       if (!link || typeof link !== "string") continue;
       if (link.includes("facebook.com") && profile.social) profile.social.facebook = link;
       else if (link.includes("instagram.com") && profile.social) profile.social.instagram = link;
-      else if (link.includes("twitter.com") || link.includes("x.com")) {
-        if (profile.social) profile.social.twitter = link;
-      }
+      else if ((link.includes("twitter.com") || link.includes("x.com")) && profile.social) profile.social.twitter = link;
       else if (link.includes("youtube.com") && profile.social) profile.social.youtube = link;
     }
   }
 }
 
-// ───────────────────────────────────────────────────────────
-// Meta tag extraction
-// ───────────────────────────────────────────────────────────
+// ─── Meta tags ──────────────────────────────────────────────
 
 function applyMetaTags(html: string, profile: DealerProfile) {
   const getMeta = (name: string): string => {
@@ -300,34 +275,24 @@ function applyMetaTags(html: string, profile: DealerProfile) {
   const metaDesc = getMeta("description");
 
   if (!profile.name && ogSiteName) profile.name = ogSiteName;
-  if (!profile.name && ogTitle) {
-    // Strip "| City, State" suffix
-    profile.name = ogTitle.split(/[|\-–—]/)[0].trim();
-  }
+  if (!profile.name && ogTitle) profile.name = ogTitle.split(/[|\-–—]/)[0].trim();
   if (!profile.tagline && ogDesc) profile.tagline = ogDesc.slice(0, 200);
   if (!profile.tagline && metaDesc) profile.tagline = metaDesc.slice(0, 200);
   if (!profile.logo_url && ogImage) profile.logo_url = ogImage;
 }
 
-// ───────────────────────────────────────────────────────────
-// HTML pattern matching
-// ───────────────────────────────────────────────────────────
+// ─── HTML patterns ──────────────────────────────────────────
 
 function applyHtmlPatterns(html: string, profile: DealerProfile) {
-  // Title tag fallback
   if (!profile.name) {
     const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    if (m) {
-      profile.name = m[1].split(/[|\-–—]/)[0].trim();
-    }
+    if (m) profile.name = m[1].split(/[|\-–—]/)[0].trim();
   }
 
-  // Phone — look for tel: links first, then regex
   if (!profile.phone) {
     const telMatch = html.match(/href\s*=\s*["']tel:([\d\-\+\s\(\)\.]+)["']/i);
     if (telMatch) {
       profile.phone = telMatch[1].replace(/[^\d]/g, "").replace(/^1/, "");
-      // Reformat
       if (profile.phone.length === 10) {
         profile.phone = `(${profile.phone.slice(0, 3)}) ${profile.phone.slice(3, 6)}-${profile.phone.slice(6)}`;
       }
@@ -338,21 +303,16 @@ function applyHtmlPatterns(html: string, profile: DealerProfile) {
     if (m) profile.phone = m[1].trim();
   }
 
-  // Email — look for mailto: then regex
   if (!profile.email) {
     const mailMatch = html.match(/href\s*=\s*["']mailto:([^"'?]+)["']/i);
     if (mailMatch) profile.email = mailMatch[1];
   }
   if (!profile.email) {
     const m = html.match(/[\w.-]+@[\w.-]+\.[A-Za-z]{2,}/);
-    if (m && !m[0].includes("@example.") && !m[0].includes("@dealer.com")) {
-      profile.email = m[0];
-    }
+    if (m && !m[0].includes("@example.") && !m[0].includes("@dealer.com")) profile.email = m[0];
   }
 
-  // Address patterns
   if (!profile.address) {
-    // Look for structured address spans
     const addrMatch = html.match(/<[^>]*itemprop\s*=\s*["']streetAddress["'][^>]*>([^<]+)</i);
     if (addrMatch) profile.address = addrMatch[1].trim();
   }
@@ -369,7 +329,6 @@ function applyHtmlPatterns(html: string, profile: DealerProfile) {
     if (zipMatch) profile.zip = zipMatch[1].trim();
   }
 
-  // Plain-text address fallback (US format: "123 Main St, City, ST 12345")
   if (!profile.address) {
     const m = html.match(/(\d{1,5}[\w\s.,]+?)\s*,\s*([A-Za-z\s.]+?)\s*,\s*([A-Z]{2})\s*(\d{5})/);
     if (m) {
@@ -380,7 +339,6 @@ function applyHtmlPatterns(html: string, profile: DealerProfile) {
     }
   }
 
-  // Logo fallback — look for <img> with logo-like src or class
   if (!profile.logo_url) {
     const logoMatch = html.match(/<img[^>]*(?:class|id)\s*=\s*["'][^"']*logo[^"']*["'][^>]*src\s*=\s*["']([^"']+)["']/i)
       || html.match(/<img[^>]*src\s*=\s*["']([^"']+)["'][^>]*(?:class|id|alt)\s*=\s*["'][^"']*logo[^"']*["']/i);
@@ -388,9 +346,7 @@ function applyHtmlPatterns(html: string, profile: DealerProfile) {
   }
 }
 
-// ───────────────────────────────────────────────────────────
-// OEM brand detection
-// ───────────────────────────────────────────────────────────
+// ─── OEM brands ─────────────────────────────────────────────
 
 const OEM_BRANDS = [
   "Acura", "Alfa Romeo", "Aston Martin", "Audi", "Bentley", "BMW", "Buick",
@@ -406,64 +362,46 @@ function detectOemBrands(html: string, profile: DealerProfile) {
   const cleaned = html.replace(/<[^>]+>/g, " ").toLowerCase();
   const found = new Set<string>();
   for (const brand of OEM_BRANDS) {
-    // Match word-boundary so "Mini" doesn't match "minimum"
     const rx = new RegExp(`\\b${brand.replace(/\s/g, "\\s*")}\\b`, "i");
     if (rx.test(cleaned)) found.add(brand);
   }
   profile.oem_brands = Array.from(found);
 }
 
-// ───────────────────────────────────────────────────────────
-// Value proposition extraction
-// ───────────────────────────────────────────────────────────
+// ─── Value props ────────────────────────────────────────────
 
 function extractValueProps(html: string, profile: DealerProfile) {
   const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
   const phrases = [
     /family[\s-]owned(?:\s+(?:and|&)\s+operated)?/gi,
-    /award[\s-]winning/gi,
-    /certified\s+dealer/gi,
-    /premier\s+dealer/gi,
-    /largest\s+selection/gi,
-    /price\s+guarantee/gi,
-    /best\s+price/gi,
-    /no\s+haggle/gi,
-    /lifetime\s+warranty/gi,
-    /free\s+delivery/gi,
-    /customer\s+satisfaction/gi,
-    /since\s+\d{4}/gi,
+    /award[\s-]winning/gi, /certified\s+dealer/gi, /premier\s+dealer/gi,
+    /largest\s+selection/gi, /price\s+guarantee/gi, /best\s+price/gi,
+    /no\s+haggle/gi, /lifetime\s+warranty/gi, /free\s+delivery/gi,
+    /customer\s+satisfaction/gi, /since\s+\d{4}/gi,
   ];
-
   const found = new Set<string>();
   for (const rx of phrases) {
     const matches = text.match(rx);
     if (matches) {
       for (const m of matches) {
         const cleaned = m.trim().replace(/\s+/g, " ");
-        if (cleaned.length > 4 && cleaned.length < 80) {
-          found.add(cleaned);
-        }
+        if (cleaned.length > 4 && cleaned.length < 80) found.add(cleaned);
       }
     }
   }
-
   profile.value_propositions = Array.from(found).slice(0, 8);
 }
 
-// ───────────────────────────────────────────────────────────
-// Social links extraction
-// ───────────────────────────────────────────────────────────
+// ─── Social links ───────────────────────────────────────────
 
 function extractSocialLinks(html: string, profile: DealerProfile) {
   if (!profile.social) profile.social = {};
-
   const patterns = [
     { key: "facebook" as const, rx: /href\s*=\s*["'](https?:\/\/(?:www\.)?facebook\.com\/[^\s"']+)["']/i },
     { key: "instagram" as const, rx: /href\s*=\s*["'](https?:\/\/(?:www\.)?instagram\.com\/[^\s"']+)["']/i },
     { key: "twitter" as const, rx: /href\s*=\s*["'](https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[^\s"']+)["']/i },
     { key: "youtube" as const, rx: /href\s*=\s*["'](https?:\/\/(?:www\.)?youtube\.com\/[^\s"']+)["']/i },
   ];
-
   for (const { key, rx } of patterns) {
     if (profile.social[key]) continue;
     const m = html.match(rx);
