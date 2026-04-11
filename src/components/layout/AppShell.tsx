@@ -26,6 +26,7 @@ import {
   Palette,
   ToggleLeft,
   Tag,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
@@ -83,6 +84,7 @@ const AppShell = ({ children }: AppShellProps) => {
         { label: "New Addendum", path: "/", icon: FileText },
         { label: "Saved Addendums", path: "/saved", icon: FolderOpen },
         { label: "Buyers Guide", path: "/buyers-guide", icon: ScrollText, featureKey: "feature_buyers_guide" },
+        { label: "Trade-Up Sticker", path: "/trade-up", icon: TrendingUp },
       ],
     },
     configuration: {

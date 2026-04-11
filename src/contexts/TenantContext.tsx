@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import type { Tenant, Store } from "@/types/tenant";
+import { useTenantIntegration, IntegrationMode } from "@/hooks/useTenantIntegration";
 
 interface TenantContextType {
   tenant: Tenant | null;
@@ -11,6 +12,14 @@ interface TenantContextType {
   deleteStore: (id: string) => void;
   updateTenant: (updates: Partial<Tenant>) => void;
   loading: boolean;
+  // Integration mode
+  mode: IntegrationMode;
+  isEmbedded: boolean;
+  isStandalone: boolean;
+  isOnboardingComplete: boolean;
+  completeOnboarding: () => void;
+  parentOrigin: string | null;
+  externalUser: { id: string; email: string; name?: string; role?: string } | null;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -24,7 +33,7 @@ const DEFAULT_TENANT: Tenant = {
   name: "Clear Deal",
   slug: "clear-deal",
   logo_url: "",
-  primary_color: "#1a2b4a",
+  primary_color: "#192f54",
   secondary_color: "#2563eb",
   created_at: new Date().toISOString(),
   is_active: true,
@@ -48,11 +57,14 @@ const DEFAULT_STORE: Store = {
 };
 
 export const TenantProvider = ({ children }: { children: ReactNode }) => {
+  const integration = useTenantIntegration();
+
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [stores, setStores] = useState<Store[]>([]);
   const [currentStore, setCurrentStoreState] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Initial load from localStorage
   useEffect(() => {
     const savedTenant = localStorage.getItem(TENANT_KEY);
     const savedStores = localStorage.getItem(STORES_KEY);
@@ -67,7 +79,50 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
+  // Sync from external tenant (embedded mode)
+  useEffect(() => {
+    if (!integration.externalTenant) return;
+
+    const ext = integration.externalTenant;
+
+    const nextTenant: Tenant = {
+      id: ext.tenant.id,
+      name: ext.tenant.name,
+      slug: ext.tenant.slug,
+      logo_url: ext.tenant.logo_url,
+      primary_color: ext.tenant.primary_color,
+      secondary_color: ext.tenant.secondary_color,
+      created_at: new Date().toISOString(),
+      is_active: true,
+    };
+
+    setTenant(nextTenant);
+
+    if (ext.stores && ext.stores.length > 0) {
+      const mapped: Store[] = ext.stores.map(s => ({
+        id: s.id,
+        tenant_id: nextTenant.id,
+        name: s.name,
+        slug: s.id,
+        address: s.address || "",
+        city: s.city || "",
+        state: s.state || "",
+        zip: s.zip || "",
+        phone: s.phone || "",
+        logo_url: s.logo_url || "",
+        tagline: s.tagline || "",
+        primary_color: ext.tenant.primary_color,
+        created_at: new Date().toISOString(),
+        is_active: true,
+      }));
+      setStores(mapped);
+      setCurrentStoreState(mapped[0]);
+    }
+  }, [integration.externalTenant]);
+
   const persist = (t: Tenant, s: Store[]) => {
+    // Don't persist when embedded — parent owns the data
+    if (integration.mode === "embedded") return;
     localStorage.setItem(TENANT_KEY, JSON.stringify(t));
     localStorage.setItem(STORES_KEY, JSON.stringify(s));
   };
@@ -75,6 +130,8 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
   const setCurrentStore = (store: Store) => {
     setCurrentStoreState(store);
     localStorage.setItem(CURRENT_STORE_KEY, store.id);
+    // Notify parent when running embedded
+    integration.sendToParent("store_change", { storeId: store.id });
   };
 
   const addStore = (data: Omit<Store, "id" | "created_at">) => {
@@ -109,7 +166,26 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <TenantContext.Provider value={{ tenant, stores, currentStore, setCurrentStore, addStore, updateStore, deleteStore, updateTenant, loading }}>
+    <TenantContext.Provider
+      value={{
+        tenant,
+        stores,
+        currentStore,
+        setCurrentStore,
+        addStore,
+        updateStore,
+        deleteStore,
+        updateTenant,
+        loading,
+        mode: integration.mode,
+        isEmbedded: integration.mode === "embedded",
+        isStandalone: integration.mode === "standalone",
+        isOnboardingComplete: integration.isOnboardingComplete,
+        completeOnboarding: integration.completeOnboarding,
+        parentOrigin: integration.parentOrigin,
+        externalUser: integration.externalTenant?.user || null,
+      }}
+    >
       {children}
     </TenantContext.Provider>
   );

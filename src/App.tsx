@@ -8,6 +8,8 @@ import { DealerSettingsProvider } from "@/contexts/DealerSettingsContext";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { AuditProvider } from "@/contexts/AuditContext";
 import AppShell from "@/components/layout/AppShell";
+import ThemeInjector from "@/components/layout/ThemeInjector";
+import OnboardingGate from "@/components/layout/OnboardingGate";
 import Dashboard from "./pages/Dashboard.tsx";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
@@ -16,6 +18,8 @@ import SavedAddendums from "./pages/SavedAddendums.tsx";
 import BuyersGuide from "./pages/BuyersGuide.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import MobileSigning from "./pages/MobileSigning.tsx";
+import Onboarding from "./pages/Onboarding.tsx";
+import TradeUpSticker from "./pages/TradeUpSticker.tsx";
 
 const queryClient = new QueryClient();
 
@@ -29,20 +33,25 @@ const App = () => (
           <DealerSettingsProvider>
             <AuditProvider>
               <BrowserRouter>
-                <Routes>
-                  {/* Public routes — no shell */}
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/sign/:token" element={<MobileSigning />} />
+                <ThemeInjector />
+                <OnboardingGate>
+                  <Routes>
+                    {/* Public routes — no shell */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/sign/:token" element={<MobileSigning />} />
+                    <Route path="/onboarding" element={<Onboarding />} />
 
-                  {/* Signed-in routes — wrapped in AppShell */}
-                  <Route path="/" element={<AppShell><Index /></AppShell>} />
-                  <Route path="/dashboard" element={<AppShell><Dashboard /></AppShell>} />
-                  <Route path="/admin" element={<AppShell><Admin /></AppShell>} />
-                  <Route path="/saved" element={<AppShell><SavedAddendums /></AppShell>} />
-                  <Route path="/buyers-guide" element={<AppShell><BuyersGuide /></AppShell>} />
+                    {/* Signed-in routes — wrapped in AppShell */}
+                    <Route path="/" element={<AppShell><Index /></AppShell>} />
+                    <Route path="/dashboard" element={<AppShell><Dashboard /></AppShell>} />
+                    <Route path="/admin" element={<AppShell><Admin /></AppShell>} />
+                    <Route path="/saved" element={<AppShell><SavedAddendums /></AppShell>} />
+                    <Route path="/buyers-guide" element={<AppShell><BuyersGuide /></AppShell>} />
+                    <Route path="/trade-up" element={<AppShell><TradeUpSticker /></AppShell>} />
 
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </OnboardingGate>
               </BrowserRouter>
             </AuditProvider>
           </DealerSettingsProvider>

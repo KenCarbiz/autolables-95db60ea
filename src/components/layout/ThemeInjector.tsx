@@ -1,0 +1,87 @@
+import { useEffect } from "react";
+import { useTenant } from "@/contexts/TenantContext";
+
+// Converts a hex color like "#dc2626" to HSL components "0 72% 51%"
+// that match the format Tailwind CSS variables expect.
+function hexToHsl(hex: string): string | null {
+  const cleaned = hex.replace(/^#/, "");
+  if (!/^[0-9a-fA-F]{6}$/.test(cleaned)) return null;
+
+  const r = parseInt(cleaned.slice(0, 2), 16) / 255;
+  const g = parseInt(cleaned.slice(2, 4), 16) / 255;
+  const b = parseInt(cleaned.slice(4, 6), 16) / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+/**
+ * ThemeInjector watches the current tenant and applies primary/secondary
+ * colors as CSS variables on :root. This lets embedded mode instantly
+ * re-theme the entire UI from the parent app's postMessage payload.
+ */
+const ThemeInjector = () => {
+  const { tenant, currentStore } = useTenant();
+
+  useEffect(() => {
+    const root = document.documentElement;
+
+    // Prefer store-level brand over tenant-level
+    const primary = currentStore?.primary_color || tenant?.primary_color || "";
+    const secondary = tenant?.secondary_color || "";
+
+    if (primary) {
+      const hsl = hexToHsl(primary);
+      if (hsl) {
+        root.style.setProperty("--primary", hsl);
+        root.style.setProperty("--navy", hsl);
+        root.style.setProperty("--ring", hsl);
+        root.style.setProperty("--sidebar-ring", hsl);
+      }
+    } else {
+      // Restore defaults when no custom color
+      root.style.removeProperty("--primary");
+      root.style.removeProperty("--navy");
+      root.style.removeProperty("--ring");
+      root.style.removeProperty("--sidebar-ring");
+    }
+
+    if (secondary) {
+      const hsl = hexToHsl(secondary);
+      if (hsl) {
+        root.style.setProperty("--blue", hsl);
+        root.style.setProperty("--action", hsl);
+        root.style.setProperty("--sidebar-primary", hsl);
+      }
+    } else {
+      root.style.removeProperty("--blue");
+      root.style.removeProperty("--action");
+      root.style.removeProperty("--sidebar-primary");
+    }
+
+    // Update tab title + favicon hint based on tenant
+    if (tenant?.name) {
+      document.title = `${tenant.name} · Addendum Platform`;
+    }
+  }, [tenant, currentStore]);
+
+  return null;
+};
+
+export default ThemeInjector;
