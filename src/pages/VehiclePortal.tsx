@@ -14,11 +14,26 @@ interface PortalProduct {
   disclosure?: string;
 }
 
+interface DealerValueProp {
+  title: string;
+  description: string;
+  price: string; // "No Charge" or "$X"
+}
+
+interface DealerUpload {
+  name: string;
+  url: string;
+  type: string;
+}
+
 const VehiclePortal = () => {
   const { vin } = useParams<{ vin: string }>();
   const [vehicleFile, setVehicleFile] = useState<any>(null);
   const [storeName, setStoreName] = useState("Your Dealership");
   const [storePhone, setStorePhone] = useState("");
+  const [storeTagline, setStoreTagline] = useState("");
+  const [valueProps, setValueProps] = useState<DealerValueProp[]>([]);
+  const [dealerUploads, setDealerUploads] = useState<DealerUpload[]>([]);
 
   useEffect(() => {
     if (!vin) return;
@@ -32,7 +47,16 @@ const VehiclePortal = () => {
       if (stores[0]) {
         setStoreName(stores[0].name || "Your Dealership");
         setStorePhone(stores[0].phone || "");
+        setStoreTagline(stores[0].tagline || "");
       }
+
+      // Load dealer value propositions from settings
+      const dealerVP = JSON.parse(localStorage.getItem("dealer_value_props") || "[]");
+      setValueProps(dealerVP);
+
+      // Load dealer uploaded documents
+      const uploads = JSON.parse(localStorage.getItem("dealer_uploads") || "[]");
+      setDealerUploads(uploads);
     } catch { /* */ }
   }, [vin]);
 
@@ -162,6 +186,81 @@ const VehiclePortal = () => {
                 </div>
               )}
             </div>
+
+            {/* Dealer Value Propositions */}
+            {valueProps.length > 0 && (
+              <div className="bg-white rounded-2xl border border-border shadow-premium p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Star className="w-4 h-4 text-amber-500" />
+                  <h2 className="text-base font-semibold text-foreground">Included With Your Purchase</h2>
+                </div>
+                <div className="space-y-3">
+                  {valueProps.map((vp, i) => (
+                    <div key={i} className="flex items-start justify-between gap-3 p-3 rounded-lg bg-amber-50/50 border border-amber-100">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{vp.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{vp.description}</p>
+                      </div>
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded flex-shrink-0">
+                        {vp.price}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Dealer Uploaded Documents */}
+            {dealerUploads.length > 0 && (
+              <div className="bg-white rounded-2xl border border-border shadow-premium p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Package className="w-4 h-4 text-blue-600" />
+                  <h2 className="text-base font-semibold text-foreground">Program Details</h2>
+                </div>
+                <div className="space-y-2">
+                  {dealerUploads.map((doc, i) => (
+                    <a
+                      key={i}
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <Package className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{doc.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{doc.type} — Tap to view</p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* All stickers generated for this VIN */}
+            {vehicleFile?.stickers?.length > 0 && (
+              <div className="bg-white rounded-2xl border border-border shadow-premium p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Package className="w-4 h-4 text-purple-600" />
+                  <h2 className="text-base font-semibold text-foreground">Vehicle Documents</h2>
+                </div>
+                <div className="space-y-2">
+                  {vehicleFile.stickers.map((s: any) => (
+                    <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border">
+                      <div>
+                        <p className="text-xs font-semibold text-foreground capitalize">{s.type.replace(/_/g, " ")}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">{s.tracking_code}</p>
+                      </div>
+                      <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                        s.status === "signed" ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"
+                      }`}>{s.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Trust indicators */}
             <div className="bg-white rounded-2xl border border-border shadow-premium p-6">
