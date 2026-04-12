@@ -497,6 +497,27 @@ const AppShell = ({ children }: AppShellProps) => {
             <p className="text-xs text-muted-foreground break-all font-mono">
               {window.location.origin}/scan
             </p>
+            {/* Text link to phone */}
+            <div className="flex gap-2">
+              <input
+                id="sms-phone-input"
+                type="tel"
+                placeholder="(555) 555-5555"
+                className="flex-1 h-10 px-3 rounded-lg border-2 border-border text-sm text-foreground outline-none focus:border-primary"
+              />
+              <button
+                onClick={() => {
+                  const phone = (document.getElementById("sms-phone-input") as HTMLInputElement)?.value?.replace(/\D/g, "");
+                  if (!phone || phone.length < 10) { alert("Enter a valid phone number"); return; }
+                  const smsBody = encodeURIComponent(`Open the lot scanner on your phone: ${window.location.origin}/scan`);
+                  window.open(`sms:${phone}?body=${smsBody}`, "_blank");
+                }}
+                className="h-10 px-4 rounded-lg bg-teal text-primary-foreground text-sm font-semibold hover:opacity-90"
+              >
+                Text Link
+              </button>
+            </div>
+
             <div className="flex gap-2">
               <button
                 onClick={() => {
