@@ -26,6 +26,7 @@ import ScanPage from "./pages/ScanPage.tsx";
 import ComplianceCenter from "./pages/ComplianceCenter.tsx";
 import VehiclePortal from "./pages/VehiclePortal.tsx";
 import UsedCarSticker from "./pages/UsedCarSticker.tsx";
+import CpoSheet from "./pages/CpoSheet.tsx";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
                     <Route path="/buyers-guide" element={<AppShell><BuyersGuide /></AppShell>} />
                     <Route path="/trade-up" element={<AppShell><TradeUpSticker /></AppShell>} />
                     <Route path="/used-car-sticker" element={<AppShell><UsedCarSticker /></AppShell>} />
+                    <Route path="/cpo-sheet" element={<AppShell><CpoSheet /></AppShell>} />
                     <Route path="/compliance" element={<AppShell><ComplianceCenter /></AppShell>} />
 
                     <Route path="*" element={<NotFound />} />
