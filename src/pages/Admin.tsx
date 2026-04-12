@@ -101,7 +101,7 @@ const Admin = () => {
   const { settings, updateSettings } = useDealerSettings();
   const { rules, addRule, updateRule, deleteRule } = useProductRules();
   const { entries: auditEntries, exportCsv: exportAuditCsv } = useAudit();
-  const { currentStore } = useTenant();
+  const { currentStore, updateTenant } = useTenant();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -600,9 +600,44 @@ const Admin = () => {
                   )}
                 </div>
               </div>
-              <button onClick={handleSaveBranding} className="px-6 py-2 bg-teal text-primary-foreground rounded font-semibold text-sm">
-                Save Branding
-              </button>
+              <div className="flex gap-3">
+                <button onClick={handleSaveBranding} className="px-6 py-2 bg-teal text-primary-foreground rounded font-semibold text-sm">
+                  Save Branding
+                </button>
+                <button
+                  onClick={() => {
+                    const defaults = {
+                      dealer_name: "",
+                      dealer_tagline: "",
+                      dealer_logo_url: "",
+                      primary_color: "",
+                    };
+                    setBranding(defaults);
+                    updateSettings(defaults);
+                    // Reset tenant colors to Autocurb defaults
+                    updateTenant({
+                      primary_color: "#0F1E3C",
+                      secondary_color: "#2563EB",
+                      logo_url: "/logo-mark.svg",
+                      name: "Autocurb",
+                    });
+                    // Remove any inline style overrides so index.css defaults apply
+                    const root = document.documentElement;
+                    root.style.removeProperty("--primary");
+                    root.style.removeProperty("--navy");
+                    root.style.removeProperty("--ring");
+                    root.style.removeProperty("--blue");
+                    root.style.removeProperty("--action");
+                    root.style.removeProperty("--sidebar-primary");
+                    root.style.removeProperty("--sidebar-ring");
+                    toast.success("Branding reset to Autocurb defaults");
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Reset to Defaults
+                </button>
+              </div>
             </div>
           </div>
         )}
