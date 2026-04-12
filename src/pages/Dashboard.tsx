@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAudit } from "@/contexts/AuditContext";
+import { usePredictiveAcceptance } from "@/hooks/usePredictiveAcceptance";
 import { useNavigate } from "react-router-dom";
 import { format, isToday, isThisWeek, isThisMonth } from "date-fns";
 import {
@@ -23,6 +24,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { currentStore } = useTenant();
   const { entries } = useAudit();
+  const { predictForVehicle } = usePredictiveAcceptance();
   const navigate = useNavigate();
 
   const { data: addendums } = useQuery({

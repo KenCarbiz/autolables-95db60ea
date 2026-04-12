@@ -543,6 +543,21 @@ const Admin = () => {
               )}
             </div>
 
+            {/* Integrations status */}
+            <div className="bg-card rounded-lg p-4 shadow-premium mb-3">
+              <h4 className="text-sm font-bold text-foreground mb-2">Integration Status</h4>
+              <p className="text-xs text-muted-foreground mb-3">Connect these services in Supabase &gt; Edge Functions &gt; Secrets to activate.</p>
+              <div className="space-y-2 text-xs">
+                <IntegrationRow label="AI Descriptions (Claude)" secretKey="ANTHROPIC_API_KEY" feature={settings.feature_ai_descriptions} />
+                <IntegrationRow label="Email Distribution" secretKey="RESEND_API_KEY or SENDGRID_API_KEY" feature={settings.feature_sms} />
+                <IntegrationRow label="SMS (Twilio)" secretKey="TWILIO_API_KEY" feature={settings.feature_sms} />
+                <IntegrationRow label="OEM Build Sheet (DataOne)" secretKey="DATAONE_API_KEY" feature={false} />
+                <IntegrationRow label="Black Book Market Data" secretKey="BLACKBOOK_API_KEY" feature={settings.feature_blackbook} />
+                <IntegrationRow label="Zebra CloudPrint" secretKey="ZEBRA_API_KEY" feature={false} />
+                <IntegrationRow label="Photo Background Removal" secretKey="REMOVEBG_API_KEY" feature={false} />
+              </div>
+            </div>
+
             {/* Feature Toggle list */}
             <div className="space-y-2">
               {FEATURE_TOGGLES.map((ft) => (
@@ -1520,6 +1535,18 @@ const StatMini = ({ icon: Icon, label, value, color }: { icon: typeof FileText; 
     <Icon className={`w-4 h-4 ${color} mb-2`} />
     <div className="text-2xl font-semibold tracking-tight font-display tabular-nums text-foreground">{value}</div>
     <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
+  </div>
+);
+
+const IntegrationRow = ({ label, secretKey, feature }: { label: string; secretKey: string; feature: boolean }) => (
+  <div className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+    <div>
+      <p className="font-medium text-foreground">{label}</p>
+      <p className="text-[10px] text-muted-foreground">Secret: {secretKey}</p>
+    </div>
+    <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${feature ? "bg-emerald-50 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+      {feature ? "Enabled" : "Configure"}
+    </span>
   </div>
 );
 
