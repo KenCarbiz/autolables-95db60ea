@@ -101,7 +101,7 @@ const Admin = () => {
   const { settings, updateSettings } = useDealerSettings();
   const { rules, addRule, updateRule, deleteRule } = useProductRules();
   const { entries: auditEntries, exportCsv: exportAuditCsv } = useAudit();
-  const { currentStore } = useTenant();
+  const { currentStore, updateTenant } = useTenant();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
