@@ -29,6 +29,7 @@ const ScanPage = lazy(() => import("./pages/ScanPage"));
 const ComplianceCenter = lazy(() => import("./pages/ComplianceCenter"));
 const VehiclePortal = lazy(() => import("./pages/VehiclePortal"));
 const UsedCarSticker = lazy(() => import("./pages/UsedCarSticker"));
+const NewCarSticker = lazy(() => import("./pages/NewCarSticker"));
 const CpoSheet = lazy(() => import("./pages/CpoSheet"));
 const DescriptionWriter = lazy(() => import("./pages/DescriptionWriter"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -77,6 +78,7 @@ const App = () => (
                       <Route path="/buyers-guide" element={<AppShell><BuyersGuide /></AppShell>} />
                       <Route path="/trade-up" element={<AppShell><TradeUpSticker /></AppShell>} />
                       <Route path="/used-car-sticker" element={<AppShell><UsedCarSticker /></AppShell>} />
+                    <Route path="/new-car-sticker" element={<AppShell><NewCarSticker /></AppShell>} />
                       <Route path="/cpo-sheet" element={<AppShell><CpoSheet /></AppShell>} />
                       <Route path="/compliance" element={<AppShell><ComplianceCenter /></AppShell>} />
                     <Route path="/description-writer" element={<AppShell><DescriptionWriter /></AppShell>} />
