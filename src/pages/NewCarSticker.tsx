@@ -48,6 +48,14 @@ const NewCarSticker = () => {
 
   const signingUrl = vehicle.vin ? `${window.location.origin}/vehicle/${vehicle.vin}` : "";
 
+  // Proper tracking code: AC-{STORE}-{VIN6}-NA-{TIMESTAMP}
+  const trackingCode = (() => {
+    const storePrefix = (currentStore?.id || "STOR").slice(0, 4).toUpperCase();
+    const vinSuffix = vehicle.vin ? vehicle.vin.slice(-6).toUpperCase() : "000000";
+    const ts = Date.now().toString(36).toUpperCase().slice(-6);
+    return `AC-${storePrefix}-${vinSuffix}-NA-${ts}`;
+  })();
+
   const handleVinDecode = async () => {
     if (vehicle.vin.length !== 17) return;
     const result = await decode(vehicle.vin);
@@ -287,8 +295,8 @@ const NewCarSticker = () => {
             {/* QR + footer */}
             <div className="px-5 py-2 flex items-center justify-between border-t border-foreground">
               <div>
-                <p className="text-[7px] font-bold text-foreground">Scan for details & sign-off</p>
-                <p className="text-[6px] text-muted-foreground">This addendum is separate from the factory Monroney label.</p>
+                <p className="text-[7px] font-bold text-foreground">UPC: {trackingCode}</p>
+                <p className="text-[6px] text-muted-foreground">Scan QR for details & sign-off · Separate from factory Monroney label</p>
               </div>
               {signingUrl && <QRCodeSVG value={signingUrl} size={48} />}
             </div>

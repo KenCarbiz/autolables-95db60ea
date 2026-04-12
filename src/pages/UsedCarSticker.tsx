@@ -48,10 +48,14 @@ const UsedCarSticker = () => {
   const [valueProps, setValueProps] = useState<{ name: string; value: string }[]>([
     { name: "", value: "No Charge" },
   ]);
-  const [trackingCode] = useState(() => {
+  // Generate proper tracking code: AC-{STORE}-{VIN6}-{TYPE}-{TIMESTAMP}
+  const trackingCode = (() => {
+    const storePrefix = (currentStore?.id || "STOR").slice(0, 4).toUpperCase();
+    const vinSuffix = vehicle.vin ? vehicle.vin.slice(-6).toUpperCase() : "000000";
+    const typeCode = mode === "accessories_only" ? "UA" : "US";
     const ts = Date.now().toString(36).toUpperCase().slice(-6);
-    return `AC-USED-${ts}`;
-  });
+    return `AC-${storePrefix}-${vinSuffix}-${typeCode}-${ts}`;
+  })();
 
   const dealerName = currentStore?.name || settings.dealer_name || "Your Dealership";
   const dealerLogo = currentStore?.logo_url || settings.dealer_logo_url || tenant?.logo_url || "";
