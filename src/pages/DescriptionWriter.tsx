@@ -62,6 +62,9 @@ const DescriptionWriter = () => {
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [charCount, setCharCount] = useState(0);
+  const [history, setHistory] = useState<{ text: string; platform: string; score: number; createdAt: string }[]>(() => {
+    try { return JSON.parse(localStorage.getItem("desc_history") || "[]"); } catch { return []; }
+  });
 
   const maxChars = platform === "custom" ? customMax : PLATFORMS[platform].maxChars;
 
@@ -142,6 +145,7 @@ Write the description now (${maxChars} char max):`;
         const desc = data.description.slice(0, maxChars);
         setDescription(desc);
         setCharCount(desc.length);
+        saveToHistory(desc);
       } else {
         throw new Error("No description returned");
       }
@@ -166,6 +170,64 @@ Write the description now (${maxChars} char max):`;
     if (vehicle.color) parts.push(`Finished in ${vehicle.color}${vehicle.interiorColor ? ` with a ${vehicle.interiorColor} interior` : ""}.`);
     if (includeCallToAction && dealerName) parts.push(`Contact ${dealerName} today to schedule a test drive.`);
     return parts.join(" ").slice(0, maxChars);
+  };
+
+  // SEO quality score (0-100)
+  const seoScore = (() => {
+    if (!description) return 0;
+    let score = 0;
+    const ymm = `${vehicle.year} ${vehicle.make} ${vehicle.model}`.toLowerCase();
+    const lower = description.toLowerCase();
+
+    // Year Make Model in first 100 chars
+    if (lower.slice(0, 100).includes(vehicle.year) && lower.slice(0, 100).includes(vehicle.make.toLowerCase())) score += 15;
+    else if (lower.includes(ymm.split(" ").filter(Boolean).join(" "))) score += 8;
+
+    // Geo city/state mention
+    if (geoCity && lower.includes(geoCity.toLowerCase())) score += 12;
+    if (geoState && lower.includes(geoState.toLowerCase())) score += 5;
+
+    // Word count (200-400 optimal)
+    const words = description.split(/\s+/).length;
+    if (words >= 200 && words <= 500) score += 15;
+    else if (words >= 100) score += 8;
+    else score += 3;
+
+    // Within character limit
+    if (charCount <= maxChars) score += 10;
+
+    // Has features buyers search for
+    const featureWords = ["safety", "fuel", "mpg", "awd", "4wd", "leather", "sunroof", "bluetooth", "camera", "carplay", "heated", "warranty", "certified", "inspected"];
+    const featureHits = featureWords.filter(w => lower.includes(w)).length;
+    score += Math.min(featureHits * 3, 15);
+
+    // No ALL CAPS words (penalty)
+    if (/\b[A-Z]{4,}\b/.test(description)) score -= 5;
+
+    // No exclamation marks
+    if (!description.includes("!")) score += 5;
+
+    // Has call to action
+    if (lower.includes("contact") || lower.includes("call") || lower.includes("schedule") || lower.includes("visit")) score += 8;
+
+    // Has natural long-tail phrases
+    if (lower.includes("for sale") || lower.includes("near me") || lower.includes("best price")) score += 8;
+
+    // Paragraphs (2+ is good)
+    const paras = description.split(/\n\n+/).filter(p => p.trim().length > 20).length;
+    if (paras >= 2) score += 7;
+
+    return Math.min(Math.max(score, 0), 100);
+  })();
+
+  const seoGrade = seoScore >= 85 ? "A" : seoScore >= 70 ? "B" : seoScore >= 55 ? "C" : seoScore >= 40 ? "D" : "F";
+  const seoColor = seoScore >= 85 ? "text-emerald-600" : seoScore >= 70 ? "text-blue-600" : seoScore >= 55 ? "text-amber-600" : "text-red-600";
+
+  const saveToHistory = (text: string) => {
+    const entry = { text, platform: PLATFORMS[platform].name, score: seoScore, createdAt: new Date().toISOString() };
+    const updated = [entry, ...history].slice(0, 20);
+    setHistory(updated);
+    localStorage.setItem("desc_history", JSON.stringify(updated));
   };
 
   const handleCopy = () => {
@@ -354,6 +416,59 @@ Write the description now (${maxChars} char max):`;
             </div>
           </div>
 
+          {/* SEO Quality Score */}
+          {description && (
+            <div className="bg-card rounded-xl border border-border shadow-premium p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-foreground">SEO Quality Score</h4>
+                <div className="flex items-center gap-2">
+                  <span className={`text-3xl font-bold tabular-nums ${seoColor}`}>{seoScore}</span>
+                  <span className={`text-lg font-bold ${seoColor}`}>{seoGrade}</span>
+                </div>
+              </div>
+              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    seoScore >= 85 ? "bg-emerald-500" : seoScore >= 70 ? "bg-blue-500" : seoScore >= 55 ? "bg-amber-500" : "bg-red-500"
+                  }`}
+                  style={{ width: `${seoScore}%` }}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-3 text-[10px]">
+                <ScoreItem label="YMM in first sentence" ok={description.toLowerCase().slice(0, 100).includes(vehicle.year) && description.toLowerCase().slice(0, 100).includes(vehicle.make.toLowerCase())} />
+                <ScoreItem label="Geo city mentioned" ok={!!geoCity && description.toLowerCase().includes(geoCity.toLowerCase())} />
+                <ScoreItem label="Within char limit" ok={charCount <= maxChars} />
+                <ScoreItem label="No exclamation marks" ok={!description.includes("!")} />
+                <ScoreItem label="200+ words" ok={description.split(/\s+/).length >= 200} />
+                <ScoreItem label="Has call to action" ok={/contact|call|schedule|visit/i.test(description)} />
+                <ScoreItem label="Multiple paragraphs" ok={description.split(/\n\n+/).filter(p => p.trim().length > 20).length >= 2} />
+                <ScoreItem label="Long-tail phrases" ok={/for sale|near me|best price/i.test(description)} />
+              </div>
+            </div>
+          )}
+
+          {/* Description History */}
+          {history.length > 0 && (
+            <div className="bg-card rounded-xl border border-border shadow-premium p-5">
+              <h4 className="text-sm font-semibold text-foreground mb-3">Recent Descriptions ({history.length})</h4>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {history.slice(0, 5).map((h, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setDescription(h.text); setCharCount(h.text.length); }}
+                    className="w-full text-left p-2 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[10px] text-muted-foreground">{h.platform}</span>
+                      <span className={`text-[10px] font-bold ${h.score >= 70 ? "text-emerald-600" : "text-amber-600"}`}>Score: {h.score}</span>
+                    </div>
+                    <p className="text-xs text-foreground line-clamp-2">{h.text}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* SEO tips */}
           <div className="bg-card rounded-xl border border-border shadow-premium p-5">
             <h4 className="text-sm font-semibold text-foreground mb-3">SEO Best Practices</h4>
@@ -380,6 +495,13 @@ const ConfigCard = ({ icon: Icon, title, children }: { icon: typeof Car; title: 
       <h3 className="text-sm font-semibold text-foreground">{title}</h3>
     </div>
     {children}
+  </div>
+);
+
+const ScoreItem = ({ label, ok }: { label: string; ok: boolean }) => (
+  <div className="flex items-center gap-1.5">
+    {ok ? <Check className="w-3 h-3 text-emerald-500" /> : <div className="w-3 h-3 rounded-full border border-muted-foreground/30" />}
+    <span className={ok ? "text-foreground" : "text-muted-foreground"}>{label}</span>
   </div>
 );
 
