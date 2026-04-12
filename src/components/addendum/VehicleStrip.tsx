@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useVinDecode } from "@/hooks/useVinDecode";
 import { useVehicleUrlScrape, ScrapedVehicle } from "@/hooks/useVehicleUrlScrape";
 import { useBlackBook } from "@/hooks/useBlackBook";
+import { useOemBuildSheet } from "@/hooks/useOemBuildSheet";
 import { useDealerSettings } from "@/contexts/DealerSettingsContext";
 
 interface VehicleStripProps {
@@ -23,6 +24,7 @@ const VehicleStrip = ({ vehicle, onChange, onVinDecoded, onVehicleScraped, inkSa
   const { decode, decoding, error: vinError } = useVinDecode();
   const { scrape, scraping, error: scrapeError } = useVehicleUrlScrape();
   const { pull: pullBlackBook, loading: bbLoading, data: bbData, error: bbError } = useBlackBook();
+  const { pull: pullOem, loading: oemLoading, data: oemData, error: oemError } = useOemBuildSheet();
   const { settings } = useDealerSettings();
   const [decoded, setDecoded] = useState(false);
   const [scraped, setScraped] = useState(false);
@@ -132,6 +134,15 @@ const VehicleStrip = ({ vehicle, onChange, onVinDecoded, onVehicleScraped, inkSa
                   {decoding ? "Decoding..." : decoded ? "Decoded" : "Decode VIN"}
                 </button>
               )}
+              {f.key === "vin" && vehicle.vin.trim().length === 17 && (
+                <button
+                  onClick={() => pullOem(vehicle.vin.trim())}
+                  disabled={oemLoading}
+                  className="shrink-0 text-[8px] font-bold px-2 py-1 rounded bg-blue-600 text-white hover:opacity-85 disabled:opacity-40 transition-all"
+                >
+                  {oemLoading ? "Pulling..." : oemData ? "OEM" : "OEM Data"}
+                </button>
+              )}
               {f.key === "vin" && settings.feature_blackbook && vehicle.vin.trim().length === 17 && (
                 <button
                   onClick={() => pullBlackBook(vehicle.vin.trim())}
@@ -150,6 +161,19 @@ const VehicleStrip = ({ vehicle, onChange, onVinDecoded, onVehicleScraped, inkSa
       )}
       {bbError && settings.feature_blackbook && (
         <p className="text-[8px] text-red mt-1">{bbError}</p>
+      )}
+      {oemError && <p className="text-[8px] text-red mt-1">{oemError}</p>}
+      {oemData && (
+        <div className="mt-1 p-1.5 bg-blue-50 border border-blue-200 rounded text-[8px] no-print">
+          <p className="font-bold text-blue-800 mb-0.5">OEM Build Sheet ({oemData.source})</p>
+          {oemData.totalMsrp > 0 && <p className="text-blue-700">Total MSRP: ${oemData.totalMsrp.toLocaleString()}</p>}
+          {oemData.standardEquipment.length > 0 && (
+            <p className="text-blue-600 mt-0.5">{oemData.standardEquipment.map(e => e.name).join(" · ")}</p>
+          )}
+          {oemData.source === "demo" && (
+            <p className="text-blue-600 italic mt-0.5">Connect DataOne or Auto.dev API key in Admin &gt; Settings for live OEM data.</p>
+          )}
+        </div>
       )}
       {bbData && settings.feature_blackbook && (
         <div className="mt-1 p-1.5 bg-purple-50 border border-purple-200 rounded text-[8px] no-print">
