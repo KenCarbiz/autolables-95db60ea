@@ -3,6 +3,7 @@ import type {
   VehicleFile,
   StickerRecord,
   SigningRecord,
+  AftermarketInstall,
   StickerType,
   DealStatus,
 } from "@/types/vehicleFile";
@@ -116,6 +117,7 @@ export const useVehicleFiles = (storeId: string) => {
       msrp: data.msrp || 0,
       market_value: data.market_value || 0,
       factory_equipment: data.factory_equipment || [],
+      aftermarket_installs: [],
       stickers: [],
       signings: [],
       deal_status: "stickered",
@@ -253,6 +255,25 @@ export const useVehicleFiles = (storeId: string) => {
     persist(all);
   }, [storeId]);
 
+  // Record an aftermarket install on a vehicle
+  const addAftermarketInstall = useCallback((fileId: string, data: Omit<AftermarketInstall, "id" | "created_at">): AftermarketInstall | null => {
+    const all = getAll();
+    const file = all.find(f => f.id === fileId);
+    if (!file) return null;
+
+    const install: AftermarketInstall = {
+      ...data,
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+    };
+
+    if (!file.aftermarket_installs) file.aftermarket_installs = [];
+    file.aftermarket_installs.push(install);
+    file.updated_at = new Date().toISOString();
+    persist(all);
+    return install;
+  }, [storeId]);
+
   // Look up a vehicle file by tracking code
   const findByTrackingCode = useCallback((code: string): {
     file: VehicleFile;
@@ -308,6 +329,7 @@ export const useVehicleFiles = (storeId: string) => {
     updateDealStatus,
     updateCustomer,
     voidSticker,
+    addAftermarketInstall,
     findByTrackingCode,
     findByVin,
     findBySigningToken,

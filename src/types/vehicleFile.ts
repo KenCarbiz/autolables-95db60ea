@@ -67,6 +67,23 @@ export interface SigningRecord {
   device_info: string;
 }
 
+export interface AftermarketInstall {
+  id: string;
+  product_id: string;
+  product_name: string;
+  installed_date: string;       // Date the product was physically installed
+  installed_by: string;         // Technician name
+  ro_number: string;            // Repair order number
+  po_number?: string;           // Purchase order number
+  vendor: string;               // Vendor/supplier name
+  cost: number;                 // Dealer cost (internal)
+  retail_price: number;         // Customer-facing price
+  warranty_registration?: string; // Warranty registration number
+  notes: string;
+  photos?: string[];            // Before/after install photos
+  created_at: string;
+}
+
 export interface VehicleFile {
   id: string;
   store_id: string;
@@ -85,6 +102,9 @@ export interface VehicleFile {
 
   // Equipment pulled from NHTSA
   factory_equipment: string[];
+
+  // Aftermarket install log — dealer can attach detailed install records
+  aftermarket_installs: AftermarketInstall[];
 
   // All stickers ever printed for this vehicle
   stickers: StickerRecord[];
