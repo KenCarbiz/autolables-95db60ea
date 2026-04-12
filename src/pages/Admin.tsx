@@ -12,6 +12,8 @@ import { STATE_DOC_FEES } from "@/data/docFees";
 import { format } from "date-fns";
 import { useLeads } from "@/hooks/useLeads";
 import { useVinQueue, QueuedVehicle } from "@/hooks/useVinQueue";
+import { useVehicleFiles } from "@/hooks/useVehicleFiles";
+import type { VehicleFile as VehicleFileType, StickerType } from "@/types/vehicleFile";
 import {
   Download,
   ShieldCheck,
@@ -43,7 +45,7 @@ interface Product {
   icon_type?: string;
 }
 
-type AdminTab = "products" | "rules" | "settings" | "branding" | "analytics" | "leads" | "audit" | "queue";
+type AdminTab = "products" | "rules" | "settings" | "branding" | "analytics" | "leads" | "audit" | "queue" | "files";
 
 const emptyProduct = {
   name: "",
@@ -92,7 +94,7 @@ const FEATURE_TOGGLES: { key: keyof DealerSettings; label: string; description: 
   { key: "feature_blackbook", label: "Black Book Data", description: "Pull factory equipment and live market data from Black Book (requires API key)" },
 ];
 
-const VALID_TABS: AdminTab[] = ["products", "rules", "settings", "branding", "analytics", "leads", "audit", "queue"];
+const VALID_TABS: AdminTab[] = ["products", "rules", "settings", "branding", "analytics", "leads", "audit", "queue", "files"];
 
 const Admin = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
@@ -127,6 +129,10 @@ const Admin = () => {
 
   // VIN queue for print queue tab
   const { queue: vinQueue, updateItem: updateQueueItem, removeItem: removeQueueItem, clearCompleted } = useVinQueue();
+
+  // Vehicle files for compliance tracking
+  const { files: vehicleFiles, stats: fileStats, findByVin } = useVehicleFiles(currentStore?.id || "");
+  const [fileSearch, setFileSearch] = useState("");
 
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
@@ -232,6 +238,7 @@ const Admin = () => {
     ...(settings.feature_analytics ? [{ id: "analytics" as const, label: "Analytics" }] : []),
     ...(settings.feature_lead_capture ? [{ id: "leads" as const, label: "Leads" }] : []),
     { id: "queue", label: "Print Queue" },
+    { id: "files", label: "Vehicle Files" },
     { id: "audit", label: "Audit Log" },
   ];
 
@@ -868,6 +875,134 @@ const Admin = () => {
                     );
                   })}
                 </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ─── Vehicle Files Tab ─── */}
+        {tab === "files" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Car className="w-4 h-4 text-blue-600" />
+                  <h3 className="text-sm font-semibold text-foreground">Vehicle Files</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Every stickered vehicle has a permanent compliance file with tracking codes, signing links, and audit trail.
+                </p>
+              </div>
+            </div>
+
+            {/* Stats row */}
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+              <StatMini icon={Car} label="Total Vehicles" value={fileStats.totalFiles} color="text-blue-600" />
+              <StatMini icon={Printer} label="Total Stickers" value={fileStats.totalStickers} color="text-purple-600" />
+              <StatMini icon={Clock} label="Pending Sign" value={fileStats.pendingSign} color="text-amber-600" />
+              <StatMini icon={CheckCircle2} label="Signed" value={fileStats.signed} color="text-emerald-600" />
+              <StatMini icon={FileText} label="Delivered" value={fileStats.delivered} color="text-blue-600" />
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                value={fileSearch}
+                onChange={(e) => setFileSearch(e.target.value)}
+                placeholder="Search by VIN, stock #, customer name, or vehicle..."
+                className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+
+            {/* Vehicle file list */}
+            <div className="bg-card rounded-xl border border-border shadow-premium overflow-hidden">
+              {vehicleFiles.length === 0 ? (
+                <div className="px-5 py-12 text-center">
+                  <Car className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-foreground">No vehicle files yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Scan VINs and print stickers to create vehicle files automatically.</p>
+                </div>
+              ) : (
+                (() => {
+                  const q = fileSearch.toLowerCase();
+                  const filtered = vehicleFiles.filter(f => {
+                    if (!q) return true;
+                    return (
+                      f.vin.toLowerCase().includes(q) ||
+                      f.stock_number.toLowerCase().includes(q) ||
+                      `${f.year} ${f.make} ${f.model}`.toLowerCase().includes(q) ||
+                      f.customer_name.toLowerCase().includes(q)
+                    );
+                  });
+                  return (
+                    <div>
+                      <div className="px-5 py-2.5 bg-muted/30 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        {filtered.length} vehicle{filtered.length !== 1 ? "s" : ""}
+                      </div>
+                      {filtered.map(f => {
+                        const stickerCount = f.stickers.length;
+                        const signedCount = f.stickers.filter(s => s.status === "signed").length;
+                        const latestSticker = f.stickers[f.stickers.length - 1];
+                        return (
+                          <div key={f.id} className="px-5 py-4 border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-semibold text-foreground truncate">
+                                    {f.year} {f.make} {f.model} {f.trim}
+                                  </p>
+                                  <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                                    f.deal_status === "signed" ? "bg-emerald-50 text-emerald-700" :
+                                    f.deal_status === "pending_sign" ? "bg-amber-50 text-amber-700" :
+                                    f.deal_status === "delivered" ? "bg-blue-50 text-blue-700" :
+                                    "bg-muted text-muted-foreground"
+                                  }`}>
+                                    {f.deal_status.replace(/_/g, " ")}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                                  <span className="font-mono">{f.vin}</span>
+                                  {f.stock_number && <span>Stock: {f.stock_number}</span>}
+                                  <span>{f.mileage.toLocaleString()} mi</span>
+                                  <span className="capitalize">{f.condition}</span>
+                                </div>
+                                {f.customer_name && (
+                                  <p className="text-xs text-foreground mt-1">Customer: {f.customer_name}</p>
+                                )}
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <p className="text-xs text-muted-foreground">{stickerCount} sticker{stickerCount !== 1 ? "s" : ""}</p>
+                                <p className="text-xs text-muted-foreground">{signedCount} signed</p>
+                              </div>
+                            </div>
+
+                            {/* Sticker tracking codes */}
+                            {f.stickers.length > 0 && (
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {f.stickers.map(s => (
+                                  <div
+                                    key={s.id}
+                                    className={`inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-1 rounded border ${
+                                      s.status === "signed" ? "bg-emerald-50 border-emerald-200 text-emerald-700" :
+                                      s.status === "voided" ? "bg-red-50 border-red-200 text-red-700 line-through" :
+                                      "bg-muted border-border text-foreground"
+                                    }`}
+                                  >
+                                    <span className="font-sans text-[9px] uppercase font-semibold">
+                                      {s.type.replace(/_/g, " ").replace("car ", "")}
+                                    </span>
+                                    {s.tracking_code}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()
               )}
             </div>
           </div>

@@ -107,6 +107,7 @@ const AppShell = ({ children }: AppShellProps) => {
       items: [
         { label: "Analytics", path: "/admin?tab=analytics", icon: BarChart3, featureKey: "feature_analytics" },
         { label: "Leads", path: "/admin?tab=leads", icon: Users, featureKey: "feature_lead_capture" },
+        { label: "Vehicle Files", path: "/admin?tab=files", icon: FolderOpen },
         { label: "Compliance Log", path: "/admin?tab=audit", icon: ShieldCheck },
       ],
     },
