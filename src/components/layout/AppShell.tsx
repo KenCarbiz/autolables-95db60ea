@@ -40,6 +40,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { useDealerSettings } from "@/contexts/DealerSettingsContext";
 import { useAudit } from "@/contexts/AuditContext";
 import Logo from "@/components/brand/Logo";
+import AppSwitcher from "@/components/layout/AppSwitcher";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -402,6 +403,9 @@ const AppShell = ({ children }: AppShellProps) => {
             </div>
 
             <div className="flex items-center gap-1">
+              {/* App Switcher — switch between Autocurb platform products */}
+              <AppSwitcher currentApp="cleardeal" />
+
               {/* Mobile QR launcher — shows QR code for phone scanning */}
               <button
                 onClick={() => setShowMobileQr(true)}
