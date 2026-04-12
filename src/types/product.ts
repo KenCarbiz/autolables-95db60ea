@@ -9,7 +9,7 @@
 // - Provider/vendor information
 // ──────────────────────────────────────────────────────────────
 
-export type VehicleCategory = "sedan" | "suv" | "truck" | "van" | "coupe" | "convertible" | "wagon" | "default";
+export type VehicleCategory = "small_sedan" | "large_sedan" | "small_suv" | "large_suv" | "truck" | "van" | "coupe" | "convertible" | "wagon" | "sports" | "default";
 
 export interface ProductPriceTier {
   vehicleCategory: VehicleCategory;
@@ -41,9 +41,14 @@ export interface ProductLibraryEntry {
 
   // Warranty
   warranty: string;           // Short warranty line for sticker
-  warrantyDetails: string;    // Full warranty terms
+  warrantyDetails: string;    // Full warranty terms & conditions
   warrantyProvider: string;   // Who backs the warranty
   warrantyDuration: string;   // e.g. "7 years / 100,000 miles"
+  warrantyTermsAndConditions: string;  // Full T&C (printable for customer)
+  warrantyClaimProcess: string;        // How customer initiates a claim
+  warrantyClaimPhone: string;          // Claims phone number
+  warrantyClaimEmail: string;          // Claims email
+  warrantyClaimUrl: string;            // Online claims portal URL
 
   // Provider / vendor
   vendorName: string;         // e.g. "XPEL", "Cilajet", "Resistall"
@@ -68,28 +73,70 @@ export interface ProductLibraryEntry {
   updated_at: string;
 }
 
-// Map body style strings to our vehicle categories
-export function getVehicleCategory(bodyStyle: string): VehicleCategory {
-  const lower = (bodyStyle || "").toLowerCase();
+// Known large vehicles by make/model for accurate size classification
+const LARGE_SEDANS = ["avalon", "maxima", "charger", "300", "impala", "taurus", "continental", "genesis", "ls", "s-class", "7 series", "a8", "ct6", "lucid"];
+const LARGE_SUVS = ["tahoe", "suburban", "yukon", "expedition", "sequoia", "armada", "escalade", "navigator", "land cruiser", "gx", "lx", "wagoneer", "grand wagoneer", "durango", "traverse", "pilot", "palisade", "telluride", "atlas", "pathfinder", "highlander", "4runner", "defender", "range rover", "x7", "gls", "q7", "q8", "cayenne", "model x"];
+const SMALL_SUVS = ["rav4", "cr-v", "cx-5", "tucson", "sportage", "rogue", "escape", "equinox", "trax", "hr-v", "seltos", "kona", "crosstrek", "cx-30", "corolla cross", "kicks", "venue", "trailblazer", "bronco sport", "compass", "cherokee", "nx", "ux", "rdx", "q3", "q5", "x1", "x3", "glc", "macan", "model y"];
 
-  if (lower.includes("sedan") || lower.includes("coupe") || lower.includes("hatchback") || lower.includes("convertible")) {
-    return "sedan";
-  }
+// Map body style + model to our vehicle categories
+export function getVehicleCategory(bodyStyle: string, model?: string): VehicleCategory {
+  const lower = (bodyStyle || "").toLowerCase();
+  const modelLower = (model || "").toLowerCase();
+
+  // Check model-specific overrides first
+  if (LARGE_SUVS.some(m => modelLower.includes(m))) return "large_suv";
+  if (SMALL_SUVS.some(m => modelLower.includes(m))) return "small_suv";
+  if (LARGE_SEDANS.some(m => modelLower.includes(m))) return "large_sedan";
+
+  // Sports / performance
+  if (lower.includes("sports") || lower.includes("performance") || lower.includes("roadster")) return "sports";
+
+  // Convertible
+  if (lower.includes("convertible") || lower.includes("cabriolet")) return "convertible";
+
+  // Coupe
+  if (lower.includes("coupe")) return "coupe";
+
+  // Truck
+  if (lower.includes("truck") || lower.includes("pickup") || lower.includes("cab")) return "truck";
+
+  // Van
+  if (lower.includes("van") || lower.includes("minivan")) return "van";
+
+  // Wagon
+  if (lower.includes("wagon") || lower.includes("estate")) return "wagon";
+
+  // SUV — check size by keywords
   if (lower.includes("suv") || lower.includes("crossover") || lower.includes("sport utility")) {
-    return "suv";
+    if (lower.includes("large") || lower.includes("full-size") || lower.includes("full size")) return "large_suv";
+    if (lower.includes("small") || lower.includes("compact") || lower.includes("subcompact") || lower.includes("mini")) return "small_suv";
+    // Default SUV → small (more common)
+    return "small_suv";
   }
-  if (lower.includes("truck") || lower.includes("pickup") || lower.includes("cab")) {
-    return "truck";
-  }
-  if (lower.includes("van") || lower.includes("minivan")) {
-    return "van";
-  }
-  if (lower.includes("wagon")) {
-    return "wagon";
+
+  // Sedan — check size
+  if (lower.includes("sedan") || lower.includes("hatchback")) {
+    if (lower.includes("full") || lower.includes("large") || lower.includes("mid-size") || lower.includes("midsize")) return "large_sedan";
+    return "small_sedan";
   }
 
   return "default";
 }
+
+// Human-readable labels for each category
+export const VEHICLE_CATEGORY_LABELS: Record<VehicleCategory, string> = {
+  small_sedan: "Small Sedan / Compact",
+  large_sedan: "Large Sedan / Mid-Size",
+  small_suv: "Small SUV / Crossover",
+  large_suv: "Large SUV / Full-Size",
+  truck: "Truck / Pickup",
+  van: "Van / Minivan",
+  coupe: "Coupe",
+  convertible: "Convertible",
+  wagon: "Wagon",
+  sports: "Sports / Performance",
+  default: "Standard",
+};
 
 // Get the right price for a vehicle category
 export function getProductPrice(product: ProductLibraryEntry, vehicleCategory: VehicleCategory): number {
@@ -124,9 +171,12 @@ export const emptyProductLibraryEntry: Omit<ProductLibraryEntry, "id" | "created
   badge_type: "installed",
   defaultPrice: 0,
   priceTiers: [
-    { vehicleCategory: "sedan", price: 0, label: "Sedan / Coupe" },
-    { vehicleCategory: "suv", price: 0, label: "SUV / Crossover" },
+    { vehicleCategory: "small_sedan", price: 0, label: "Small Sedan / Compact" },
+    { vehicleCategory: "large_sedan", price: 0, label: "Large Sedan / Mid-Size" },
+    { vehicleCategory: "small_suv", price: 0, label: "Small SUV / Crossover" },
+    { vehicleCategory: "large_suv", price: 0, label: "Large SUV / Full-Size" },
     { vehicleCategory: "truck", price: 0, label: "Truck / Pickup" },
+    { vehicleCategory: "van", price: 0, label: "Van / Minivan" },
   ],
   price_label: "Included in Selling Price",
   description: "",
@@ -137,6 +187,11 @@ export const emptyProductLibraryEntry: Omit<ProductLibraryEntry, "id" | "created
   warrantyDetails: "",
   warrantyProvider: "",
   warrantyDuration: "",
+  warrantyTermsAndConditions: "",
+  warrantyClaimProcess: "",
+  warrantyClaimPhone: "",
+  warrantyClaimEmail: "",
+  warrantyClaimUrl: "",
   vendorName: "",
   disclosure: "",
   ftcCompliant: true,
