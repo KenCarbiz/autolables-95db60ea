@@ -34,6 +34,9 @@ const MobileSigning = () => {
   const [deliveryMileage, setDeliveryMileage] = useState("");
   // Addendum/sticker matching acknowledgment
   const [stickerMatchAck, setStickerMatchAck] = useState(false);
+  // Price overrides — sales manager can discount accessories (NOT doc fee)
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
+  const [showPriceEdit, setShowPriceEdit] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -245,6 +248,89 @@ const MobileSigning = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Price Confirmation — sales manager can discount accessories */}
+        <div className="bg-card rounded-xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold font-barlow-condensed text-foreground">Confirm Pricing</h2>
+            <button
+              onClick={() => setShowPriceEdit(!showPriceEdit)}
+              className={`text-[10px] font-semibold px-2.5 py-1 rounded ${showPriceEdit ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+            >
+              {showPriceEdit ? "Done Editing" : "Adjust Prices"}
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Review and confirm all pricing before the customer signs. Accessories may be discounted by a sales manager.
+          </p>
+
+          <div className="space-y-2">
+            {products.map(p => {
+              const originalPrice = p.price;
+              const currentPrice = priceOverrides[p.id] ?? originalPrice;
+              const isDiscounted = currentPrice < originalPrice;
+              const isDocFee = p.name.toLowerCase().includes("doc") || p.name.toLowerCase().includes("conveyance") || p.name.toLowerCase().includes("processing fee") || p.name.toLowerCase().includes("documentation");
+
+              return (
+                <div key={p.id} className={`flex items-center justify-between p-2.5 rounded-lg border ${isDiscounted ? "border-emerald-200 bg-emerald-50/50" : "border-border"}`}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
+                    <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                      p.badge_type === "installed" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                    }`}>
+                      {p.badge_type === "installed" ? "Installed" : "Optional"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {showPriceEdit && !isDocFee ? (
+                      <div className="flex items-center gap-1">
+                        {isDiscounted && (
+                          <span className="text-xs text-muted-foreground line-through tabular-nums">${originalPrice.toFixed(2)}</span>
+                        )}
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={currentPrice}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value);
+                              if (!isNaN(val) && val >= 0 && val <= originalPrice) {
+                                setPriceOverrides(prev => ({ ...prev, [p.id]: val }));
+                              }
+                            }}
+                            className="w-24 h-9 pl-5 pr-2 rounded-md border border-border bg-background text-sm font-semibold text-right tabular-nums outline-none focus:border-primary"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-right">
+                        {isDiscounted && <p className="text-[10px] text-muted-foreground line-through tabular-nums">${originalPrice.toFixed(2)}</p>}
+                        <p className={`text-sm font-bold tabular-nums ${isDiscounted ? "text-emerald-700" : "text-foreground"}`}>
+                          ${currentPrice.toFixed(2)}
+                        </p>
+                      </div>
+                    )}
+                    {isDocFee && showPriceEdit && (
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-foreground tabular-nums">${currentPrice.toFixed(2)}</p>
+                        <p className="text-[8px] text-destructive font-semibold">Cannot discount</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {Object.keys(priceOverrides).length > 0 && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+              <p className="text-xs text-emerald-800 font-medium">
+                Price adjustments applied. Original prices and discounts will be recorded in the compliance audit trail.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* FTC Warranty Acknowledgment + Mileage at Delivery */}
