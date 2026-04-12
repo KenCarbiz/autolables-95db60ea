@@ -24,6 +24,7 @@ import About from "./pages/About.tsx";
 import BrandGuide from "./pages/BrandGuide.tsx";
 import ScanPage from "./pages/ScanPage.tsx";
 import ComplianceCenter from "./pages/ComplianceCenter.tsx";
+import VehiclePortal from "./pages/VehiclePortal.tsx";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
                     <Route path="/sign/:token" element={<MobileSigning />} />
                     <Route path="/onboarding" element={<Onboarding />} />
                     <Route path="/scan" element={<ScanPage />} />
+                    <Route path="/vehicle/:vin" element={<VehiclePortal />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/brand" element={<BrandGuide />} />
 
