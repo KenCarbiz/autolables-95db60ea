@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { Pen, Type, RotateCcw, Check } from "lucide-react";
 
 interface SignaturePadProps {
   label: string;
@@ -12,6 +13,7 @@ interface SignaturePadProps {
 const SignaturePad = ({ label, subtitle, value, type: sigType, onChange, className }: SignaturePadProps) => {
   const [mode, setMode] = useState<"draw" | "type">(sigType || "draw");
   const [typedName, setTypedName] = useState(sigType === "type" ? (value || "") : "");
+  const [hasDrawn, setHasDrawn] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawing = useRef(false);
 
@@ -23,6 +25,7 @@ const SignaturePad = ({ label, subtitle, value, type: sigType, onChange, classNa
         if (ctx && canvasRef.current) {
           ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
           ctx.drawImage(img, 0, 0);
+          setHasDrawn(true);
         }
       };
       img.src = value;
@@ -32,10 +35,18 @@ const SignaturePad = ({ label, subtitle, value, type: sigType, onChange, classNa
   const getPos = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     if ("touches" in e) {
-      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+      return {
+        x: (e.touches[0].clientX - rect.left) * scaleX,
+        y: (e.touches[0].clientY - rect.top) * scaleY,
+      };
     }
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
   };
 
   const startDraw = (e: React.MouseEvent | React.TouchEvent) => {
@@ -50,19 +61,18 @@ const SignaturePad = ({ label, subtitle, value, type: sigType, onChange, classNa
 
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing.current) return;
-    // Only prevent default (stops page scroll) when we're actively drawing
-    if ("touches" in e) {
-      e.preventDefault();
-    }
+    if ("touches" in e) e.preventDefault();
     const ctx = canvasRef.current?.getContext("2d");
     if (ctx) {
       const { x, y } = getPos(e);
-      ctx.lineWidth = 3;
+      // Premium thin pen — 1.5px, dark ink, smooth curves
+      ctx.lineWidth = 1.5;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = "#000000";
+      ctx.strokeStyle = "#1a1a2e";
       ctx.lineTo(x, y);
       ctx.stroke();
+      setHasDrawn(true);
     }
   };
 
@@ -78,35 +88,60 @@ const SignaturePad = ({ label, subtitle, value, type: sigType, onChange, classNa
     if (ctx && canvasRef.current) {
       ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       onChange("", "draw");
+      setHasDrawn(false);
     }
   };
 
+  const isSigned = mode === "draw" ? hasDrawn : !!typedName.trim();
+
   return (
-    <div className={`space-y-1 ${className || ""}`}>
-      <div className="flex items-center justify-between">
-        <span className="text-[9px] font-bold text-foreground">{label}</span>
-        <div className="flex gap-1">
+    <div className={`${className || ""}`}>
+      {/* Header with label + mode toggle */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {isSigned && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+          <span className="text-xs font-semibold text-foreground">{label}</span>
+        </div>
+        <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
           <button
             onClick={() => setMode("draw")}
-            className={`text-[8px] px-2 py-0.5 rounded ${mode === "draw" ? "bg-navy text-primary-foreground" : "bg-light text-muted-foreground"}`}
+            className={`inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded transition-colors ${
+              mode === "draw"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            ✏️ Draw
+            <Pen className="w-3 h-3" />
+            Draw
           </button>
           <button
             onClick={() => setMode("type")}
-            className={`text-[8px] px-2 py-0.5 rounded ${mode === "type" ? "bg-navy text-primary-foreground" : "bg-light text-muted-foreground"}`}
+            className={`inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded transition-colors ${
+              mode === "type"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            ⌨️ Type
+            <Type className="w-3 h-3" />
+            Type
           </button>
         </div>
       </div>
+
       {mode === "draw" ? (
-        <div className="relative">
+        <div className="relative group">
+          {/* Signature line guide */}
+          <div className="absolute bottom-[18px] left-4 right-4 h-[1px] bg-border-custom/60 pointer-events-none" />
+
           <canvas
             ref={canvasRef}
-            width={400}
-            height={80}
-            className="w-full border-b-2 border-border-custom bg-card rounded cursor-crosshair"
+            width={800}
+            height={160}
+            className={`w-full h-[80px] rounded-lg border-2 transition-colors cursor-crosshair ${
+              hasDrawn
+                ? "border-emerald-300 bg-emerald-50/30"
+                : "border-border bg-card hover:border-primary/30"
+            }`}
             style={{ touchAction: "pan-y" }}
             onMouseDown={startDraw}
             onMouseMove={draw}
@@ -116,25 +151,51 @@ const SignaturePad = ({ label, subtitle, value, type: sigType, onChange, classNa
             onTouchMove={draw}
             onTouchEnd={endDraw}
           />
-          <button onClick={clearCanvas} className="absolute top-1 right-1 text-[7px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground">
-            Clear
-          </button>
+
+          {/* Placeholder text when empty */}
+          {!hasDrawn && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <p className="text-xs text-muted-foreground/40">Sign here</p>
+            </div>
+          )}
+
+          {/* Clear button */}
+          {hasDrawn && (
+            <button
+              onClick={clearCanvas}
+              className="absolute top-2 right-2 inline-flex items-center gap-1 text-[10px] px-2 py-1 bg-card/90 backdrop-blur-sm rounded border border-border text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Clear
+            </button>
+          )}
         </div>
       ) : (
-        <input
-          value={typedName}
-          onChange={(e) => {
-            setTypedName(e.target.value);
-            onChange(e.target.value, "type");
-          }}
-          placeholder="Type full name"
-          className="w-full border-b-[1.5px] border-border-custom bg-transparent outline-none py-1"
-          style={{ fontFamily: "'Brush Script MT', 'Segoe Script', cursive", fontSize: "20px" }}
-        />
+        <div className="relative">
+          <input
+            value={typedName}
+            onChange={(e) => {
+              setTypedName(e.target.value);
+              onChange(e.target.value, "type");
+            }}
+            placeholder="Type your full legal name"
+            className={`w-full h-[80px] px-4 rounded-lg border-2 bg-card outline-none text-center transition-colors ${
+              typedName.trim()
+                ? "border-emerald-300 bg-emerald-50/30"
+                : "border-border hover:border-primary/30"
+            }`}
+            style={{
+              fontFamily: "'Brush Script MT', 'Segoe Script', 'Apple Chancery', cursive",
+              fontSize: "28px",
+              letterSpacing: "0.02em",
+            }}
+          />
+          {/* Baseline */}
+          <div className="absolute bottom-[18px] left-4 right-4 h-[1px] bg-border-custom/40 pointer-events-none" />
+        </div>
       )}
-      <p className="text-[7px] text-muted-foreground">
-        {subtitle}
-      </p>
+
+      <p className="text-[10px] text-muted-foreground mt-1.5">{subtitle}</p>
     </div>
   );
 };
