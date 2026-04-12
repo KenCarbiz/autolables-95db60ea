@@ -46,6 +46,9 @@ const ThemeInjector = () => {
     const primary = currentStore?.primary_color || tenant?.primary_color || "";
     const secondary = tenant?.secondary_color || "";
 
+    // Only override CSS variables when a custom color is provided.
+    // When no custom color is set, leave the defaults from index.css intact
+    // (removing them causes a "washed out" flash).
     if (primary) {
       const hsl = hexToHsl(primary);
       if (hsl) {
@@ -54,12 +57,6 @@ const ThemeInjector = () => {
         root.style.setProperty("--ring", hsl);
         root.style.setProperty("--sidebar-ring", hsl);
       }
-    } else {
-      // Restore defaults when no custom color
-      root.style.removeProperty("--primary");
-      root.style.removeProperty("--navy");
-      root.style.removeProperty("--ring");
-      root.style.removeProperty("--sidebar-ring");
     }
 
     if (secondary) {
@@ -69,10 +66,6 @@ const ThemeInjector = () => {
         root.style.setProperty("--action", hsl);
         root.style.setProperty("--sidebar-primary", hsl);
       }
-    } else {
-      root.style.removeProperty("--blue");
-      root.style.removeProperty("--action");
-      root.style.removeProperty("--sidebar-primary");
     }
 
     // Update tab title + favicon hint based on tenant
