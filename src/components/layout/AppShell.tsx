@@ -75,7 +75,13 @@ const AppShell = ({ children }: AppShellProps) => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showMobileQr, setShowMobileQr] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("dark_mode") === "true" ||
+        document.documentElement.classList.contains("dark");
+    }
+    return false;
+  });
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     documents: true,
     inventory: true,
@@ -136,8 +142,10 @@ const AppShell = ({ children }: AppShellProps) => {
   };
 
   const handleToggleDark = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle("dark");
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("dark_mode", String(next));
   };
 
   const toggleSection = (key: string) => {

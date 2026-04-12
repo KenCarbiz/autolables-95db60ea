@@ -6,6 +6,7 @@ import { useVinQueue } from "@/hooks/useVinQueue";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAudit } from "@/contexts/AuditContext";
+import { useGpsTracking } from "@/hooks/useGpsTracking";
 import { toast } from "sonner";
 import {
   ScanLine,
@@ -19,6 +20,7 @@ import {
   List,
   Sparkles,
   X,
+  MapPin,
 } from "lucide-react";
 
 const ScanPage = () => {
@@ -29,6 +31,7 @@ const ScanPage = () => {
   const { decode, decoding, error: vinError } = useVinDecode();
   const { fetchFactoryData, loading: factoryLoading, error: factoryError } = useFactoryData();
   const { queue, addToQueue } = useVinQueue();
+  const { pinLocation } = useGpsTracking();
 
   const vinRef = useRef<HTMLInputElement>(null);
   const [vin, setVin] = useState("");
@@ -123,6 +126,11 @@ const ScanPage = () => {
           source: "mobile_scan",
         },
       });
+    }
+
+    // Auto-pin GPS location when scanning on the lot
+    if (user) {
+      pinLocation(vin.trim().toUpperCase(), user.id).catch(() => {});
     }
 
     setAdded(true);

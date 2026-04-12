@@ -11,6 +11,7 @@ import { AuditProvider } from "@/contexts/AuditContext";
 import AppShell from "@/components/layout/AppShell";
 import ThemeInjector from "@/components/layout/ThemeInjector";
 import OnboardingGate from "@/components/layout/OnboardingGate";
+import ErrorBoundary from "@/components/layout/ErrorBoundary";
 
 // Lazy-loaded pages — each becomes its own chunk
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -44,6 +45,7 @@ const PageLoader = () => (
 );
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -88,6 +90,7 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
