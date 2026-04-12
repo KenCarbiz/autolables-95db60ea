@@ -77,30 +77,37 @@ const AppShell = ({ children }: AppShellProps) => {
   const [showMobileQr, setShowMobileQr] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    workspace: true,
-    configuration: true,
-    insights: true,
-    admin: true,
+    documents: true,
+    inventory: true,
+    admin: false,
+    compliance: false,
   });
 
   const sections: Record<string, NavSection> = {
-    workspace: {
-      title: "WORKSPACE",
+    documents: {
+      title: "DOCUMENTS",
       defaultOpen: true,
       items: [
         { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
         { label: "New Addendum", path: "/", icon: FileText },
-        { label: "Saved Addendums", path: "/saved", icon: FolderOpen },
-        { label: "Buyers Guide", path: "/buyers-guide", icon: ScrollText, featureKey: "feature_buyers_guide" },
         { label: "Used Car Sticker", path: "/used-car-sticker", icon: Car },
+        { label: "Buyers Guide", path: "/buyers-guide", icon: ScrollText, featureKey: "feature_buyers_guide" },
         { label: "CPO Info Sheet", path: "/cpo-sheet", icon: Award },
         { label: "Trade-Up Sticker", path: "/trade-up", icon: TrendingUp },
+      ],
+    },
+    inventory: {
+      title: "INVENTORY",
+      defaultOpen: true,
+      items: [
+        { label: "Saved Addendums", path: "/saved", icon: FolderOpen },
+        { label: "Vehicle Files", path: "/admin?tab=files", icon: FolderOpen },
         { label: "Print Queue", path: "/admin?tab=queue", icon: Printer },
       ],
     },
-    configuration: {
-      title: "CONFIGURATION",
-      defaultOpen: true,
+    admin: {
+      title: "ADMINISTRATION",
+      defaultOpen: false,
       items: [
         { label: "Products", path: "/admin?tab=products", icon: Package },
         { label: "Product Rules", path: "/admin?tab=rules", icon: Wrench, featureKey: "feature_product_rules" },
@@ -108,15 +115,14 @@ const AppShell = ({ children }: AppShellProps) => {
         { label: "Feature Toggles", path: "/admin?tab=settings", icon: ToggleLeft },
       ],
     },
-    insights: {
-      title: "INSIGHTS",
-      defaultOpen: true,
+    compliance: {
+      title: "COMPLIANCE",
+      defaultOpen: false,
       items: [
+        { label: "Compliance Guide", path: "/compliance", icon: BookOpen },
+        { label: "Audit Log", path: "/admin?tab=audit", icon: ShieldCheck },
         { label: "Analytics", path: "/admin?tab=analytics", icon: BarChart3, featureKey: "feature_analytics" },
         { label: "Leads", path: "/admin?tab=leads", icon: Users, featureKey: "feature_lead_capture" },
-        { label: "Vehicle Files", path: "/admin?tab=files", icon: FolderOpen },
-        { label: "Compliance Guide", path: "/compliance", icon: BookOpen },
-        { label: "Compliance Log", path: "/admin?tab=audit", icon: ShieldCheck },
       ],
     },
   };
@@ -152,9 +158,13 @@ const AppShell = ({ children }: AppShellProps) => {
     const crumbs: { label: string; path?: string }[] = [{ label: "Dashboard", path: "/dashboard" }];
 
     if (pathname === "/dashboard") return crumbs;
-    if (pathname === "/") { crumbs.push({ label: "New Addendum" }); return crumbs; }
-    if (pathname === "/saved") { crumbs.push({ label: "Saved Addendums" }); return crumbs; }
-    if (pathname === "/buyers-guide") { crumbs.push({ label: "Buyers Guide" }); return crumbs; }
+    if (pathname === "/") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "New Addendum" }); return crumbs; }
+    if (pathname === "/saved") { crumbs.push({ label: "Inventory" }); crumbs.push({ label: "Saved Addendums" }); return crumbs; }
+    if (pathname === "/buyers-guide") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "Buyers Guide" }); return crumbs; }
+    if (pathname === "/used-car-sticker") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "Used Car Sticker" }); return crumbs; }
+    if (pathname === "/cpo-sheet") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "CPO Info Sheet" }); return crumbs; }
+    if (pathname === "/trade-up") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "Trade-Up Sticker" }); return crumbs; }
+    if (pathname === "/compliance") { crumbs.push({ label: "Compliance" }); crumbs.push({ label: "Compliance Guide" }); return crumbs; }
     if (pathname === "/admin") {
       const tab = new URLSearchParams(search).get("tab") || "products";
       const tabLabels: Record<string, string> = {
@@ -164,9 +174,16 @@ const AppShell = ({ children }: AppShellProps) => {
         settings: "Feature Toggles",
         analytics: "Analytics",
         leads: "Leads",
-        audit: "Compliance Log",
+        audit: "Audit Log",
+        queue: "Print Queue",
+        files: "Vehicle Files",
       };
-      crumbs.push({ label: "Admin", path: "/admin" });
+      const sectionMap: Record<string, string> = {
+        products: "Administration", rules: "Administration", branding: "Administration", settings: "Administration",
+        analytics: "Compliance", leads: "Compliance", audit: "Compliance",
+        queue: "Inventory", files: "Inventory",
+      };
+      crumbs.push({ label: sectionMap[tab] || "Admin" });
       crumbs.push({ label: tabLabels[tab] || "Settings" });
       return crumbs;
     }
