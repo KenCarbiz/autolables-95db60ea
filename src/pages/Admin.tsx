@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { useLeads } from "@/hooks/useLeads";
 import { useVinQueue, QueuedVehicle } from "@/hooks/useVinQueue";
 import { useVehicleFiles } from "@/hooks/useVehicleFiles";
+import { useGetReady } from "@/hooks/useGetReady";
 import type { VehicleFile as VehicleFileType, StickerType } from "@/types/vehicleFile";
 import {
   Download,
@@ -45,7 +46,7 @@ interface Product {
   icon_type?: string;
 }
 
-type AdminTab = "products" | "rules" | "settings" | "branding" | "analytics" | "leads" | "audit" | "queue" | "files";
+type AdminTab = "products" | "rules" | "settings" | "branding" | "analytics" | "leads" | "audit" | "queue" | "files" | "getready";
 
 const emptyProduct = {
   name: "",
@@ -94,7 +95,7 @@ const FEATURE_TOGGLES: { key: keyof DealerSettings; label: string; description: 
   { key: "feature_blackbook", label: "Black Book Data", description: "Pull factory equipment and live market data from Black Book (requires API key)" },
 ];
 
-const VALID_TABS: AdminTab[] = ["products", "rules", "settings", "branding", "analytics", "leads", "audit", "queue", "files"];
+const VALID_TABS: AdminTab[] = ["products", "rules", "settings", "branding", "analytics", "leads", "audit", "queue", "files", "getready"];
 
 const Admin = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
@@ -133,6 +134,9 @@ const Admin = () => {
   // Vehicle files for compliance tracking
   const { files: vehicleFiles, stats: fileStats, findByVin } = useVehicleFiles(currentStore?.id || "");
   const [fileSearch, setFileSearch] = useState("");
+
+  // Get-Ready tracking
+  const { records: getReadyRecords, getPending: getPendingGetReady, validateTimeline } = useGetReady(currentStore?.id || "");
 
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
@@ -238,6 +242,7 @@ const Admin = () => {
     ...(settings.feature_analytics ? [{ id: "analytics" as const, label: "Analytics" }] : []),
     ...(settings.feature_lead_capture ? [{ id: "leads" as const, label: "Leads" }] : []),
     { id: "queue", label: "Print Queue" },
+    { id: "getready", label: "Get-Ready" },
     { id: "files", label: "Vehicle Files" },
     { id: "audit", label: "Audit Log" },
   ];
@@ -904,6 +909,102 @@ const Admin = () => {
                             >
                               <Trash2 className="w-3.5 h-3.5 text-destructive" />
                             </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ─── Get-Ready Tab ─── */}
+        {tab === "getready" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  <h3 className="text-sm font-semibold text-foreground">Vehicle Get-Ready Tracker</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Track vehicle preparation from acquisition to inventory-ready. Proves accessories installed before listing date.
+                </p>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <StatMini icon={Clock} label="Pending" value={getReadyRecords.filter(r => r.status === "pending" || r.status === "in_progress").length} color="text-amber-600" />
+              <StatMini icon={CheckCircle2} label="Ready" value={getReadyRecords.filter(r => r.status === "ready").length} color="text-emerald-600" />
+              <StatMini icon={Car} label="In Inventory" value={getReadyRecords.filter(r => r.status === "inventory").length} color="text-blue-600" />
+              <StatMini icon={FileText} label="Total" value={getReadyRecords.length} color="text-foreground" />
+            </div>
+
+            {/* Records list */}
+            <div className="bg-card rounded-xl border border-border shadow-premium overflow-hidden">
+              {getReadyRecords.length === 0 ? (
+                <div className="px-5 py-12 text-center">
+                  <Clock className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-foreground">No get-ready records yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">When you create a sticker for a vehicle, a get-ready record can be generated automatically.</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="px-5 py-2.5 bg-muted/30 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                    <span>{getReadyRecords.length} vehicle{getReadyRecords.length !== 1 ? "s" : ""}</span>
+                    <span>{getPendingGetReady().length} pending</span>
+                  </div>
+                  {getReadyRecords.map(record => {
+                    const timeline = validateTimeline(record);
+                    const completedItems = record.items.filter(i => i.status === "complete").length;
+                    const totalItems = record.items.length;
+                    const pct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+
+                    return (
+                      <div key={record.id} className="px-5 py-4 border-b border-border last:border-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-foreground truncate">{record.ymm}</p>
+                              <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                                record.status === "inventory" ? "bg-blue-50 text-blue-700" :
+                                record.status === "ready" ? "bg-emerald-50 text-emerald-700" :
+                                "bg-amber-50 text-amber-700"
+                              }`}>{record.status.replace(/_/g, " ")}</span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                              <span className="font-mono">{record.vin}</span>
+                              {record.stockNumber && <span>Stock: {record.stockNumber}</span>}
+                            </div>
+
+                            {/* Timeline dates */}
+                            <div className="mt-2 flex flex-wrap gap-3 text-[10px]">
+                              <span className="text-muted-foreground">Acquired: <strong className="text-foreground">{record.acquiredDate ? format(new Date(record.acquiredDate), "M/d/yy") : "—"}</strong></span>
+                              <span className="text-muted-foreground">Get-Ready: <strong className="text-foreground">{record.getReadyCompleteDate ? format(new Date(record.getReadyCompleteDate), "M/d/yy") : "In progress"}</strong></span>
+                              <span className="text-muted-foreground">Inventory: <strong className="text-foreground">{record.inventoryDate ? format(new Date(record.inventoryDate), "M/d/yy") : "Pending"}</strong></span>
+                            </div>
+
+                            {/* Progress bar */}
+                            <div className="mt-2 flex items-center gap-2">
+                              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${pct === 100 ? "bg-emerald-500" : "bg-blue-500"}`} style={{ width: `${pct}%` }} />
+                              </div>
+                              <span className="text-[10px] text-muted-foreground tabular-nums">{completedItems}/{totalItems}</span>
+                            </div>
+
+                            {/* Timeline warnings */}
+                            {!timeline.valid && (
+                              <div className="mt-2 space-y-1">
+                                {timeline.warnings.map((w, i) => (
+                                  <p key={i} className="text-[10px] text-destructive font-medium flex items-start gap-1">
+                                    <span className="flex-shrink-0">⚠</span> {w}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

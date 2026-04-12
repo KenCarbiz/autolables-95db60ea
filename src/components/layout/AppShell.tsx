@@ -32,6 +32,7 @@ import {
   BookOpen,
   Car,
   Award,
+  Clock,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -108,6 +109,7 @@ const AppShell = ({ children }: AppShellProps) => {
       defaultOpen: true,
       items: [
         { label: "Saved Addendums", path: "/saved", icon: FolderOpen },
+        { label: "Get-Ready", path: "/admin?tab=getready", icon: Clock },
         { label: "Vehicle Files", path: "/admin?tab=files", icon: FolderOpen },
         { label: "Print Queue", path: "/admin?tab=queue", icon: Printer },
       ],
@@ -185,12 +187,13 @@ const AppShell = ({ children }: AppShellProps) => {
         leads: "Leads",
         audit: "Audit Log",
         queue: "Print Queue",
+        getready: "Get-Ready",
         files: "Vehicle Files",
       };
       const sectionMap: Record<string, string> = {
         products: "Administration", rules: "Administration", branding: "Administration", settings: "Administration",
         analytics: "Compliance", leads: "Compliance", audit: "Compliance",
-        queue: "Inventory", files: "Inventory",
+        queue: "Inventory", getready: "Inventory", files: "Inventory",
       };
       crumbs.push({ label: sectionMap[tab] || "Admin" });
       crumbs.push({ label: tabLabels[tab] || "Settings" });
