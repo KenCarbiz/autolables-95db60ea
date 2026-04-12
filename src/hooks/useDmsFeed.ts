@@ -86,9 +86,7 @@ export const useDmsFeed = () => {
       // For now, return demo status
       await new Promise(r => setTimeout(r, 1000));
 
-      config.lastSync = new Date().toISOString();
-      config.status = "connected";
-      saveConfig(config);
+      saveConfig({ ...config, lastSync: new Date().toISOString(), status: "connected" });
 
       setSyncing(false);
       return { count: getVehicles().length };

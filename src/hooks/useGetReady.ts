@@ -259,7 +259,7 @@ export const useGetReady = (storeId: string) => {
     record.updatedAt = new Date().toISOString();
 
     // Mark matching checklist item as complete
-    const item = record.items.find(i => i.label.includes(acc.productName) && i.category === "accessory");
+    const item = record.items.find(i => i.category === "accessory" && i.label === `Install: ${acc.productName}`);
     if (item) {
       item.status = "complete";
       item.completedAt = new Date().toISOString();

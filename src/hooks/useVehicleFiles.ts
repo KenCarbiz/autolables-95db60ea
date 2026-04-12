@@ -179,9 +179,8 @@ export const useVehicleFiles = (storeId: string) => {
       status: "printed",
     };
 
-    file.stickers.push(sticker);
-    file.updated_at = new Date().toISOString();
-    persist(all);
+    const updatedFile = { ...file, stickers: [...file.stickers, sticker], updated_at: new Date().toISOString() };
+    persist(all.map(f => f.id === fileId ? updatedFile : f));
     return sticker;
   }, [storeId]);
 
@@ -202,16 +201,18 @@ export const useVehicleFiles = (storeId: string) => {
       signed_at: new Date().toISOString(),
     };
 
-    file.signings.push(signing);
-    file.deal_status = "signed";
-    file.customer_name = data.customer_name;
-
-    // Mark the sticker as signed
-    const sticker = file.stickers.find(s => s.id === stickerId);
-    if (sticker) sticker.status = "signed";
-
-    file.updated_at = new Date().toISOString();
-    persist(all);
+    const updatedStickers = file.stickers.map(s =>
+      s.id === stickerId ? { ...s, status: "signed" as const } : s
+    );
+    const updatedFile = {
+      ...file,
+      signings: [...file.signings, signing],
+      stickers: updatedStickers,
+      deal_status: "signed" as const,
+      customer_name: data.customer_name,
+      updated_at: new Date().toISOString(),
+    };
+    persist(all.map(f => f.id === fileId ? updatedFile : f));
     return signing;
   }, [storeId]);
 

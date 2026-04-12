@@ -25,7 +25,8 @@ const LeadCaptureModal = ({ open, signingUrl, vehicleInfo, onClose }: LeadCaptur
   if (!open) return null;
 
   const handleCapture = () => {
-    const leads = JSON.parse(localStorage.getItem("leads") || "[]");
+    let leads: any[] = [];
+    try { leads = JSON.parse(localStorage.getItem("leads") || "[]"); } catch { /* corrupted, start fresh */ }
     leads.push({
       id: crypto.randomUUID(),
       store_id: localStorage.getItem("wl_current_store") || "store-default",

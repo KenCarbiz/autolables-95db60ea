@@ -30,7 +30,7 @@ const SignaturePad = ({ label, subtitle, value, type: sigType, onChange, classNa
       };
       img.src = value;
     }
-  }, []);
+  }, [mode, value]);
 
   const getPos = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current!;

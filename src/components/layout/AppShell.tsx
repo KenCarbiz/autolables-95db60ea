@@ -176,6 +176,8 @@ const AppShell = ({ children }: AppShellProps) => {
     if (pathname === "/used-car-sticker") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "Used Car Sticker" }); return crumbs; }
     if (pathname === "/cpo-sheet") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "CPO Info Sheet" }); return crumbs; }
     if (pathname === "/trade-up") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "Trade-Up Sticker" }); return crumbs; }
+    if (pathname === "/new-car-sticker") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "New Car Sticker" }); return crumbs; }
+    if (pathname === "/description-writer") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "Description Writer" }); return crumbs; }
     if (pathname === "/compliance") { crumbs.push({ label: "Compliance" }); crumbs.push({ label: "Compliance Guide" }); return crumbs; }
     if (pathname === "/admin") {
       const tab = new URLSearchParams(search).get("tab") || "products";
