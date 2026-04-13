@@ -32,6 +32,8 @@ const UsedCarSticker = lazy(() => import("./pages/UsedCarSticker"));
 const NewCarSticker = lazy(() => import("./pages/NewCarSticker"));
 const CpoSheet = lazy(() => import("./pages/CpoSheet"));
 const DescriptionWriter = lazy(() => import("./pages/DescriptionWriter"));
+const SaveCarInventory = lazy(() => import("./pages/SaveCarInventory"));
+const DealSigning = lazy(() => import("./pages/DealSigning"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -67,6 +69,7 @@ const App = () => (
                       <Route path="/onboarding" element={<Onboarding />} />
                       <Route path="/scan" element={<ScanPage />} />
                       <Route path="/vehicle/:vin" element={<VehiclePortal />} />
+                      <Route path="/deal/:token" element={<DealSigning />} />
                       <Route path="/about" element={<About />} />
                       <Route path="/brand" element={<BrandGuide />} />
 
@@ -82,6 +85,7 @@ const App = () => (
                       <Route path="/cpo-sheet" element={<AppShell><CpoSheet /></AppShell>} />
                       <Route path="/compliance" element={<AppShell><ComplianceCenter /></AppShell>} />
                     <Route path="/description-writer" element={<AppShell><DescriptionWriter /></AppShell>} />
+                      <Route path="/add-inventory" element={<AppShell><SaveCarInventory /></AppShell>} />
 
                       <Route path="*" element={<NotFound />} />
                     </Routes>

@@ -84,6 +84,25 @@ export interface AftermarketInstall {
   created_at: string;
 }
 
+export type AttachedDocType =
+  | "k208"              // CT K-208 used car inspection form
+  | "ftc_buyers_guide"  // FTC Used Car Buyers Guide
+  | "window_sticker"    // Window sticker snapshot
+  | "carfax"
+  | "cpo_checklist"
+  | "financing"
+  | "contract"
+  | "other";
+
+export interface AttachedDocument {
+  id: string;
+  type: AttachedDocType;
+  label: string;
+  data: any;              // Form data (K208FormData, BuyersGuide config, etc.)
+  created_at: string;
+  created_by: string;
+}
+
 export interface VehicleFile {
   id: string;
   store_id: string;
@@ -112,11 +131,20 @@ export interface VehicleFile {
   // All signing events
   signings: SigningRecord[];
 
+  // Attached compliance documents (K-208, FTC Buyers Guide, etc.)
+  attached_documents: AttachedDocument[];
+
+  // QR code token — scanning this opens the deal signing page
+  deal_qr_token: string;
+
   // Deal tracking
   deal_status: DealStatus;
   customer_name: string;
   customer_phone: string;
   customer_email: string;
+  cobuyer_name: string;
+  cobuyer_phone: string;
+  cobuyer_email: string;
 
   // Metadata
   created_at: string;

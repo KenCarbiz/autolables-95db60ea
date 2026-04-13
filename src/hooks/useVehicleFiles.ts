@@ -4,6 +4,8 @@ import type {
   StickerRecord,
   SigningRecord,
   AftermarketInstall,
+  AttachedDocument,
+  AttachedDocType,
   StickerType,
   DealStatus,
 } from "@/types/vehicleFile";
@@ -120,10 +122,15 @@ export const useVehicleFiles = (storeId: string) => {
       aftermarket_installs: [],
       stickers: [],
       signings: [],
+      attached_documents: [],
+      deal_qr_token: crypto.randomUUID(),
       deal_status: "stickered",
       customer_name: "",
       customer_phone: "",
       customer_email: "",
+      cobuyer_name: "",
+      cobuyer_phone: "",
+      cobuyer_email: "",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       created_by: data.created_by,
@@ -302,6 +309,41 @@ export const useVehicleFiles = (storeId: string) => {
     return files.find(f => f.vin === vin) || null;
   }, [files]);
 
+  // Attach a compliance document (K-208, FTC Buyers Guide, etc.)
+  const attachDocument = useCallback((fileId: string, doc: {
+    type: AttachedDocType;
+    label: string;
+    data: any;
+    created_by: string;
+  }): AttachedDocument | null => {
+    const all = getAll();
+    const file = all.find(f => f.id === fileId);
+    if (!file) return null;
+
+    const attached: AttachedDocument = {
+      id: crypto.randomUUID(),
+      type: doc.type,
+      label: doc.label,
+      data: doc.data,
+      created_at: new Date().toISOString(),
+      created_by: doc.created_by,
+    };
+
+    const updatedFile = {
+      ...file,
+      attached_documents: [...(file.attached_documents || []), attached],
+      updated_at: new Date().toISOString(),
+    };
+    persist(all.map(f => f.id === fileId ? updatedFile : f));
+    return attached;
+  }, [storeId]);
+
+  // Look up by deal QR token (for the signing flow when car is sold)
+  const findByDealQrToken = useCallback((token: string): VehicleFile | null => {
+    const all = getAll();
+    return all.find(f => f.deal_qr_token === token) || null;
+  }, []);
+
   // Look up by signing token
   const findBySigningToken = useCallback((token: string): {
     file: VehicleFile;
@@ -337,8 +379,10 @@ export const useVehicleFiles = (storeId: string) => {
     updateCustomer,
     voidSticker,
     addAftermarketInstall,
+    attachDocument,
     findByTrackingCode,
     findByVin,
+    findByDealQrToken,
     findBySigningToken,
   };
 };
