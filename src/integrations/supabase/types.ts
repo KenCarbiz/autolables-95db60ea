@@ -107,6 +107,153 @@ export type Database = {
         }
         Relationships: []
       }
+      dealer_subscriptions: {
+        Row: {
+          active_product_slugs: string[]
+          bundle_slug: string | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          dealer_id: string
+          id: string
+          plan_tier: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          active_product_slugs?: string[]
+          bundle_slug?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          dealer_id: string
+          id?: string
+          plan_tier?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          active_product_slugs?: string[]
+          bundle_slug?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          dealer_id?: string
+          id?: string
+          plan_tier?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      demo_requests: {
+        Row: {
+          created_at: string
+          dealership_name: string | null
+          email: string
+          id: string
+          message: string | null
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          dealership_name?: string | null
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          dealership_name?: string | null
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      platform_bundles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          included_product_slugs: string[]
+          name: string
+          price_monthly: number
+          price_yearly: number
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          included_product_slugs?: string[]
+          name: string
+          price_monthly?: number
+          price_yearly?: number
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          included_product_slugs?: string[]
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_products: {
+        Row: {
+          app_url: string | null
+          created_at: string
+          description: string | null
+          icon_url: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          app_url?: string | null
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          app_url?: string | null
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           badge_type: string
