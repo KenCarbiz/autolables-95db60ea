@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
 
 // Converts a hex color like "#dc2626" to HSL components "0 72% 51%"
@@ -31,6 +32,20 @@ function hexToHsl(hex: string): string | null {
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
+const THEME_VARIABLES = [
+  "--primary",
+  "--navy",
+  "--ring",
+  "--sidebar-ring",
+  "--blue",
+  "--action",
+  "--sidebar-primary",
+] as const;
+
+function resetThemeVariables(root: HTMLElement) {
+  THEME_VARIABLES.forEach((variable) => root.style.removeProperty(variable));
+}
+
 /**
  * ThemeInjector watches the current tenant and applies primary/secondary
  * colors as CSS variables on :root. This lets embedded mode instantly
@@ -38,33 +53,38 @@ function hexToHsl(hex: string): string | null {
  */
 const ThemeInjector = () => {
   const { tenant, currentStore } = useTenant();
+  const location = useLocation();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
+    const isOnboardingRoute = location.pathname === "/onboarding";
 
-    // Prefer store-level brand over tenant-level
-    const primary = currentStore?.primary_color || tenant?.primary_color || "";
-    const secondary = tenant?.secondary_color || "";
+    if (isOnboardingRoute) {
+      resetThemeVariables(root);
+    } else {
+      // Prefer store-level brand over tenant-level
+      const primary = currentStore?.primary_color || tenant?.primary_color || "";
+      const secondary = tenant?.secondary_color || "";
 
-    // Only override CSS variables when a custom color is provided.
-    // When no custom color is set, leave the defaults from index.css intact
-    // (removing them causes a "washed out" flash).
-    if (primary) {
-      const hsl = hexToHsl(primary);
-      if (hsl) {
-        root.style.setProperty("--primary", hsl);
-        root.style.setProperty("--navy", hsl);
-        root.style.setProperty("--ring", hsl);
-        root.style.setProperty("--sidebar-ring", hsl);
+      // Only override CSS variables when a custom color is provided.
+      // When no custom color is set, leave the defaults from index.css intact.
+      if (primary) {
+        const hsl = hexToHsl(primary);
+        if (hsl) {
+          root.style.setProperty("--primary", hsl);
+          root.style.setProperty("--navy", hsl);
+          root.style.setProperty("--ring", hsl);
+          root.style.setProperty("--sidebar-ring", hsl);
+        }
       }
-    }
 
-    if (secondary) {
-      const hsl = hexToHsl(secondary);
-      if (hsl) {
-        root.style.setProperty("--blue", hsl);
-        root.style.setProperty("--action", hsl);
-        root.style.setProperty("--sidebar-primary", hsl);
+      if (secondary) {
+        const hsl = hexToHsl(secondary);
+        if (hsl) {
+          root.style.setProperty("--blue", hsl);
+          root.style.setProperty("--action", hsl);
+          root.style.setProperty("--sidebar-primary", hsl);
+        }
       }
     }
 
@@ -72,7 +92,7 @@ const ThemeInjector = () => {
     if (tenant?.name) {
       document.title = `${tenant.name} · Addendum Platform`;
     }
-  }, [tenant, currentStore]);
+  }, [tenant, currentStore, location.pathname]);
 
   return null;
 };
