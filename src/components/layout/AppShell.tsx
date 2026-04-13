@@ -532,10 +532,10 @@ const AppShell = ({ children }: AppShellProps) => {
               Scan this QR code with your iPhone or iPad to open the mobile vehicle scanner.
             </p>
             <div className="flex justify-center py-4">
-              <QRCodeSVG value={`${window.location.origin}/scan`} size={200} level="M" />
+              <QRCodeSVG value={`https://autolabels.io/scan`} size={200} level="M" />
             </div>
             <p className="text-xs text-muted-foreground break-all font-mono">
-              {window.location.origin}/scan
+              autolabels.io/scan
             </p>
             {/* Text link to phone */}
             <div className="flex gap-2">
