@@ -1,35 +1,31 @@
 // ──────────────────────────────────────────────────────────────
-// Autocurb.io — Brand Identity Constants
+// AutoLabels.io — Brand Identity Constants
 //
-// Single source of truth for Autocurb's brand system. Used by
+// Single source of truth for AutoLabels brand system. Used by
 // TenantContext (as default), BrandGuide page, About page,
-// and anywhere the Autocurb brand surfaces directly.
-//
-// When running as an HarteCash addon, the parent tenant data
-// overrides these. When running standalone on autocurb.io,
-// these are the defaults.
+// and anywhere the AutoLabels brand surfaces directly.
 // ──────────────────────────────────────────────────────────────
 
 export const AUTOCURB_BRAND = {
-  name: "Autocurb.io",
-  tagline: "Where the lot meets the cloud.",
-  shortTagline: "Built for the curb.",
+  name: "AutoLabels.io",
+  tagline: "Every label. Every vehicle. Every deal.",
+  shortTagline: "Built for dealers.",
   description:
-    "The dealer OS that turns every curb into a deal. Scan a VIN, build an addendum, capture a lead, sign a deal — all before the customer leaves the curb.",
+    "The dealer label platform that powers every sticker, addendum, and compliance form. Scan a VIN, build a label, capture a lead, sign a deal.",
 
   // Brand positioning
-  positioning: "The modern dealer's command center — where the lot meets the cloud.",
+  positioning: "The modern dealer's label & compliance platform.",
   mission:
-    "Give every dealership — from a single rooftop to a 50-store group — the tools to turn the lot into a living pipeline.",
+    "Give every dealership — from a single rooftop to a 50-store group — the tools to label, comply, and close.",
   vision:
-    "A world where the walk around a car on a lot is the beginning of a digital deal, not the end of a paper process.",
+    "A world where every vehicle label is digital-first, compliant, and revenue-ready.",
 
   // Principles
   principles: [
     {
       number: "01",
-      title: "The curb is data",
-      body: "Every car, every scan, every interaction feeds the system.",
+      title: "The label is data",
+      body: "Every vehicle, every scan, every interaction feeds the system.",
     },
     {
       number: "02",
@@ -45,14 +41,12 @@ export const AUTOCURB_BRAND = {
 
   // Taglines (ranked)
   taglines: {
-    primary: "Where the lot meets the cloud.",
+    primary: "Every label. Every vehicle. Every deal.",
     secondary: [
-      "Every curb. Every car. Every deal.",
+      "Labels that sell. Compliance that sticks.",
       "Turn your lot into a lead machine.",
-      "Curb appeal, automated.",
-      "The dealer OS for the modern curb.",
-      "From curb to close.",
-      "The lot is the funnel.",
+      "From label to close.",
+      "The sticker is the start.",
     ],
   },
 
@@ -65,7 +59,7 @@ export const AUTOCURB_BRAND = {
       { name: "A little sharp", desc: "Enough attitude to stand out." },
       { name: "Customer-respectful", desc: "Dealers talk about customers, not against them." },
     ],
-    wordsWeUse: ["lot", "curb", "deal", "move", "signal", "pipeline", "capture", "close", "stick", "scan"],
+    wordsWeUse: ["lot", "label", "deal", "move", "signal", "pipeline", "capture", "close", "stick", "scan"],
     wordsWeAvoid: [
       "synergy",
       "solutions",
@@ -80,7 +74,7 @@ export const AUTOCURB_BRAND = {
   // Color system (hex + HSL)
   colors: {
     core: [
-      { name: "Curb Navy", hex: "#0F1E3C", hsl: "217 60% 14%", use: "Primary — headers, CTAs, dark surfaces" },
+      { name: "Label Navy", hex: "#0F1E3C", hsl: "217 60% 14%", use: "Primary — headers, CTAs, dark surfaces" },
       { name: "Signal Blue", hex: "#2563EB", hsl: "221 83% 53%", use: "Accent — links, hover, buttons, data viz" },
       { name: "Asphalt", hex: "#111827", hsl: "220 39% 11%", use: "Dark mode background" },
       { name: "Concrete", hex: "#F6F8FB", hsl: "214 30% 97%", use: "Light page background" },
@@ -138,9 +132,9 @@ export const AUTOCURB_BRAND = {
 
   // Sample copy
   sampleCopy: {
-    hero: "Every curb. Every car. Every deal.",
-    subhero: "The dealer OS that turns your lot into a live pipeline.",
-    emailSignature: "Autocurb — where the lot meets the cloud.",
+    hero: "Every label. Every vehicle. Every deal.",
+    subhero: "The dealer label platform that powers compliance and revenue.",
+    emailSignature: "AutoLabels.io — every label, every vehicle, every deal.",
     good: [
       "Build a sticker. Print it. Stick it. Get a lead. Close a deal.",
       "Your F&I menu shouldn't take longer than a test drive.",
@@ -155,16 +149,16 @@ export const AUTOCURB_BRAND = {
 
   // Social / contact
   contact: {
-    website: "https://autocurb.io",
-    email: "hello@autocurb.io",
+    website: "https://autolabels.io",
+    email: "hello@autolabels.io",
   },
 } as const;
 
 // Canonical tenant preset used when the app runs on autocurb.io directly
 export const AUTOCURB_TENANT_DEFAULT = {
-  id: "autocurb",
-  name: "Autocurb",
-  slug: "autocurb",
+  id: "autolabels",
+  name: "AutoLabels.io",
+  slug: "autolabels",
   logo_url: "/logo-mark.svg",
   primary_color: "#0F1E3C",
   secondary_color: "#2563EB",

@@ -47,7 +47,7 @@ const Login = () => {
               <Sparkles className="w-5 h-5" />
             </div>
             <span className="font-semibold text-lg tracking-tight">
-              {tenant?.name || "Clear Deal"}
+              {tenant?.name || "AutoLabels.io"}
             </span>
           </div>
 
@@ -70,7 +70,7 @@ const Login = () => {
           </div>
 
           <div className="text-xs text-primary-foreground/50">
-            © {new Date().getFullYear()} {tenant?.name || "Clear Deal"}. All rights reserved.
+            © {new Date().getFullYear()} {tenant?.name || "AutoLabels.io"}. All rights reserved.
           </div>
         </div>
       </div>
@@ -83,7 +83,7 @@ const Login = () => {
               <Sparkles className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="font-semibold text-base tracking-tight">
-              {tenant?.name || "Clear Deal"}
+              {tenant?.name || "AutoLabels.io"}
             </span>
           </div>
 

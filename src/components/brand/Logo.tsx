@@ -6,11 +6,11 @@ interface LogoProps {
 }
 
 /**
- * Autocurb.io Logo Component
+ * AutoLabels.io Logo Component
  *
  * Variants:
- * - mark     — just the A-curb square mark (default)
- * - full     — mark + "autocurb.io" horizontal
+ * - mark     — just the square mark (default)
+ * - full     — mark + "autolabels.io" horizontal
  * - stacked  — mark on top, wordmark below
  * - wordmark — text only, no mark
  *
@@ -74,10 +74,10 @@ const Logo = ({ variant = "mark", inverted = false, size = 32, className }: Logo
   if (variant === "wordmark") {
     return (
       <svg width={size * 4.5} height={size} viewBox="0 0 160 32" xmlns="http://www.w3.org/2000/svg" className={className}>
-        <text x="0" y="24" fontFamily="Inter, system-ui, sans-serif" fontSize="22" fontWeight="800" fill={wordColor} letterSpacing="-0.02em">
-          autocurb
+        <text x="0" y="24" fontFamily="Inter, system-ui, sans-serif" fontSize="20" fontWeight="800" fill={wordColor} letterSpacing="-0.02em">
+          autolabels
         </text>
-        <text x="104" y="24" fontFamily="Inter, system-ui, sans-serif" fontSize="22" fontWeight="500" fill={ioColor} letterSpacing="-0.01em">
+        <text x="115" y="24" fontFamily="Inter, system-ui, sans-serif" fontSize="20" fontWeight="500" fill={ioColor} letterSpacing="-0.01em">
           .io
         </text>
       </svg>
@@ -90,8 +90,8 @@ const Logo = ({ variant = "mark", inverted = false, size = 32, className }: Logo
         <g transform="translate(48 0)">
           <MarkSquare />
         </g>
-        <text x="80" y="100" textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontSize="18" fontWeight="800" fill={wordColor} letterSpacing="-0.02em">
-          autocurb<tspan fill={ioColor} fontWeight="500">.io</tspan>
+        <text x="80" y="100" textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="800" fill={wordColor} letterSpacing="-0.02em">
+          autolabels<tspan fill={ioColor} fontWeight="500">.io</tspan>
         </text>
       </svg>
     );
@@ -101,10 +101,10 @@ const Logo = ({ variant = "mark", inverted = false, size = 32, className }: Logo
   return (
     <svg width={size * 3.75} height={size} viewBox="0 0 240 64" xmlns="http://www.w3.org/2000/svg" className={className}>
       <MarkSquare />
-      <text x="80" y="42" fontFamily="Inter, system-ui, sans-serif" fontSize="26" fontWeight="800" fill={wordColor} letterSpacing="-0.02em">
-        autocurb
+      <text x="80" y="42" fontFamily="Inter, system-ui, sans-serif" fontSize="24" fontWeight="800" fill={wordColor} letterSpacing="-0.02em">
+        autolabels
       </text>
-      <text x="201" y="42" fontFamily="Inter, system-ui, sans-serif" fontSize="26" fontWeight="500" fill={ioColor} letterSpacing="-0.01em">
+      <text x="210" y="42" fontFamily="Inter, system-ui, sans-serif" fontSize="24" fontWeight="500" fill={ioColor} letterSpacing="-0.01em">
         .io
       </text>
     </svg>

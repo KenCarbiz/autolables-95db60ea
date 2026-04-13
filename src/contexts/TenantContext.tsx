@@ -29,9 +29,9 @@ const STORES_KEY = "wl_stores";
 const CURRENT_STORE_KEY = "wl_current_store";
 
 const DEFAULT_TENANT: Tenant = {
-  id: "autocurb",
-  name: "Autocurb",
-  slug: "autocurb",
+  id: "autolabels",
+  name: "AutoLabels.io",
+  slug: "autolabels",
   logo_url: "/logo-mark.svg",
   primary_color: "#0F1E3C",
   secondary_color: "#2563EB",

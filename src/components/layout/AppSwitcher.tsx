@@ -21,10 +21,9 @@ export interface PlatformProduct {
 }
 
 const ALL_PRODUCTS: PlatformProduct[] = [
-  { id: "autocurb", name: "Autocurb.io", shortName: "Autocurb", icon: Sparkles, url: "https://autocurb.io", description: "Off-street vehicle acquisition", color: "bg-blue-600" },
-  { id: "cleardeal", name: "Clear Deal", shortName: "Clear Deal", icon: FileText, url: "/dashboard", description: "Window stickers & compliance", color: "bg-primary" },
-  { id: "autoframe", name: "AutoFrame", shortName: "AutoFrame", icon: Camera, url: "https://autoframe.autocurb.io", description: "Vehicle photography & media", color: "bg-purple-600" },
-  { id: "autovideo", name: "AutoVideo", shortName: "AutoVideo", icon: Video, url: "https://autovideo.autocurb.io", description: "Video walkarounds & MPI", color: "bg-amber-600" },
+  { id: "autolabels", name: "AutoLabels.io", shortName: "AutoLabels", icon: FileText, url: "/dashboard", description: "Dealer labels, stickers & compliance", color: "bg-primary" },
+  { id: "autoframe", name: "AutoFrame", shortName: "AutoFrame", icon: Camera, url: "https://autoframe.autolabels.io", description: "Vehicle photography & media", color: "bg-purple-600" },
+  { id: "autovideo", name: "AutoVideo", shortName: "AutoVideo", icon: Video, url: "https://autovideo.autolabels.io", description: "Video walkarounds & MPI", color: "bg-amber-600" },
 ];
 
 const SUBSCRIPTION_KEY = "platform_subscriptions";
@@ -35,8 +34,8 @@ export function getSubscribedProducts(): string[] {
     const subs = localStorage.getItem(SUBSCRIPTION_KEY);
     if (subs) return JSON.parse(subs);
   } catch { /* */ }
-  // Default: Clear Deal always available (they're on it)
-  return ["cleardeal"];
+  // Default: AutoLabels always available (they're on it)
+  return ["autolabels"];
 }
 
 export function setSubscribedProducts(productIds: string[]) {
@@ -47,7 +46,7 @@ interface AppSwitcherProps {
   currentApp?: string;
 }
 
-const AppSwitcher = ({ currentApp = "cleardeal" }: AppSwitcherProps) => {
+const AppSwitcher = ({ currentApp = "autolabels" }: AppSwitcherProps) => {
   const subscribedIds = getSubscribedProducts();
 
   const current = ALL_PRODUCTS.find(p => p.id === currentApp) || ALL_PRODUCTS[1];
@@ -65,7 +64,7 @@ const AppSwitcher = ({ currentApp = "cleardeal" }: AppSwitcherProps) => {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-72">
-        <DropdownMenuLabel className="text-xs">Autocurb Platform</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs">AutoLabels Platform</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
         {ALL_PRODUCTS.map(product => {
@@ -112,7 +111,7 @@ const AppSwitcher = ({ currentApp = "cleardeal" }: AppSwitcherProps) => {
             {subscribedIds.length} of {ALL_PRODUCTS.length} products active
           </p>
           <button
-            onClick={() => window.open("https://autocurb.io/pricing", "_blank")}
+            onClick={() => window.open("https://autolabels.io/pricing", "_blank")}
             className="mt-1.5 w-full h-8 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
           >
             Upgrade Plan

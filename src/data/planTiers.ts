@@ -26,7 +26,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     name: "Sticker",
     tagline: "Window stickers + labels. No signing, no compliance trail.",
     price: "Free",
-    priceNote: "Free with Autocurb.io subscription",
+    priceNote: "Free with AutoLabels.io subscription",
     features: [
       "Used car window sticker",
       "New car addendum sticker",

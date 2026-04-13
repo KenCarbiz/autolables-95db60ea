@@ -1,13 +1,12 @@
 // ──────────────────────────────────────────────────────────────
 // Internal API Hook
 //
-// This is the integration layer for other Autocurb products
-// (CRM, Inventory Platform, HarteCash) to push/pull data
-// to/from the addendum platform.
+// This is the integration layer for other AutoLabels products
+// to push/pull data to/from the addendum platform.
 //
 // TWO MODES:
 // 1. EMBEDDED (postMessage) — when running as iframe inside
-//    HarteCash or another Autocurb product. Uses the existing
+//    HarteCash or another AutoLabels product. Uses the existing
 //    useTenantIntegration protocol.
 //
 // 2. REST API (Supabase Edge Functions) — when running as

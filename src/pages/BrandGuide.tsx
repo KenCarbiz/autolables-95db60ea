@@ -34,7 +34,7 @@ const BrandGuide = () => {
             Brand Guidelines
           </h1>
           <p className="text-xl text-white/60 mt-4 max-w-xl">
-            The visual and voice system for Autocurb.io — the dealer OS where the lot meets the cloud.
+            The visual and voice system for AutoLabels.io — the dealer label & compliance platform.
           </p>
           <div className="mt-8 flex items-center gap-2 text-xs text-white/40">
             <span>v1.0</span>
@@ -158,7 +158,7 @@ const BrandGuide = () => {
         </Section>
 
         {/* Voice */}
-        <Section eyebrow="Voice" title="How Autocurb Talks" subtitle="Direct, confident, respectful of both the dealer and the customer." icon={MessageSquare}>
+        <Section eyebrow="Voice" title="How AutoLabels Talks" subtitle="Direct, confident, respectful of both the dealer and the customer." icon={MessageSquare}>
           <div className="grid md:grid-cols-2 gap-4 mb-6">
             {b.voice.attributes.map((attr) => (
               <Card key={attr.name}>
@@ -231,7 +231,7 @@ const BrandGuide = () => {
               <thead className="bg-muted/30">
                 <tr>
                   <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Surface</th>
-                  <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Autocurb Name</th>
+                  <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">AutoLabels Name</th>
                 </tr>
               </thead>
               <tbody>
@@ -254,7 +254,7 @@ const BrandGuide = () => {
         {/* Social card preview */}
         <Section eyebrow="Social" title="Open Graph Card" subtitle="1200 × 630. Used for link previews on social + messaging.">
           <div className="rounded-xl overflow-hidden border border-border shadow-premium-lg">
-            <img src="/og-image.svg" alt="Autocurb.io OG card" className="w-full" />
+            <img src="/og-image.svg" alt="AutoLabels.io OG card" className="w-full" />
           </div>
           <DownloadLink href="/og-image.svg" label="og-image.svg" />
         </Section>
@@ -264,7 +264,7 @@ const BrandGuide = () => {
       <footer className="bg-slate-950 text-white/60 py-10 px-6 mt-16">
         <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <Logo variant="full" size={32} inverted />
-          <p className="text-xs">© {new Date().getFullYear()} Autocurb.io. Where the lot meets the cloud.</p>
+          <p className="text-xs">© {new Date().getFullYear()} AutoLabels.io. Every label. Every vehicle. Every deal.</p>
         </div>
       </footer>
     </div>
@@ -340,14 +340,14 @@ const EmailSignature = ({ onCopy, copiedId }: { onCopy: (v: string, id: string) 
   const signatureHtml = `<table cellpadding="0" cellspacing="0" border="0" style="font-family: -apple-system, 'Inter', sans-serif;">
   <tr>
     <td style="padding-right: 16px; border-right: 2px solid #2563EB;">
-      <img src="https://autocurb.io/logo-mark.svg" width="48" height="48" alt="Autocurb" />
+      <img src="https://autolabels.io/logo-mark.svg" width="48" height="48" alt="AutoLabels" />
     </td>
     <td style="padding-left: 16px;">
       <div style="font-size: 15px; font-weight: 700; color: #0F1E3C; letter-spacing: -0.01em;">Your Name</div>
-      <div style="font-size: 13px; color: #64748B;">Title · Autocurb.io</div>
-      <div style="font-size: 12px; color: #2563EB; margin-top: 4px;">Where the lot meets the cloud.</div>
+      <div style="font-size: 13px; color: #64748B;">Title · AutoLabels.io</div>
+      <div style="font-size: 12px; color: #2563EB; margin-top: 4px;">Every label. Every vehicle. Every deal.</div>
       <div style="font-size: 12px; color: #64748B; margin-top: 6px;">
-        <a href="https://autocurb.io" style="color: #2563EB; text-decoration: none;">autocurb.io</a>
+        <a href="https://autolabels.io" style="color: #2563EB; text-decoration: none;">autolabels.io</a>
       </div>
     </td>
   </tr>
@@ -366,10 +366,10 @@ const EmailSignature = ({ onCopy, copiedId }: { onCopy: (v: string, id: string) 
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#0F1E3C", letterSpacing: "-0.01em" }}>
                   Your Name
                 </div>
-                <div style={{ fontSize: 13, color: "#64748B" }}>Title · Autocurb.io</div>
-                <div style={{ fontSize: 12, color: "#2563EB", marginTop: 4 }}>Where the lot meets the cloud.</div>
+                <div style={{ fontSize: 13, color: "#64748B" }}>Title · AutoLabels.io</div>
+                <div style={{ fontSize: 12, color: "#2563EB", marginTop: 4 }}>Every label. Every vehicle. Every deal.</div>
                 <div style={{ fontSize: 12, color: "#64748B", marginTop: 6 }}>
-                  <a href="https://autocurb.io" style={{ color: "#2563EB", textDecoration: "none" }}>autocurb.io</a>
+                  <a href="https://autolabels.io" style={{ color: "#2563EB", textDecoration: "none" }}>autolabels.io</a>
                 </div>
               </td>
             </tr>

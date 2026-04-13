@@ -297,7 +297,7 @@ const VehiclePortal = () => {
             <div className="text-center py-6">
               <Logo variant="full" size={24} />
               <p className="text-[10px] text-muted-foreground mt-2">
-                Powered by Autocurb.io · Where the lot meets the cloud
+                Powered by AutoLabels.io
               </p>
             </div>
           </>

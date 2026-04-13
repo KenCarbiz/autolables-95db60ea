@@ -235,10 +235,10 @@ const AppShell = ({ children }: AppShellProps) => {
             )}
             <div>
               <p className="text-sm font-semibold text-sidebar-foreground leading-none tracking-tight">
-                {tenant?.name || "Autocurb"}
+                {tenant?.name || "AutoLabels.io"}
               </p>
               <p className="text-[10px] text-sidebar-foreground/50 mt-0.5 uppercase tracking-wider">
-                {tenant?.slug === "autocurb" ? "Dealer OS" : "Addendum Platform"}
+                {tenant?.slug === "autolabels" ? "Label Platform" : "Addendum Platform"}
               </p>
             </div>
           </div>
@@ -354,10 +354,10 @@ const AppShell = ({ children }: AppShellProps) => {
           </button>
           <div className="pt-2 text-center">
             <p className="text-[9px] text-sidebar-foreground/40 uppercase tracking-wider">
-              {tenant?.name?.toUpperCase() || "CLEAR DEAL"}
+              {tenant?.name?.toUpperCase() || "AUTOLABELS.IO"}
             </p>
             <p className="text-[9px] text-sidebar-foreground/30 mt-0.5">
-              Powered by Autocurb.io
+              Powered by AutoLabels.io
             </p>
           </div>
         </div>
@@ -403,8 +403,8 @@ const AppShell = ({ children }: AppShellProps) => {
             </div>
 
             <div className="flex items-center gap-1">
-              {/* App Switcher — switch between Autocurb platform products */}
-              <AppSwitcher currentApp="cleardeal" />
+              {/* App Switcher — switch between AutoLabels platform products */}
+              <AppSwitcher currentApp="autolabels" />
 
               {/* Mobile QR launcher — shows QR code for phone scanning */}
               <button
