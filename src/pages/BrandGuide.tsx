@@ -343,7 +343,7 @@ const EmailSignature = ({ onCopy, copiedId }: { onCopy: (v: string, id: string) 
       <img src="https://autolabels.io/logo-mark.svg" width="48" height="48" alt="AutoLabels" />
     </td>
     <td style="padding-left: 16px;">
-      <div style="font-size: 15px; font-weight: 700; color: #0F1E3C; letter-spacing: -0.01em;">Your Name</div>
+      <div style="font-size: 15px; font-weight: 700; color: #0B2041; letter-spacing: -0.01em;">Your Name</div>
       <div style="font-size: 13px; color: #64748B;">Title · AutoLabels.io</div>
       <div style="font-size: 12px; color: #2563EB; margin-top: 4px;">Every label. Every vehicle. Every deal.</div>
       <div style="font-size: 12px; color: #64748B; margin-top: 6px;">
@@ -363,7 +363,7 @@ const EmailSignature = ({ onCopy, copiedId }: { onCopy: (v: string, id: string) 
                 <Logo variant="mark" size={48} />
               </td>
               <td style={{ paddingLeft: 16 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "#0F1E3C", letterSpacing: "-0.01em" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#0B2041", letterSpacing: "-0.01em" }}>
                   Your Name
                 </div>
                 <div style={{ fontSize: 13, color: "#64748B" }}>Title · AutoLabels.io</div>

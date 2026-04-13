@@ -74,7 +74,7 @@ export const AUTOCURB_BRAND = {
   // Color system (hex + HSL)
   colors: {
     core: [
-      { name: "Label Navy", hex: "#0F1E3C", hsl: "217 60% 14%", use: "Primary — headers, CTAs, dark surfaces" },
+      { name: "Label Navy", hex: "#0B2041", hsl: "217 71% 15%", use: "Primary — headers, CTAs, dark surfaces" },
       { name: "Signal Blue", hex: "#2563EB", hsl: "221 83% 53%", use: "Accent — links, hover, buttons, data viz" },
       { name: "Asphalt", hex: "#111827", hsl: "220 39% 11%", use: "Dark mode background" },
       { name: "Concrete", hex: "#F6F8FB", hsl: "214 30% 97%", use: "Light page background" },
@@ -88,7 +88,7 @@ export const AUTOCURB_BRAND = {
       { name: "Highway Orange", hex: "#EA580C", hsl: "20 91% 48%", use: "Revenue/pipeline gradients" },
     ],
     gradients: {
-      primaryCta: "linear-gradient(135deg, #0F1E3C 0%, #2563EB 100%)",
+      primaryCta: "linear-gradient(135deg, #0B2041 0%, #2563EB 100%)",
       pipelineValue: "linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)",
       aiFeature: "linear-gradient(135deg, #2563EB 0%, #8B5CF6 100%)",
       success: "linear-gradient(135deg, #2563EB 0%, #10B981 100%)",

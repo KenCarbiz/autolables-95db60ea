@@ -20,7 +20,7 @@ interface LogoProps {
 const Logo = ({ variant = "mark", inverted = false, size = 32, className }: LogoProps) => {
   const gradId = `acGrad-${inverted ? "inv" : "norm"}-${Math.random().toString(36).slice(2, 7)}`;
   const stroke = inverted ? "#FFFFFF" : "#FFFFFF";
-  const wordColor = inverted ? "#FFFFFF" : "#0F1E3C";
+  const wordColor = inverted ? "#FFFFFF" : "#0B2041";
   const ioColor = inverted ? "#60A5FA" : "#2563EB";
 
   // Just the square mark
@@ -36,7 +36,7 @@ const Logo = ({ variant = "mark", inverted = false, size = 32, className }: Logo
           ) : (
             <>
               <stop offset="0%" stopColor="#2563EB" />
-              <stop offset="100%" stopColor="#0F1E3C" />
+              <stop offset="100%" stopColor="#0B2041" />
             </>
           )}
         </linearGradient>
@@ -44,7 +44,7 @@ const Logo = ({ variant = "mark", inverted = false, size = 32, className }: Logo
       <rect width="64" height="64" rx="14" fill={`url(#${gradId})`} />
       <path
         d="M 18 48 L 32 16 L 46 48"
-        stroke={inverted ? "#0F1E3C" : stroke}
+        stroke={inverted ? "#0B2041" : stroke}
         strokeWidth="4.5"
         fill="none"
         strokeLinecap="round"
@@ -55,11 +55,11 @@ const Logo = ({ variant = "mark", inverted = false, size = 32, className }: Logo
         y1="38"
         x2="40"
         y2="38"
-        stroke={inverted ? "#0F1E3C" : stroke}
+        stroke={inverted ? "#0B2041" : stroke}
         strokeWidth="4.5"
         strokeLinecap="round"
       />
-      <circle cx="32" cy="16" r="3.5" fill={inverted ? "#0F1E3C" : stroke} />
+      <circle cx="32" cy="16" r="3.5" fill={inverted ? "#0B2041" : stroke} />
     </g>
   );
 
