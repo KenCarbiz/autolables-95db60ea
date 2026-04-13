@@ -221,9 +221,7 @@ export const useVehicleFiles = (storeId: string) => {
     const all = getAll();
     const file = all.find(f => f.id === fileId);
     if (!file) return;
-    file.deal_status = status;
-    file.updated_at = new Date().toISOString();
-    persist(all);
+    persist(all.map(f => f.id === fileId ? { ...f, deal_status: status, updated_at: new Date().toISOString() } : f));
   }, [storeId]);
 
   // Update customer info
@@ -235,11 +233,14 @@ export const useVehicleFiles = (storeId: string) => {
     const all = getAll();
     const file = all.find(f => f.id === fileId);
     if (!file) return;
-    if (data.customer_name !== undefined) file.customer_name = data.customer_name;
-    if (data.customer_phone !== undefined) file.customer_phone = data.customer_phone;
-    if (data.customer_email !== undefined) file.customer_email = data.customer_email;
-    file.updated_at = new Date().toISOString();
-    persist(all);
+    const updated = {
+      ...file,
+      ...(data.customer_name !== undefined ? { customer_name: data.customer_name } : {}),
+      ...(data.customer_phone !== undefined ? { customer_phone: data.customer_phone } : {}),
+      ...(data.customer_email !== undefined ? { customer_email: data.customer_email } : {}),
+      updated_at: new Date().toISOString(),
+    };
+    persist(all.map(f => f.id === fileId ? updated : f));
   }, [storeId]);
 
   // Void a sticker
@@ -247,13 +248,16 @@ export const useVehicleFiles = (storeId: string) => {
     const all = getAll();
     const file = all.find(f => f.id === fileId);
     if (!file) return;
-    const sticker = file.stickers.find(s => s.id === stickerId);
-    if (!sticker) return;
-    sticker.status = "voided";
-    sticker.voided_at = new Date().toISOString();
-    sticker.voided_reason = reason;
-    file.updated_at = new Date().toISOString();
-    persist(all);
+    if (!file.stickers.find(s => s.id === stickerId)) return;
+    const updatedFile = {
+      ...file,
+      stickers: file.stickers.map(s => s.id === stickerId
+        ? { ...s, status: "voided" as const, voided_at: new Date().toISOString(), voided_reason: reason }
+        : s
+      ),
+      updated_at: new Date().toISOString(),
+    };
+    persist(all.map(f => f.id === fileId ? updatedFile : f));
   }, [storeId]);
 
   // Record an aftermarket install on a vehicle
@@ -268,10 +272,12 @@ export const useVehicleFiles = (storeId: string) => {
       created_at: new Date().toISOString(),
     };
 
-    if (!file.aftermarket_installs) file.aftermarket_installs = [];
-    file.aftermarket_installs.push(install);
-    file.updated_at = new Date().toISOString();
-    persist(all);
+    const updatedFile = {
+      ...file,
+      aftermarket_installs: [...(file.aftermarket_installs || []), install],
+      updated_at: new Date().toISOString(),
+    };
+    persist(all.map(f => f.id === fileId ? updatedFile : f));
     return install;
   }, [storeId]);
 

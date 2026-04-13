@@ -108,7 +108,7 @@ export const useTenantIntegration = () => {
         // Announce readiness to parent
         try {
           window.parent.postMessage(
-            { type: "addon_ready", addon: "clear-deal-docs" },
+            { type: "addon_ready", addon: "autolabels" },
             "*"
           );
         } catch {
