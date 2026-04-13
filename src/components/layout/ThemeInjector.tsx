@@ -85,6 +85,8 @@ const ThemeInjector = () => {
     // Update tab title + favicon hint based on tenant
     if (tenant?.name) {
       document.title = `${tenant.name} · Addendum Platform`;
+    } else {
+      document.title = "AutoLabels.io · Addendum Platform";
     }
   }, [tenant, currentStore]);
 

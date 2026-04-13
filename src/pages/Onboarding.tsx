@@ -179,7 +179,7 @@ const Onboarding = () => {
             <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-sm tracking-tight">Clear Deal</span>
+            <span className="font-semibold text-sm tracking-tight">AutoLabels.io</span>
           </div>
           <div className="text-xs text-muted-foreground">
             Step {step} of {TOTAL_STEPS}

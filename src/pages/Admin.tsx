@@ -664,7 +664,7 @@ const Admin = () => {
                       primary_color: "#0F1E3C",
                       secondary_color: "#2563EB",
                       logo_url: "/logo-mark.svg",
-                      name: "Autocurb",
+                      name: "AutoLabels.io",
                     });
                     // Remove any inline style overrides so index.css defaults apply
                     const root = document.documentElement;
@@ -675,7 +675,7 @@ const Admin = () => {
                     root.style.removeProperty("--action");
                     root.style.removeProperty("--sidebar-primary");
                     root.style.removeProperty("--sidebar-ring");
-                    toast.success("Branding reset to Autocurb defaults");
+                    toast.success("Branding reset to AutoLabels defaults");
                   }}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
                 >
