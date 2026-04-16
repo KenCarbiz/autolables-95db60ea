@@ -53,12 +53,12 @@ const SavedAddendums = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/")} className="p-2 rounded-md hover:bg-muted transition-colors">
+            <button onClick={() => navigate("/addendum")} className="p-2 rounded-md hover:bg-muted transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="text-2xl font-bold font-barlow-condensed text-foreground">Saved Addendums</h1>
           </div>
-          <button onClick={() => navigate("/")} className="font-semibold text-[13px] px-5 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-85">
+          <button onClick={() => navigate("/addendum")} className="font-semibold text-[13px] px-5 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-85">
             + New Addendum
           </button>
         </div>

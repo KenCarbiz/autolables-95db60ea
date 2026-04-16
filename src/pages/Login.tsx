@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
+import Logo from "@/components/brand/Logo";
 import { Sparkles, CheckCircle2, ShieldCheck, Zap } from "lucide-react";
 
 const Login = () => {
@@ -34,31 +35,26 @@ const Login = () => {
   return (
     <div className="min-h-screen flex bg-background">
       {/* Left brand panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-[hsl(214_95%_18%)]" />
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-20 left-20 w-96 h-96 rounded-full bg-blue blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full bg-teal blur-3xl" />
+      <div className="hidden lg:flex lg:w-1/2 shimmer-hero relative overflow-hidden">
+        <div className="absolute inset-0 opacity-25 pointer-events-none">
+          <div className="absolute top-20 left-20 w-96 h-96 rounded-full bg-[#3BB4FF] blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full bg-[#1E90FF] blur-3xl" />
         </div>
 
-        <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground w-full">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <span className="font-semibold text-lg tracking-tight">
-              {tenant?.name || "AutoLabels.io"}
-            </span>
-          </div>
+        <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
+          <Logo variant="full" size={32} inverted tagline />
 
           <div className="space-y-8">
             <div>
               <h2 className="text-4xl font-semibold tracking-tight font-display leading-tight">
-                The premium<br />addendum platform<br />for modern dealers.
+                Clear.<br />Compliant.<br />
+                <span className="bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] bg-clip-text text-transparent italic">
+                  Consistent.
+                </span>
               </h2>
-              <p className="mt-4 text-base text-primary-foreground/70 max-w-md">
-                Build, sign, and audit dealer addendums with compliance-grade
-                tools trusted by leading automotive groups.
+              <p className="mt-4 text-base text-white/70 max-w-md">
+                The dealer label platform — every sticker, addendum, and Buyers Guide
+                that leaves your lot, perfectly priced and ready to sign.
               </p>
             </div>
 
@@ -69,8 +65,8 @@ const Login = () => {
             </div>
           </div>
 
-          <div className="text-xs text-primary-foreground/50">
-            © {new Date().getFullYear()} {tenant?.name || "AutoLabels.io"}. All rights reserved.
+          <div className="text-xs text-white/50">
+            © {new Date().getFullYear()} {tenant?.name || "AutoLabels.io"}. Clear · Compliant · Consistent.
           </div>
         </div>
       </div>
@@ -78,13 +74,8 @@ const Login = () => {
       {/* Right form panel */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-sm">
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-base tracking-tight">
-              {tenant?.name || "AutoLabels.io"}
-            </span>
+          <div className="lg:hidden mb-8">
+            <Logo variant="full" size={24} />
           </div>
 
           <div className="mb-8">
@@ -144,7 +135,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-10 rounded-md bg-primary text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="w-full h-10 rounded-md shimmer-cta font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50"
             >
               {loading ? "Please wait..." : isSignUp ? "Create account" : "Sign in"}
             </button>

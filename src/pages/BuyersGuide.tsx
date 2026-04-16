@@ -150,7 +150,7 @@ const BuyersGuide = () => {
     <div className="min-h-screen bg-background py-4 px-2 md:px-4">
       {/* Controls */}
       <div className="max-w-[8.5in] mx-auto mb-3 flex flex-wrap gap-2 items-center no-print">
-        <button onClick={() => navigate("/")} className="font-semibold text-[13px] px-5 py-2 rounded-md bg-navy text-primary-foreground tracking-[0.4px] hover:opacity-85">
+        <button onClick={() => navigate("/addendum")} className="font-semibold text-[13px] px-5 py-2 rounded-md bg-navy text-primary-foreground tracking-[0.4px] hover:opacity-85">
           ← Back to Addendum
         </button>
         <div className="flex gap-1 bg-muted rounded-md p-0.5">

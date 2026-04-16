@@ -178,7 +178,7 @@ const Dashboard = () => {
           Filter
         </button>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/addendum")}
           className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -224,7 +224,7 @@ const Dashboard = () => {
                       Create your first addendum to see it here
                     </p>
                     <button
-                      onClick={() => navigate("/")}
+                      onClick={() => navigate("/addendum")}
                       className="mt-4 inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90"
                     >
                       <Plus className="w-3.5 h-3.5" />

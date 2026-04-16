@@ -44,18 +44,29 @@ export function setSubscribedProducts(productIds: string[]) {
 
 interface AppSwitcherProps {
   currentApp?: string;
+  /**
+   * Surface theme for the trigger button.
+   * "dark"  — used inside the navy topbar (white-on-translucent).
+   * "light" — used on the public landing nav (border + neutral chip).
+   */
+  theme?: "dark" | "light";
 }
 
-const AppSwitcher = ({ currentApp = "autolabels" }: AppSwitcherProps) => {
+const AppSwitcher = ({ currentApp = "autolabels", theme = "dark" }: AppSwitcherProps) => {
   const subscribedIds = getSubscribedProducts();
 
   const current = ALL_PRODUCTS.find(p => p.id === currentApp) || ALL_PRODUCTS[1];
   const CurrentIcon = current.icon;
 
+  const triggerClass =
+    theme === "light"
+      ? "inline-flex items-center gap-1.5 h-9 px-2.5 rounded-md border border-border bg-card hover:bg-muted text-foreground text-sm font-medium transition-colors"
+      : "inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-colors";
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md bg-white/10 hover:bg-white/20 text-sm font-medium transition-colors">
+        <button className={triggerClass}>
           <div className={`w-5 h-5 rounded ${current.color} flex items-center justify-center`}>
             <CurrentIcon className="w-3 h-3 text-white" />
           </div>

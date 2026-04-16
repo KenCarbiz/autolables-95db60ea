@@ -8,10 +8,10 @@
 
 export const AUTOCURB_BRAND = {
   name: "AutoLabels.io",
-  tagline: "Every label. Every vehicle. Every deal.",
-  shortTagline: "Built for dealers.",
+  tagline: "Clear. Compliant. Consistent.",
+  shortTagline: "The dealer label platform.",
   description:
-    "The dealer label platform that powers every sticker, addendum, and compliance form. Scan a VIN, build a label, capture a lead, sign a deal.",
+    "Clear, compliant, consistent labels for every vehicle on the lot. Scan a VIN, build a sticker, capture a lead, sign a deal.",
 
   // Brand positioning
   positioning: "The modern dealer's label & compliance platform.",
@@ -41,8 +41,9 @@ export const AUTOCURB_BRAND = {
 
   // Taglines (ranked)
   taglines: {
-    primary: "Every label. Every vehicle. Every deal.",
+    primary: "Clear. Compliant. Consistent.",
     secondary: [
+      "Every label. Every vehicle. Every deal.",
       "Labels that sell. Compliance that sticks.",
       "Turn your lot into a lead machine.",
       "From label to close.",
@@ -75,7 +76,8 @@ export const AUTOCURB_BRAND = {
   colors: {
     core: [
       { name: "Label Navy", hex: "#0B2041", hsl: "217 71% 15%", use: "Primary — headers, CTAs, dark surfaces" },
-      { name: "Signal Blue", hex: "#2563EB", hsl: "221 83% 53%", use: "Accent — links, hover, buttons, data viz" },
+      { name: "Signal Blue", hex: "#1E90FF", hsl: "210 100% 56%", use: "Accent — the dollar-tag blue, links, buttons" },
+      { name: "Sticker Cyan", hex: "#3BB4FF", hsl: "203 100% 62%", use: "Highlights, gradient stops, hover" },
       { name: "Asphalt", hex: "#111827", hsl: "220 39% 11%", use: "Dark mode background" },
       { name: "Concrete", hex: "#F6F8FB", hsl: "214 30% 97%", use: "Light page background" },
       { name: "Cloud", hex: "#FFFFFF", hsl: "0 0% 100%", use: "Cards, modals" },
@@ -88,10 +90,11 @@ export const AUTOCURB_BRAND = {
       { name: "Highway Orange", hex: "#EA580C", hsl: "20 91% 48%", use: "Revenue/pipeline gradients" },
     ],
     gradients: {
-      primaryCta: "linear-gradient(135deg, #0B2041 0%, #2563EB 100%)",
+      tagBlue: "linear-gradient(135deg, #3BB4FF 0%, #1E90FF 55%, #0066CC 100%)",
+      primaryCta: "linear-gradient(135deg, #0B2041 0%, #1E90FF 100%)",
       pipelineValue: "linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)",
-      aiFeature: "linear-gradient(135deg, #2563EB 0%, #8B5CF6 100%)",
-      success: "linear-gradient(135deg, #2563EB 0%, #10B981 100%)",
+      aiFeature: "linear-gradient(135deg, #1E90FF 0%, #8B5CF6 100%)",
+      success: "linear-gradient(135deg, #1E90FF 0%, #10B981 100%)",
     },
   },
 
@@ -132,9 +135,9 @@ export const AUTOCURB_BRAND = {
 
   // Sample copy
   sampleCopy: {
-    hero: "Every label. Every vehicle. Every deal.",
-    subhero: "The dealer label platform that powers compliance and revenue.",
-    emailSignature: "AutoLabels.io — every label, every vehicle, every deal.",
+    hero: "Clear. Compliant. Consistent.",
+    subhero: "The dealer label platform that powers every sticker, addendum, and signature.",
+    emailSignature: "AutoLabels.io — clear, compliant, consistent.",
     good: [
       "Build a sticker. Print it. Stick it. Get a lead. Close a deal.",
       "Your F&I menu shouldn't take longer than a test drive.",
@@ -154,13 +157,13 @@ export const AUTOCURB_BRAND = {
   },
 } as const;
 
-// Canonical tenant preset used when the app runs on autocurb.io directly
+// Canonical tenant preset used when the app runs on autolabels.io directly
 export const AUTOCURB_TENANT_DEFAULT = {
   id: "autolabels",
   name: "AutoLabels.io",
   slug: "autolabels",
   logo_url: "/logo-mark.svg",
   primary_color: "#0B2041",
-  secondary_color: "#2563EB",
+  secondary_color: "#1E90FF",
   is_active: true,
 };

@@ -29,12 +29,12 @@ const BrandGuide = () => {
       {/* Hero */}
       <section className="bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white py-20 px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <Logo variant="full" size={48} inverted />
+          <Logo variant="full" size={42} inverted tagline />
           <h1 className="text-5xl lg:text-6xl font-black tracking-tighter font-display mt-10 leading-none">
             Brand Guidelines
           </h1>
           <p className="text-xl text-white/60 mt-4 max-w-xl">
-            The visual and voice system for AutoLabels.io — the dealer label & compliance platform.
+            The visual and voice system for AutoLabels.io — clear, compliant, consistent labels for every vehicle on the lot.
           </p>
           <div className="mt-8 flex items-center gap-2 text-xs text-white/40">
             <span>v1.0</span>
@@ -263,8 +263,8 @@ const BrandGuide = () => {
       {/* Footer */}
       <footer className="bg-slate-950 text-white/60 py-10 px-6 mt-16">
         <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
-          <Logo variant="full" size={32} inverted />
-          <p className="text-xs">© {new Date().getFullYear()} AutoLabels.io. Every label. Every vehicle. Every deal.</p>
+          <Logo variant="full" size={28} inverted tagline />
+          <p className="text-xs">© {new Date().getFullYear()} AutoLabels.io · Clear. Compliant. Consistent.</p>
         </div>
       </footer>
     </div>

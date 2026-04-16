@@ -40,9 +40,9 @@
     /* Brand accents — used for badges, gradients, status chips */
     --navy: 217 71% 15%;
     --navy-light: 214 60% 25%;
-    --blue: 217 91% 60%;
-    --blue-bright: 214 95% 52%;
-    --action: 217 91% 60%;
+    --blue: 210 100% 56%;
+    --blue-bright: 205 100% 50%;
+    --action: 210 100% 56%;
     --teal: 172 66% 38%;
     --green: 142 71% 45%;
     --gold: 38 92% 50%;
@@ -59,12 +59,12 @@
     /* Sidebar — dark charcoal with light text (HarteCash style) */
     --sidebar-background: 222 47% 9%;
     --sidebar-foreground: 210 20% 88%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: 210 100% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 217 33% 17%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-ring: 210 100% 56%;
   }
 
   .dark {
@@ -98,9 +98,9 @@
 
     --navy: 217 71% 15%;
     --navy-light: 214 60% 25%;
-    --blue: 217 91% 60%;
-    --blue-bright: 214 95% 52%;
-    --action: 217 91% 60%;
+    --blue: 210 100% 60%;
+    --blue-bright: 205 100% 52%;
+    --action: 210 100% 60%;
     --teal: 172 66% 45%;
     --green: 142 71% 45%;
     --gold: 38 92% 55%;
@@ -116,12 +116,12 @@
 
     --sidebar-background: 222 47% 6%;
     --sidebar-foreground: 210 20% 88%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: 210 100% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 217 33% 15%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 217 33% 15%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-ring: 210 100% 56%;
   }
 }
 
@@ -171,7 +171,7 @@
 
   /* HarteCash-style gradient stat cards */
   .stat-card-blue {
-    background: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(224 76% 48%) 100%);
+    background: linear-gradient(135deg, hsl(205 100% 60%) 0%, hsl(215 95% 45%) 100%);
     color: white;
   }
   .stat-card-green {
@@ -191,9 +191,100 @@
     color: white;
   }
 
-  /* Top bar gradient */
+  /* Top bar gradient — navy with the price-tag blue rolling through */
   .topbar-navy {
-    background: linear-gradient(90deg, hsl(217 71% 12%) 0%, hsl(222 60% 15%) 50%, hsl(217 71% 12%) 100%);
+    background:
+      linear-gradient(
+        120deg,
+        hsl(217 71% 10%) 0%,
+        hsl(218 65% 16%) 22%,
+        hsl(210 100% 28%) 48%,
+        hsl(218 65% 16%) 74%,
+        hsl(217 71% 10%) 100%
+      );
+    background-size: 220% 220%;
+    animation: shimmer-roll 18s ease-in-out infinite;
+  }
+
+  /* Hero shimmer — the big "$ tag" cyan-blue rolling shine for landing surfaces */
+  .shimmer-hero {
+    position: relative;
+    background:
+      linear-gradient(
+        135deg,
+        #050a18 0%,
+        #0B2041 20%,
+        #0f3a7a 45%,
+        #1E90FF 55%,
+        #0f3a7a 65%,
+        #0B2041 85%,
+        #050a18 100%
+      );
+    background-size: 240% 240%;
+    animation: shimmer-roll 22s ease-in-out infinite;
+  }
+  .shimmer-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(60% 50% at 25% 30%, rgba(59, 180, 255, 0.18), transparent 70%),
+      radial-gradient(50% 60% at 80% 70%, rgba(30, 144, 255, 0.16), transparent 70%);
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+
+  /* Compact pill / button shimmer — for primary CTAs */
+  .shimmer-cta {
+    background:
+      linear-gradient(
+        110deg,
+        #1E90FF 0%,
+        #3BB4FF 35%,
+        #1E90FF 50%,
+        #0066CC 75%,
+        #1E90FF 100%
+      );
+    background-size: 220% 220%;
+    animation: shimmer-roll 9s ease-in-out infinite;
+    color: white;
+  }
+
+  /* Brand-blue gradient stop (no animation) for static surfaces like the logo bg */
+  .bg-tag-blue {
+    background: linear-gradient(135deg, #3BB4FF 0%, #1E90FF 55%, #0066CC 100%);
+    color: white;
+  }
+
+  @keyframes shimmer-roll {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Fine sweep for stat cards / chips — adds a moving highlight band */
+  .shimmer-sweep {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer-sweep::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.12) 50%,
+      transparent 70%
+    );
+    transform: translateX(-100%);
+    animation: shimmer-sweep 8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes shimmer-sweep {
+    0%   { transform: translateX(-100%); }
+    60%  { transform: translateX(100%); }
+    100% { transform: translateX(100%); }
   }
 }
 

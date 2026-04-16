@@ -97,7 +97,7 @@ const AppShell = ({ children }: AppShellProps) => {
       defaultOpen: true,
       items: [
         { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-        { label: "New Addendum", path: "/", icon: FileText },
+        { label: "New Addendum", path: "/addendum", icon: FileText },
         { label: "New Car Sticker", path: "/new-car-sticker", icon: FileText },
         { label: "Used Car Sticker", path: "/used-car-sticker", icon: Car },
         { label: "Buyers Guide", path: "/buyers-guide", icon: ScrollText, featureKey: "feature_buyers_guide" },
@@ -171,7 +171,7 @@ const AppShell = ({ children }: AppShellProps) => {
     const crumbs: { label: string; path?: string }[] = [{ label: "Dashboard", path: "/dashboard" }];
 
     if (pathname === "/dashboard") return crumbs;
-    if (pathname === "/") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "New Addendum" }); return crumbs; }
+    if (pathname === "/addendum") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "New Addendum" }); return crumbs; }
     if (pathname === "/saved") { crumbs.push({ label: "Inventory" }); crumbs.push({ label: "Saved Addendums" }); return crumbs; }
     if (pathname === "/buyers-guide") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "Buyers Guide" }); return crumbs; }
     if (pathname === "/used-car-sticker") { crumbs.push({ label: "Documents" }); crumbs.push({ label: "Used Car Sticker" }); return crumbs; }
@@ -237,8 +237,8 @@ const AppShell = ({ children }: AppShellProps) => {
               <p className="text-sm font-semibold text-sidebar-foreground leading-none tracking-tight">
                 {tenant?.name || "AutoLabels.io"}
               </p>
-              <p className="text-[10px] text-sidebar-foreground/50 mt-0.5 uppercase tracking-wider">
-                {tenant?.slug === "autolabels" ? "Label Platform" : "Addendum Platform"}
+              <p className="text-[9px] text-sidebar-foreground/55 mt-1 uppercase tracking-[0.18em] font-semibold">
+                Clear · Compliant · Consistent
               </p>
             </div>
           </div>
@@ -353,11 +353,11 @@ const AppShell = ({ children }: AppShellProps) => {
             <span className="flex-1 text-left font-medium">Command Center</span>
           </button>
           <div className="pt-2 text-center">
-            <p className="text-[9px] text-sidebar-foreground/40 uppercase tracking-wider">
+            <p className="text-[9px] text-sidebar-foreground/40 uppercase tracking-[0.2em] font-semibold">
               {tenant?.name?.toUpperCase() || "AUTOLABELS.IO"}
             </p>
-            <p className="text-[9px] text-sidebar-foreground/30 mt-0.5">
-              Powered by AutoLabels.io
+            <p className="text-[8px] text-sidebar-foreground/30 mt-0.5 uppercase tracking-[0.22em]">
+              Clear · Compliant · Consistent
             </p>
           </div>
         </div>

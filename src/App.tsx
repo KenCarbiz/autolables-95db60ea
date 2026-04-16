@@ -16,6 +16,7 @@ import ErrorBoundary from "@/components/layout/ErrorBoundary";
 // Lazy-loaded pages — each becomes its own chunk
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Index = lazy(() => import("./pages/Index"));
+const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
 const Admin = lazy(() => import("./pages/Admin"));
 const SavedAddendums = lazy(() => import("./pages/SavedAddendums"));
@@ -64,6 +65,7 @@ const App = () => (
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       {/* Public routes — no shell */}
+                      <Route path="/" element={<Landing />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/sign/:token" element={<MobileSigning />} />
                       <Route path="/onboarding" element={<Onboarding />} />
@@ -74,7 +76,7 @@ const App = () => (
                       <Route path="/brand" element={<BrandGuide />} />
 
                       {/* Signed-in routes — wrapped in AppShell */}
-                      <Route path="/" element={<AppShell><Index /></AppShell>} />
+                      <Route path="/addendum" element={<AppShell><Index /></AppShell>} />
                       <Route path="/dashboard" element={<AppShell><Dashboard /></AppShell>} />
                       <Route path="/admin" element={<AppShell><Admin /></AppShell>} />
                       <Route path="/saved" element={<AppShell><SavedAddendums /></AppShell>} />

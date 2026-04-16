@@ -20,9 +20,12 @@ const OnboardingGate = ({ children }: OnboardingGateProps) => {
     if (loading || mode === "loading") return;
     if (!isStandalone) return;
     if (isOnboardingComplete) return;
-    if (location.pathname === "/onboarding") return;
-    if (location.pathname === "/login") return;
+    // Public surfaces — never gate
+    const publicPaths = ["/", "/about", "/brand", "/onboarding", "/login", "/scan"];
+    if (publicPaths.includes(location.pathname)) return;
     if (location.pathname.startsWith("/sign/")) return;
+    if (location.pathname.startsWith("/deal/")) return;
+    if (location.pathname.startsWith("/vehicle/")) return;
     navigate("/onboarding", { replace: true });
   }, [isStandalone, isOnboardingComplete, mode, loading, location.pathname, navigate]);
 

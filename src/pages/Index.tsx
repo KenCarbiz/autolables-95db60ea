@@ -398,7 +398,7 @@ const Index = () => {
         <div className="flex items-center gap-2">
           {viewMode && (
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/addendum")}
               className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-sm font-medium hover:bg-muted transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />

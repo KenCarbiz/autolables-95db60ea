@@ -22,7 +22,7 @@ const About = () => {
       {/* ─────────── Top Nav ─────────── */}
       <nav className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Logo variant="full" size={32} />
+          <Logo variant="full" size={28} />
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/brand")}
@@ -48,30 +48,30 @@ const About = () => {
       </nav>
 
       {/* ─────────── Hero ─────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white py-28 px-6 lg:px-8">
-        {/* Background glows */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-blue-500/20 blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-purple-500/20 blur-3xl" />
+      <section className="relative overflow-hidden shimmer-hero text-white py-28 px-6 lg:px-8">
+        {/* Background glows — extra cyan punch */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-[#3BB4FF]/25 blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-[#1E90FF]/20 blur-3xl" />
 
         <div className="relative max-w-6xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/10 rounded-full px-3 py-1 text-xs font-medium mb-6">
-            <Sparkles className="w-3 h-3 text-blue-400" />
-            <span>Built for the modern dealer</span>
+            <Sparkles className="w-3 h-3 text-[#3BB4FF]" />
+            <span>The dealer label platform</span>
           </div>
 
           <h1 className="text-6xl lg:text-8xl font-black tracking-tighter font-display leading-none">
-            Every curb.
+            Clear.
             <br />
-            Every car.
+            Compliant.
             <br />
-            <span className="bg-gradient-to-r from-blue-400 via-blue-300 to-cyan-300 bg-clip-text text-transparent">
-              Every deal.
+            <span className="bg-gradient-to-r from-[#3BB4FF] via-[#1E90FF] to-[#3BB4FF] bg-clip-text text-transparent italic">
+              Consistent.
             </span>
           </h1>
 
           <p className="text-lg lg:text-xl text-white/60 mt-8 max-w-2xl mx-auto">
-            The dealer OS that turns your lot into a live pipeline. Scan a VIN, build an addendum,
-            capture a lead, sign a deal — all before the customer leaves the curb.
+            Every sticker, addendum, and Buyers Guide that leaves your lot — perfectly priced,
+            fully disclosed, and ready to sign. Scan a VIN, build a label, capture a lead, close the deal.
           </p>
 
           <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
@@ -227,15 +227,15 @@ const About = () => {
 
       {/* ─────────── CTA ─────────── */}
       <section className="py-24 px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto bg-gradient-to-br from-slate-950 to-blue-950 rounded-3xl px-8 lg:px-16 py-20 text-center text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full bg-purple-500/20 blur-3xl" />
+        <div className="max-w-4xl mx-auto shimmer-hero rounded-3xl px-8 lg:px-16 py-20 text-center text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-[#3BB4FF]/25 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full bg-[#1E90FF]/20 blur-3xl" />
 
           <div className="relative">
             <h2 className="text-4xl lg:text-5xl font-black tracking-tighter font-display leading-none">
-              Ready to turn your lot
+              Ready to label your lot
               <br />
-              into a pipeline?
+              the right way?
             </h2>
             <p className="text-lg text-white/60 mt-6">
               Set up in 5 minutes. No credit card required. Cancel anytime.
@@ -263,10 +263,10 @@ const About = () => {
       <footer className="border-t border-border py-10 px-6 lg:px-8">
         <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <Logo variant="full" size={28} />
+            <Logo variant="full" size={24} />
           </div>
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Autocurb.io · Where the lot meets the cloud.
+            © {new Date().getFullYear()} AutoLabels.io · Clear. Compliant. Consistent.
           </p>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <button onClick={() => navigate("/brand")} className="hover:text-foreground">Brand</button>
@@ -291,10 +291,10 @@ const VerbCard = ({
 }) => (
   <div className="bg-card rounded-2xl border border-border shadow-premium p-6 hover:shadow-premium-md transition-shadow">
     <div className="flex items-center justify-between mb-4">
-      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#3BB4FF] via-[#1E90FF] to-[#0066CC] flex items-center justify-center">
         <Icon className="w-5 h-5 text-white" />
       </div>
-      <p className="text-xs font-bold text-blue-600 tabular-nums">{num}</p>
+      <p className="text-xs font-bold text-[#1E90FF] tabular-nums">{num}</p>
     </div>
     <h3 className="text-2xl font-bold tracking-tight font-display text-foreground">{verb}</h3>
     <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{body}</p>
