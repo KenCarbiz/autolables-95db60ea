@@ -1,7 +1,10 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
 import { useDealerScraper } from "@/hooks/useDealerScraper";
+import { useEntitlements } from "@/hooks/useEntitlements";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Sparkles,
@@ -70,13 +73,75 @@ const INITIAL: OnboardingData = {
 
 const Onboarding = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { updateTenant, addStore, stores, updateStore, completeOnboarding, isEmbedded } = useTenant();
   const { scrapeDealer, scraping, error: scrapeError } = useDealerScraper();
+  const { user } = useAuth();
+  const { tenant, profile, bootstrapTenant, reload: reloadEntitlements } = useEntitlements();
 
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>(INITIAL);
   const [scrapeSuccess, setScrapeSuccess] = useState(false);
   const [scrapePreview, setScrapePreview] = useState<Awaited<ReturnType<typeof scrapeDealer>> | null>(null);
+  const [handoffLoading, setHandoffLoading] = useState(false);
+  const [prefilledFrom, setPrefilledFrom] = useState<"autocurb" | "profile" | null>(null);
+
+  // ── Handoff token consumption. If the user was redirected here
+  //    from autocurb.io with `?handoff=<token>`, trade it for a
+  //    prefilled tenant + profile via the cross-app-handoff edge
+  //    function. One-time use; the token is burned server-side.
+  useEffect(() => {
+    const handoff = searchParams.get("handoff");
+    if (!handoff || handoffLoading) return;
+    setHandoffLoading(true);
+    (async () => {
+      const { data: res, error } = await supabase.functions.invoke("cross-app-handoff", {
+        body: { token: handoff, targetApp: "autolabels" },
+      });
+      if (error || !res?.consumed) {
+        toast.error("Handoff link invalid or expired");
+      } else {
+        const p = res.profile;
+        if (p) {
+          setData(prev => ({
+            ...prev,
+            dealerName: p.display_name || prev.dealerName,
+            tagline: p.tagline || prev.tagline,
+            logoUrl: p.logo_url || prev.logoUrl,
+            primaryColor: p.primary_color || prev.primaryColor,
+            websiteUrl: p.website || prev.websiteUrl,
+            phone: p.phone || prev.phone,
+          }));
+          setPrefilledFrom("autocurb");
+          toast.success("Welcome from Autocurb \u2014 dealer profile pre-filled");
+        }
+        await reloadEntitlements();
+      }
+      // Clear the handoff param so a refresh doesn't re-consume it
+      const next = new URLSearchParams(searchParams);
+      next.delete("handoff");
+      setSearchParams(next, { replace: true });
+      setHandoffLoading(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Profile prefill. If the user already has a tenant + onboarding
+  //    profile (came from Autocurb, or is returning to finish setup),
+  //    hydrate the form so they're not re-typing.
+  useEffect(() => {
+    if (!profile || prefilledFrom) return;
+    setData(prev => ({
+      ...prev,
+      dealerName: profile.display_name || prev.dealerName,
+      tagline: profile.tagline || prev.tagline,
+      logoUrl: profile.logo_url || prev.logoUrl,
+      primaryColor: profile.primary_color || prev.primaryColor,
+      websiteUrl: profile.website || prev.websiteUrl,
+      phone: profile.phone || prev.phone,
+    }));
+    setPrefilledFrom(profile.source === "autocurb" ? "autocurb" : "profile");
+  }, [profile, prefilledFrom]);
 
   // If running embedded, onboarding doesn't apply
   if (isEmbedded) {
@@ -126,8 +191,8 @@ const Onboarding = () => {
   const next = () => setStep(Math.min(step + 1, TOTAL_STEPS));
   const back = () => setStep(Math.max(step - 1, 1));
 
-  const finish = () => {
-    // Persist tenant
+  const finish = async () => {
+    // Persist tenant in local TenantContext (store switcher, branding)
     updateTenant({
       name: data.dealerName || "Your Dealership",
       logo_url: data.logoUrl,
@@ -163,6 +228,57 @@ const Onboarding = () => {
         primary_color: data.primaryColor,
         is_active: true,
       });
+    }
+
+    // Persist to the shared Supabase model so sibling apps (Autocurb,
+    // AutoFrame, AutoVideo) see the same profile. If the user is
+    // signed in AND has no tenant yet, bootstrap one + a 14-day
+    // autolabels trial. If the tenant already exists (came from
+    // Autocurb), update the existing profile row.
+    if (user) {
+      try {
+        let tenantId = tenant?.id;
+        if (!tenantId) {
+          const result = await bootstrapTenant({
+            name: data.dealerName || "Your Dealership",
+            source: "autolabels",
+            app: "autolabels",
+            tier: data.planTier || "sticker",
+          });
+          tenantId = result.tenantId || undefined;
+        }
+        if (tenantId) {
+          await (supabase as any)
+            .from("onboarding_profiles")
+            .upsert(
+              {
+                tenant_id: tenantId,
+                display_name: data.dealerName,
+                tagline: data.tagline,
+                primary_color: data.primaryColor,
+                logo_url: data.logoUrl,
+                website: data.websiteUrl,
+                phone: data.phone,
+                stores: stores.length
+                  ? stores.map(s => ({
+                      name: s.name, address: s.address, city: s.city,
+                      state: s.state, zip: s.zip, phone: s.phone,
+                      logo_url: s.logo_url, tagline: s.tagline,
+                    }))
+                  : [{
+                      name: data.dealerName, address: data.address,
+                      city: data.city, state: data.state, zip: data.zip,
+                      phone: data.phone, logo_url: data.logoUrl,
+                      tagline: data.tagline,
+                    }],
+                completed_at: new Date().toISOString(),
+              },
+              { onConflict: "tenant_id" }
+            );
+        }
+      } catch (err) {
+        console.error("finish() shared-profile sync failed", err);
+      }
     }
 
     completeOnboarding();
@@ -214,6 +330,29 @@ const Onboarding = () => {
             5 steps. ~5 minutes. You can save and return at any time.
           </p>
         </div>
+
+        {prefilledFrom === "autocurb" && (
+          <div className="mb-6 rounded-xl border border-[#1E90FF]/30 bg-[#1E90FF]/5 px-4 py-3 flex items-center gap-3">
+            <Sparkles className="w-4 h-4 text-[#1E90FF] flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">Welcome from Autocurb</p>
+              <p className="text-[11px] text-muted-foreground">
+                Your dealer profile is already on file. Skim through the steps to confirm, then activate.
+              </p>
+            </div>
+          </div>
+        )}
+        {prefilledFrom === "profile" && (
+          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3">
+            <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">Profile pre-filled from previous setup</p>
+              <p className="text-[11px] text-muted-foreground">
+                Continuing where you left off.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Step 1: AI Website Autofill */}
         {step === 1 && (

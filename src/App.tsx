@@ -12,6 +12,16 @@ import AppShell from "@/components/layout/AppShell";
 import ThemeInjector from "@/components/layout/ThemeInjector";
 import OnboardingGate from "@/components/layout/OnboardingGate";
 import ErrorBoundary from "@/components/layout/ErrorBoundary";
+import EntitlementGate from "@/components/layout/EntitlementGate";
+
+// Wrap a signed-in route with both the app shell and the AutoLabels
+// entitlement check. Users without an autolabels entitlement hit the
+// ActivatePaywall instead of the page content.
+const Gated = ({ children }: { children: JSX.Element }) => (
+  <EntitlementGate app="autolabels">
+    <AppShell>{children}</AppShell>
+  </EntitlementGate>
+);
 
 // Lazy-loaded pages — each becomes its own chunk
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -78,20 +88,20 @@ const App = () => (
                       <Route path="/about" element={<About />} />
                       <Route path="/brand" element={<BrandGuide />} />
 
-                      {/* Signed-in routes — wrapped in AppShell */}
-                      <Route path="/addendum" element={<AppShell><Index /></AppShell>} />
-                      <Route path="/dashboard" element={<AppShell><Dashboard /></AppShell>} />
-                      <Route path="/admin" element={<AppShell><Admin /></AppShell>} />
-                      <Route path="/saved" element={<AppShell><SavedAddendums /></AppShell>} />
-                      <Route path="/buyers-guide" element={<AppShell><BuyersGuide /></AppShell>} />
-                      <Route path="/trade-up" element={<AppShell><TradeUpSticker /></AppShell>} />
-                      <Route path="/used-car-sticker" element={<AppShell><UsedCarSticker /></AppShell>} />
-                    <Route path="/new-car-sticker" element={<AppShell><NewCarSticker /></AppShell>} />
-                      <Route path="/cpo-sheet" element={<AppShell><CpoSheet /></AppShell>} />
-                      <Route path="/compliance" element={<AppShell><ComplianceCenter /></AppShell>} />
-                    <Route path="/description-writer" element={<AppShell><DescriptionWriter /></AppShell>} />
-                      <Route path="/add-inventory" element={<AppShell><SaveCarInventory /></AppShell>} />
-                      <Route path="/prep" element={<AppShell><PrepSignOff /></AppShell>} />
+                      {/* Signed-in routes — wrapped in AppShell + entitlement gate */}
+                      <Route path="/addendum" element={<Gated><Index /></Gated>} />
+                      <Route path="/dashboard" element={<Gated><Dashboard /></Gated>} />
+                      <Route path="/admin" element={<Gated><Admin /></Gated>} />
+                      <Route path="/saved" element={<Gated><SavedAddendums /></Gated>} />
+                      <Route path="/buyers-guide" element={<Gated><BuyersGuide /></Gated>} />
+                      <Route path="/trade-up" element={<Gated><TradeUpSticker /></Gated>} />
+                      <Route path="/used-car-sticker" element={<Gated><UsedCarSticker /></Gated>} />
+                      <Route path="/new-car-sticker" element={<Gated><NewCarSticker /></Gated>} />
+                      <Route path="/cpo-sheet" element={<Gated><CpoSheet /></Gated>} />
+                      <Route path="/compliance" element={<Gated><ComplianceCenter /></Gated>} />
+                      <Route path="/description-writer" element={<Gated><DescriptionWriter /></Gated>} />
+                      <Route path="/add-inventory" element={<Gated><SaveCarInventory /></Gated>} />
+                      <Route path="/prep" element={<Gated><PrepSignOff /></Gated>} />
 
                       <Route path="*" element={<NotFound />} />
                     </Routes>
