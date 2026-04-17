@@ -6,6 +6,7 @@ import { PLAN_DEFINITIONS } from "@/data/planTiers";
 import Logo from "@/components/brand/Logo";
 import { Sparkles, Check, ShieldCheck, ArrowRight, ExternalLink, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 // ──────────────────────────────────────────────────────────────
 // ActivatePaywall — shown when a signed-in user has a tenant
@@ -35,16 +36,40 @@ const ActivatePaywall = ({ app, tenant, entitlement }: Props) => {
     app === "autocurb" ? "Autocurb" :
     app === "autoframe" ? "AutoFrame" : "AutoVideo";
 
-  const handleActivate = async (tier: string) => {
+  const handleActivate = async (tier: string, isBundled: boolean) => {
     setActivating(tier);
-    const ok = await activateApp(app, tier);
-    setActivating(null);
-    if (ok) {
-      toast.success(`${appName} activated — 14-day trial started`);
-      navigate("/dashboard");
-    } else {
-      toast.error("Could not activate. Please contact support.");
+    // Bundled-with-Autocurb tiers stay free: just flip the entitlement.
+    if (isBundled) {
+      const ok = await activateApp(app, tier);
+      setActivating(null);
+      if (ok) {
+        toast.success(`${appName} activated — included with Autocurb`);
+        navigate("/dashboard");
+      } else {
+        toast.error("Could not activate. Please contact support.");
+      }
+      return;
     }
+
+    // Paid tiers: hand off to Stripe Checkout. The webhook creates the
+    // entitlement after successful payment, so we do NOT call activateApp
+    // here. On cancel, the user lands back on this paywall.
+    const origin = window.location.origin;
+    const { data, error } = await supabase.functions.invoke("stripe-checkout", {
+      body: {
+        app_slug: app,
+        plan_tier: tier,
+        success_url: `${origin}/dashboard?activated=${app}`,
+        cancel_url: `${origin}/dashboard?cancelled=${app}`,
+      },
+    });
+    setActivating(null);
+    const url = (data as { url?: string } | null)?.url;
+    if (error || !url) {
+      toast.error("Could not start checkout. Please contact support.");
+      return;
+    }
+    window.location.href = url;
   };
 
   return (
@@ -154,7 +179,7 @@ const ActivatePaywall = ({ app, tenant, entitlement }: Props) => {
                   ))}
                 </ul>
                 <button
-                  onClick={() => handleActivate(plan.tier)}
+                  onClick={() => handleActivate(plan.tier, isBundled)}
                   disabled={!!activating}
                   className={`mt-5 h-10 rounded-md text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${
                     isBundled

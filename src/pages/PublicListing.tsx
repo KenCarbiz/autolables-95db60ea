@@ -29,10 +29,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 const PublicListing = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { getBySlug, recordView, publicUrl } = useVehicleListing("");
+  const { publicUrl } = useVehicleListing("");
   const [listing, setListing] = useState<VehicleListing | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -40,33 +41,33 @@ const PublicListing = () => {
     let mounted = true;
     (async () => {
       setLoading(true);
-      const record = await getBySlug(slug);
+      // Rate-limited edge function handles view-count, audit event,
+      // and abusive-scraper throttling server-side. Clients no longer
+      // talk to the RPC directly.
+      const { data, error } = await supabase.functions.invoke("public-listing-view", {
+        body: { slug },
+      });
       if (!mounted) return;
-      if (!record) {
+      if (error) {
+        const status = (error as unknown as { context?: { status?: number } })?.context?.status;
+        if (status === 429) setRateLimited(true);
+        else setNotFound(true);
+        setLoading(false);
+        return;
+      }
+      const row = (data as { listing?: VehicleListing } | null)?.listing ?? null;
+      if (!row) {
         setNotFound(true);
         setLoading(false);
         return;
       }
-      setListing(record);
+      setListing(row);
       setLoading(false);
-
-      // Fire-and-forget view instrumentation
-      recordView(slug).catch(() => undefined);
-      (supabase as any)
-        .from("audit_log")
-        .insert({
-          action: "listing_viewed",
-          entity_type: "vehicle_listing",
-          entity_id: record.id,
-          store_id: record.store_id,
-          details: { slug, vin: record.vin, ymm: record.ymm },
-        })
-        .then(() => undefined, () => undefined);
     })();
     return () => {
       mounted = false;
     };
-  }, [slug, getBySlug, recordView]);
+  }, [slug]);
 
   if (loading) {
     return (
@@ -74,6 +75,21 @@ const PublicListing = () => {
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-[#1E90FF] border-t-transparent rounded-full animate-spin" />
           <p className="text-xs text-muted-foreground">Loading vehicle details…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (rateLimited) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-6">
+        <div className="text-center max-w-md">
+          <Clock className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <h1 className="text-xl font-bold text-foreground">Slow Down a Moment</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            We've seen a lot of traffic from your network in the last few minutes.
+            Please wait a few minutes and refresh.
+          </p>
         </div>
       </div>
     );
