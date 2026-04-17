@@ -22,7 +22,10 @@ interface Props {
 
 const ActivatePaywall = ({ app, tenant, entitlement }: Props) => {
   const { signOut } = useAuth();
-  const { activateApp } = useEntitlements();
+  const { activateApp, hasApp } = useEntitlements();
+  // Essential is bundled free with any Autocurb.io subscription. Detect
+  // both signals: an active autocurb entitlement OR an autocurb-sourced tenant.
+  const hasAutocurbBundle = hasApp("autocurb") || tenant.source === "autocurb";
   const navigate = useNavigate();
   const [activating, setActivating] = useState<string | null>(null);
 
@@ -103,17 +106,24 @@ const ActivatePaywall = ({ app, tenant, entitlement }: Props) => {
         {/* Plans */}
         <div className="grid md:grid-cols-3 gap-5">
           {PLAN_DEFINITIONS.map((plan) => {
-            const featured = plan.tier === "compliance";
+            const featured = plan.tier === "unlimited";
+            const isBundled = plan.includedWithAutocurb && hasAutocurbBundle;
             return (
               <div
                 key={plan.tier}
                 className={`relative rounded-2xl border p-6 flex flex-col ${
-                  featured
-                    ? "border-[#1E90FF] shadow-premium-lg bg-card"
-                    : "border-border shadow-premium bg-card"
+                  isBundled
+                    ? "border-emerald-500 shadow-premium-lg bg-card"
+                    : featured
+                      ? "border-[#1E90FF] shadow-premium-lg bg-card"
+                      : "border-border shadow-premium bg-card"
                 }`}
               >
-                {featured && (
+                {isBundled ? (
+                  <span className="absolute -top-3 left-6 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest bg-emerald-500 text-white px-2.5 py-1 rounded-full">
+                    Included with Autocurb
+                  </span>
+                ) : featured && (
                   <span className="absolute -top-3 left-6 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white px-2.5 py-1 rounded-full">
                     Most popular
                   </span>
@@ -123,11 +133,18 @@ const ActivatePaywall = ({ app, tenant, entitlement }: Props) => {
                 </p>
                 <div className="mt-3 flex items-baseline gap-1.5">
                   <span className="text-3xl font-black tracking-tight font-display text-foreground">
-                    {plan.price}
+                    {isBundled ? "Free" : plan.price}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">{plan.priceNote}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {isBundled ? "with your Autocurb plan" : plan.priceNote}
+                  </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">{plan.tagline}</p>
+                {plan.includedWithAutocurb && !hasAutocurbBundle && (
+                  <p className="text-[10px] mt-2 inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 w-fit">
+                    <Check className="w-2.5 h-2.5" /> Free with any Autocurb.io subscription
+                  </p>
+                )}
                 <ul className="mt-5 space-y-1.5 flex-1">
                   {plan.features.slice(0, 7).map((f) => (
                     <li key={f} className="flex items-start gap-2 text-[11px] text-foreground">
@@ -140,12 +157,18 @@ const ActivatePaywall = ({ app, tenant, entitlement }: Props) => {
                   onClick={() => handleActivate(plan.tier)}
                   disabled={!!activating}
                   className={`mt-5 h-10 rounded-md text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                    featured
-                      ? "bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white hover:brightness-110"
-                      : "bg-foreground text-background hover:opacity-90"
+                    isBundled
+                      ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                      : featured
+                        ? "bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white hover:brightness-110"
+                        : "bg-foreground text-background hover:opacity-90"
                   } disabled:opacity-50`}
                 >
-                  {activating === plan.tier ? "Activating…" : `Start ${plan.name} trial`}
+                  {activating === plan.tier
+                    ? "Activating…"
+                    : isBundled
+                      ? "Activate free"
+                      : `Start ${plan.name} trial`}
                   {activating !== plan.tier && <ArrowRight className="w-4 h-4" />}
                 </button>
               </div>

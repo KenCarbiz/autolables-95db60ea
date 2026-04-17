@@ -542,59 +542,61 @@ const Landing = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="font-display text-4xl font-bold mb-3 text-center">Pricing</h2>
         <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
-          One CARS-Rule violation is up to <strong className="text-gray-900">$53,088</strong>. Compliance Suite is $999/mo.
+          One FTC Section 5 enforcement action is up to <strong className="text-gray-900">$53,088</strong> per violation. Compliance Pro is $999/mo.
           <span className="block mt-1">Small price to pay.</span>
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {[
             {
-              name: "Window Sticker",
-              price: "$399",
-              period: "per rooftop / month",
-              desc: "New + used window stickers, Monroney-grade typography.",
+              name: "Essential",
+              price: "$299",
+              period: "per rooftop/month",
+              desc: "Window stickers + addendums, up to 75 VINs/month",
               featured: false,
               cta: "Start trial",
+              bundledNote: "Free with any Autocurb.io subscription",
               items: [
-                "Unlimited VIN decode (NHTSA)",
-                "New + used window stickers",
-                "Zebra / Brother / DYMO print",
-                "QR code on every sticker",
-                "Basic addendum builder",
+                "Up to 75 VINs / month",
+                "New + used car window stickers",
+                "Full addendum builder",
+                "VIN decode + NHTSA recall",
+                "Shopper portal (QR + embed)",
+                "Zebra + universal print",
                 "Email support",
               ],
             },
             {
-              name: "Compliance Suite",
-              price: "$999",
-              period: "per rooftop / month",
-              desc: "Sticker on the windshield through the customer's signature. End-to-end.",
+              name: "Unlimited",
+              price: "$499",
+              period: "per rooftop/month",
+              desc: "Unlimited vehicles for high-volume dealers",
               featured: true,
               cta: "Start trial",
               items: [
-                "Everything in Window Sticker",
-                "50-state disclosure engine",
-                "FTC / CARS / Monroney / Buyers Guide",
-                "Prep + accessory-install gate",
-                "UETA / E-SIGN tamper-evident sign-off",
-                "Shopper portal + dealer-branded VDP URL",
-                "Immutable audit vault",
-                "Multi-language (ES / ZH / TL / VI / KO)",
+                "Everything in Essential, plus:",
+                "Unlimited VINs",
+                "Product rules engine",
+                "Custom branding + logo kit",
+                "Leads + analytics dashboard",
                 "Priority support",
+                "Onboarding assist",
               ],
             },
             {
-              name: "Dealer Group",
-              price: "Custom",
-              period: "multi-rooftop",
-              desc: "For groups tired of paying one DMS vendor twice.",
+              name: "Compliance Pro",
+              price: "$999",
+              period: "per rooftop/month",
+              desc: "Full scan-to-signed FTC flow for airtight deals",
               featured: false,
               cta: "Talk to sales",
               items: [
-                "Unlimited rooftops",
-                "SSO + SAML",
-                "Centralized billing",
-                "Webhook + DMS connectors",
-                "White-label shopper portal",
+                "Everything in Unlimited, plus:",
+                "50-state disclosure engine",
+                "Prep + install gate with foreman sign-off",
+                "UETA / E-SIGN tamper-evident audit vault",
+                "Multi-language addendums (es/zh/tl/vi/ko)",
+                "CA SB 766 ready (Oct 2026)",
+                "DMS webhooks (vAuto / VinSolutions / CDK)",
                 "Dedicated success manager",
               ],
             },
@@ -608,10 +610,17 @@ const Landing = () => {
               {tier.featured && <div className="text-center mb-4 text-sm font-semibold text-blue-600">FEATURED</div>}
               <h3 className="text-2xl font-bold text-gray-900 mb-2">{tier.name}</h3>
               <p className="text-gray-600 text-sm mb-4">{tier.desc}</p>
-              <div className="mb-6">
+              <div className="mb-3">
                 <span className="text-4xl font-bold text-gray-900">{tier.price}</span>
                 <span className="text-gray-600 text-sm ml-2">/ {tier.period}</span>
               </div>
+              {tier.bundledNote && (
+                <div className="mb-6 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
+                  <Check size={12} className="text-emerald-600" />
+                  {tier.bundledNote}
+                </div>
+              )}
+              {!tier.bundledNote && <div className="mb-6" />}
               <button
                 onClick={() =>
                   tier.cta === "Talk to sales"
