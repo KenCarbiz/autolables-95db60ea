@@ -81,10 +81,12 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
   // Source of truth loader: Supabase tenant + profile.stores for the
   // signed-in user's membership. Falls back to the house tenant for
   // anonymous visitors on public pages.
+  const userId = user?.id ?? null;
+
   const load = useCallback(async () => {
     if (authLoading) return;
 
-    if (!user) {
+    if (!userId) {
       setTenant(HOUSE_TENANT);
       setStores([]);
       setCurrentStoreState(null);
@@ -98,7 +100,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
       const { data: membership } = await (supabase as any)
         .from("tenant_members")
         .select("tenant_id")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .not("accepted_at", "is", null)
         .limit(1)
         .maybeSingle();
@@ -154,7 +156,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, [user, authLoading]);
+  }, [userId, authLoading]);
 
   useEffect(() => {
     load();

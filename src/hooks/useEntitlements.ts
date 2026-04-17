@@ -86,8 +86,10 @@ export const useEntitlements = () => {
     error: null,
   });
 
+  const userId = user?.id ?? null;
+
   const load = useCallback(async () => {
-    if (!user) {
+    if (!userId) {
       setState({
         tenant: null, member: null, profile: null, entitlements: [],
         loading: false, error: null,
@@ -105,7 +107,7 @@ export const useEntitlements = () => {
       const { data: membership, error: memberErr } = await (supabase as any)
         .from("tenant_members")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .not("accepted_at", "is", null)
         .limit(1)
         .maybeSingle();
@@ -147,7 +149,7 @@ export const useEntitlements = () => {
         error: err instanceof Error ? err.message : "load failed",
       });
     }
-  }, [user]);
+  }, [userId]);
 
   useEffect(() => {
     if (authLoading) return;

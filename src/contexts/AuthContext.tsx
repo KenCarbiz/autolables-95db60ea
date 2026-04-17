@@ -39,12 +39,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    let currentUserId: string | null = null;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user ?? null);
+      async (event, session) => {
+        const nextUser = session?.user ?? null;
+        setUser(nextUser);
+
+        // Only re-check admin role when the actual user identity
+        // changes (sign-in or sign-out). TOKEN_REFRESHED and
+        // USER_UPDATED events fire on tab focus — they do NOT need
+        // to flip loading back to true or re-fetch roles, which is
+        // what caused the black-screen-spinner hang on tab return.
+        if (nextUser?.id === currentUserId && event !== "SIGNED_IN") {
+          return;
+        }
+        currentUserId = nextUser?.id ?? null;
+
         try {
-          if (session?.user) {
-            await checkAdmin(session.user.id);
+          if (nextUser) {
+            await checkAdmin(nextUser.id);
           } else {
             setIsAdmin(false);
           }
@@ -55,10 +69,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      currentUserId = nextUser?.id ?? null;
       try {
-        if (session?.user) {
-          await checkAdmin(session.user.id);
+        if (nextUser) {
+          await checkAdmin(nextUser.id);
         }
       } finally {
         setLoading(false);

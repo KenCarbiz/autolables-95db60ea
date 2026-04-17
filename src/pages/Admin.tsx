@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import PlatformTenants from "@/components/admin/PlatformTenants";
+import PlatformMembers from "@/components/admin/PlatformMembers";
+import PlatformEntitlements from "@/components/admin/PlatformEntitlements";
+import PlatformAudit from "@/components/admin/PlatformAudit";
 import { useDealerSettings, DealerSettings, DEFAULT_SETTINGS } from "@/contexts/DealerSettingsContext";
 import { useProductRules, ProductRule } from "@/hooks/useProductRules";
 import { useAudit } from "@/contexts/AuditContext";
@@ -66,7 +70,7 @@ interface Product {
   icon_type?: string;
 }
 
-type AdminTab = "home" | "products" | "rules" | "settings" | "branding" | "analytics" | "leads" | "audit" | "queue" | "files" | "getready" | "inventory" | "invoices" | "warranty";
+type AdminTab = "home" | "products" | "rules" | "settings" | "branding" | "analytics" | "leads" | "audit" | "queue" | "files" | "getready" | "inventory" | "invoices" | "warranty" | "platform-tenants" | "platform-members" | "platform-entitlements" | "platform-audit";
 
 const emptyProduct = {
   name: "",
@@ -115,7 +119,7 @@ const FEATURE_TOGGLES: { key: keyof DealerSettings; label: string; description: 
   { key: "feature_blackbook", label: "Black Book Data", description: "Pull factory equipment and live market data from Black Book (requires API key)" },
 ];
 
-const VALID_TABS: AdminTab[] = ["home", "products", "rules", "settings", "branding", "analytics", "leads", "audit", "queue", "files", "getready", "inventory", "invoices", "warranty"];
+const VALID_TABS: AdminTab[] = ["home", "products", "rules", "settings", "branding", "analytics", "leads", "audit", "queue", "files", "getready", "inventory", "invoices", "warranty", "platform-tenants", "platform-members", "platform-entitlements", "platform-audit"];
 
 const Admin = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
@@ -269,7 +273,7 @@ const Admin = () => {
 
   if (loading || fetching) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
 
-  const tabs: { id: AdminTab; label: string }[] = [
+  const tabs: { id: AdminTab; label: string; group?: "dealer" | "platform" }[] = [
     { id: "home", label: "Home" },
     { id: "products", label: "Products" },
     ...(settings.feature_product_rules ? [{ id: "rules" as const, label: "Rules" }] : []),
@@ -284,6 +288,13 @@ const Admin = () => {
     ...(settings.feature_warranty ? [{ id: "warranty" as const, label: "Warranty" }] : []),
     { id: "files", label: "Vehicle Files" },
     { id: "audit", label: "Audit Log" },
+    // Platform-admin only tabs — hidden from dealer staff
+    ...(isAdmin ? [
+      { id: "platform-tenants" as const,      label: "Tenants",      group: "platform" as const },
+      { id: "platform-members" as const,      label: "Members",      group: "platform" as const },
+      { id: "platform-entitlements" as const, label: "Entitlements", group: "platform" as const },
+      { id: "platform-audit" as const,        label: "Platform Audit", group: "platform" as const },
+    ] : []),
   ];
 
   return (
@@ -1938,6 +1949,12 @@ const Admin = () => {
             </div>
           </div>
         )}
+
+        {/* ─── Platform-admin tabs ─── */}
+        {isAdmin && tab === "platform-tenants" && <PlatformTenants />}
+        {isAdmin && tab === "platform-members" && <PlatformMembers />}
+        {isAdmin && tab === "platform-entitlements" && <PlatformEntitlements />}
+        {isAdmin && tab === "platform-audit" && <PlatformAudit />}
         </div>
     </div>
   );
