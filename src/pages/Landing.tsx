@@ -44,7 +44,13 @@ const Landing = () => {
   const Navigation = () => (
     <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-        <Logo variant="full" size={32} />
+        <button
+          onClick={() => navigate("/")}
+          aria-label="AutoLabels home"
+          className="flex items-center"
+        >
+          <Logo variant="mark" size={40} />
+        </button>
         <div className="hidden md:flex gap-8 items-center justify-center flex-1">
           <a
             onClick={() => navigate("/about")}
@@ -337,7 +343,8 @@ const Landing = () => {
     const incrementalAnnualRevenue = deals * 12 * accessoryRev * 0.15;
     const complianceHoursSaved = deals * 12 * 0.4;
     const riskAvoided = disputes * 4500;
-    const yearCost = 199 * 12;
+    // Compliance Suite annual cost — the tier that unlocks the prep gate, audit vault, and state engine.
+    const yearCost = 999 * 12;
     const roi = ((incrementalAnnualRevenue + riskAvoided - yearCost) / yearCost) * 100;
 
     const fmt = (n: number) =>
@@ -533,47 +540,61 @@ const Landing = () => {
   const Pricing = () => (
     <section id="pricing" className="py-16 bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-display text-4xl font-bold mb-12 text-center">Pricing</h2>
+        <h2 className="font-display text-4xl font-bold mb-3 text-center">Pricing</h2>
+        <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+          One CARS-Rule violation is up to <strong className="text-gray-900">$53,088</strong>. Compliance Suite is $999/mo.
+          <span className="block mt-1">Small price to pay.</span>
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {[
             {
-              name: "Starter",
-              price: "$0",
-              period: "forever",
-              desc: "For solo dealers exploring",
+              name: "Window Sticker",
+              price: "$399",
+              period: "per rooftop / month",
+              desc: "New + used window stickers, Monroney-grade typography.",
               featured: false,
-              cta: "Start free",
-              items: ["1 rooftop", "VIN decode", "Basic sticker", "Email support"],
+              cta: "Start trial",
+              items: [
+                "Unlimited VIN decode (NHTSA)",
+                "New + used window stickers",
+                "Zebra / Brother / DYMO print",
+                "QR code on every sticker",
+                "Basic addendum builder",
+                "Email support",
+              ],
             },
             {
-              name: "Dealer",
-              price: "$199",
-              period: "per rooftop/month",
-              desc: "Most popular for volume dealers",
+              name: "Compliance Suite",
+              price: "$999",
+              period: "per rooftop / month",
+              desc: "Sticker on the windshield through the customer's signature. End-to-end.",
               featured: true,
               cta: "Start trial",
               items: [
-                "Unlimited VINs",
-                "Full disclosure engine",
-                "Prep + install gate",
-                "E-SIGN + audit vault",
-                "Shopper portal",
+                "Everything in Window Sticker",
+                "50-state disclosure engine",
+                "FTC / CARS / Monroney / Buyers Guide",
+                "Prep + accessory-install gate",
+                "UETA / E-SIGN tamper-evident sign-off",
+                "Shopper portal + dealer-branded VDP URL",
+                "Immutable audit vault",
+                "Multi-language (ES / ZH / TL / VI / KO)",
                 "Priority support",
               ],
             },
             {
-              name: "Group",
+              name: "Dealer Group",
               price: "Custom",
-              period: "multi-rooftop pricing",
-              desc: "For dealer groups & networks",
+              period: "multi-rooftop",
+              desc: "For groups tired of paying one DMS vendor twice.",
               featured: false,
               cta: "Talk to sales",
               items: [
                 "Unlimited rooftops",
-                "Centralized billing",
                 "SSO + SAML",
-                "Webhook integrations",
-                "DMS connectors",
+                "Centralized billing",
+                "Webhook + DMS connectors",
+                "White-label shopper portal",
                 "Dedicated success manager",
               ],
             },
