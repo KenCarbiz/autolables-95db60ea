@@ -22,20 +22,33 @@ import {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { currentStore } = useTenant();
+  const { currentStore, tenant } = useTenant();
   const { entries } = useAudit();
   const { predictForVehicle } = usePredictiveAcceptance();
   const navigate = useNavigate();
 
   const { data: addendums } = useQuery({
-    queryKey: ["addendums-dashboard"],
+    queryKey: ["addendums-dashboard", tenant?.id, currentStore?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("addendums")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
+      try {
+        let q = supabase
+          .from("addendums")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(500);
+        if (tenant?.id) {
+          q = q.or(`tenant_id.eq.${tenant.id},tenant_id.is.null`);
+        }
+        const { data, error } = await q;
+        if (error) {
+          console.warn("addendums query failed:", error.message);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.warn("addendums query threw:", err);
+        return [];
+      }
     },
     enabled: !!user,
   });

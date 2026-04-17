@@ -12,6 +12,7 @@ import AppShell from "@/components/layout/AppShell";
 import ThemeInjector from "@/components/layout/ThemeInjector";
 import ErrorBoundary from "@/components/layout/ErrorBoundary";
 import EntitlementGate from "@/components/layout/EntitlementGate";
+import AdminGate from "@/components/layout/AdminGate";
 
 // Wrap a signed-in route with both the app shell and the AutoLabels
 // entitlement check. Users without an autolabels entitlement hit the
@@ -20,6 +21,14 @@ const Gated = ({ children }: { children: JSX.Element }) => (
   <EntitlementGate app="autolabels">
     <AppShell>{children}</AppShell>
   </EntitlementGate>
+);
+
+// Wrap a platform-admin route — does NOT require a tenant or an app
+// entitlement, only an admin-role auth.users row.
+const AdminOnly = ({ children }: { children: JSX.Element }) => (
+  <AdminGate>
+    <AppShell>{children}</AppShell>
+  </AdminGate>
 );
 
 // Lazy-loaded pages — each becomes its own chunk
@@ -89,7 +98,7 @@ const App = () => (
                       {/* Signed-in routes — wrapped in AppShell + entitlement gate */}
                       <Route path="/addendum" element={<Gated><Index /></Gated>} />
                       <Route path="/dashboard" element={<Gated><Dashboard /></Gated>} />
-                      <Route path="/admin" element={<Gated><Admin /></Gated>} />
+                      <Route path="/admin" element={<AdminOnly><Admin /></AdminOnly>} />
                       <Route path="/saved" element={<Gated><SavedAddendums /></Gated>} />
                       <Route path="/buyers-guide" element={<Gated><BuyersGuide /></Gated>} />
                       <Route path="/trade-up" element={<Gated><TradeUpSticker /></Gated>} />
