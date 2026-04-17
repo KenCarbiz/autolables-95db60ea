@@ -9,8 +9,10 @@ import {
   ESIGN_CONSENT_TEXT,
   buildConsentRecord,
   fetchClientIp,
+  fetchGeoloc,
   hashPayload,
 } from "@/lib/esign";
+import { getStateRule, validateAddendum, summarizeFindings } from "@/lib/stateCompliance";
 import { isSb766Applicable, type FinancingDisclosure } from "@/lib/sb766";
 import SB766DisclosurePanel from "@/components/addendum/SB766DisclosurePanel";
 
@@ -129,14 +131,74 @@ const MobileSigning = () => {
 
     setSubmitting(true);
 
-    // Build canonical payload + tamper-evident hash. Anything that
-    // influences the customer's decision is included so we can prove
-    // what they saw at the moment of signature.
+    // Fetch compliance context in parallel with IP + geoloc. We do
+    // this at signing time so every recorded signature carries:
+    //  - the public IP seen at the moment of signature
+    //  - a best-effort client geolocation (with user consent, null
+    //    if denied or unavailable; never blocks submit)
+    //  - the install-history snapshot of every product shown on the
+    //    addendum (from prep_sign_offs), so later audit reviewers
+    //    can prove the accessory was installed prior to sale and
+    //    when
+    //  - the state rule set that applied at the moment of signing,
+    //    so if the statute changes later we can show what rule the
+    //    disclosure was built against
+    //  - a frozen ComplianceValidator report (PASS/WARN/FAIL)
     const consent = buildConsentRecord();
+    const [customerIp, geoloc, prepSnapshot] = await Promise.all([
+      fetchClientIp(),
+      fetchGeoloc(),
+      (async () => {
+        try {
+          const { data } = await (supabase as any)
+            .from("prep_sign_offs")
+            .select(
+              "id,vin,accessories_installed,inspection_passed,inspection_form_type,foreman_name,signed_at,listing_unlocked"
+            )
+            .eq("vin", addendum.vehicle_vin)
+            .eq("listing_unlocked", true)
+            .order("signed_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          return data || null;
+        } catch {
+          return null;
+        }
+      })(),
+    ]);
+
+    const stateCode = (addendum.vehicle_state || "").toString().toUpperCase() || null;
+    const stateRule = stateCode ? getStateRule(stateCode) : null;
+
+    const complianceFindings = validateAddendum({
+      state: stateCode || "",
+      vehiclePrice: addendum.vehicle_price,
+      docFeeAmount: products.find((p) =>
+        p.name.toLowerCase().includes("doc")
+      )?.price,
+      stickerText: products.map((p) => `${p.name} ${p.disclosure || ""}`).join(" "),
+      products: products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        badge_type: p.badge_type,
+        disclosure: p.disclosure || undefined,
+        separate_signoff: !!initials[p.id]?.trim(),
+      })),
+      spanishVersion: consent.language?.startsWith("es") || false,
+      threeDayAck: sb766ThreeDayAck,
+    });
+    const complianceSummary = summarizeFindings(complianceFindings);
+
+    // Canonical payload = everything that influenced the customer's
+    // decision PLUS the dealer's compliance context. This is what the
+    // SHA-256 hash covers.
     const canonicalPayload = {
       addendum_id: addendum.id,
       vehicle_vin: addendum.vehicle_vin,
       vehicle_ymm: addendum.vehicle_ymm,
+      vehicle_state: stateCode,
+      vehicle_price: addendum.vehicle_price ?? null,
       products_snapshot: addendum.products_snapshot,
       price_overrides: priceOverrides,
       initials,
@@ -148,10 +210,16 @@ const MobileSigning = () => {
       esign_consent_version: consent.version,
       sb766_three_day_return_ack: sb766ThreeDayAck || null,
       sb766_financing_disclosure: sb766Disclosure,
+      prep_sign_off_snapshot: prepSnapshot,
+      state_rule_snapshot: stateRule,
+      compliance_findings: complianceFindings,
+      compliance_summary: complianceSummary,
+      signing_location: geoloc,
+      user_agent: consent.user_agent,
+      customer_ip: customerIp,
       signed_at: new Date().toISOString(),
     };
     const contentHash = await hashPayload(canonicalPayload);
-    const customerIp = await fetchClientIp();
 
     const signedAt = new Date().toISOString();
     const { error } = await supabase
@@ -172,6 +240,7 @@ const MobileSigning = () => {
         sticker_match_ack: stickerMatchAck,
         warranty_ack: warrantyAck,
         customer_ip: customerIp,
+        signing_location: geoloc as any,
         sb766_three_day_return_ack: sb766ThreeDayAck || null,
         sb766_financing_disclosure: sb766Disclosure as any,
         price_overrides: priceOverrides as any,
