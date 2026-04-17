@@ -50,25 +50,40 @@ const EntitlementGate = ({ app, children }: Props) => {
 
   // Cold pull from Autocurb when the user has no local tenant.
   // Admins skip this entirely — they are platform operators, not
-  // dealership members.
+  // dealership members. The pull is bounded by a hard 4s timeout so
+  // a missing edge function never blocks the gate.
   useEffect(() => {
     if (authLoading || loading || !user || isAdmin) return;
     if (tenant) return;
     if (pulledRef.current) return;
     pulledRef.current = true;
+    let cancelled = false;
     (async () => {
       setPulling(true);
       try {
-        await supabase.functions.invoke("autocurb-pull", {
+        const pullPromise = supabase.functions.invoke("autocurb-pull", {
           body: { app_slug: app },
         });
-        await reload();
+        const timeout = new Promise<{ data: null; error: Error }>((resolve) =>
+          setTimeout(
+            () => resolve({ data: null, error: new Error("autocurb-pull timeout") }),
+            4000
+          )
+        );
+        const result = await Promise.race([pullPromise, timeout]);
+        if (cancelled) return;
+        if (!(result as { error?: unknown }).error) {
+          await reload();
+        }
       } catch {
         // best-effort — fall through to onboarding wizard
       } finally {
-        setPulling(false);
+        if (!cancelled) setPulling(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [authLoading, loading, user, tenant, app, reload, isAdmin]);
 
   // Auto-provision the bundled AutoLabels essential tier when the

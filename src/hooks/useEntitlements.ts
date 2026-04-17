@@ -97,42 +97,56 @@ export const useEntitlements = () => {
 
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
-    const { data: membership, error: memberErr } = await (supabase as any)
-      .from("tenant_members")
-      .select("*")
-      .eq("user_id", user.id)
-      .not("accepted_at", "is", null)
-      .limit(1)
-      .maybeSingle();
+    // Wrap the whole thing in a try/catch so a thrown query never
+    // leaves the gate stuck on `loading=true`. Tables that don't exist
+    // yet (un-applied migration, fresh project) become `error` not a
+    // hung spinner.
+    try {
+      const { data: membership, error: memberErr } = await (supabase as any)
+        .from("tenant_members")
+        .select("*")
+        .eq("user_id", user.id)
+        .not("accepted_at", "is", null)
+        .limit(1)
+        .maybeSingle();
 
-    if (memberErr) {
-      setState((prev) => ({ ...prev, loading: false, error: memberErr.message }));
-      return;
-    }
+      if (memberErr) {
+        setState({
+          tenant: null, member: null, profile: null, entitlements: [],
+          loading: false, error: memberErr.message,
+        });
+        return;
+      }
 
-    if (!membership) {
-      // Signed in but no tenant — user is pre-onboarding.
+      if (!membership) {
+        setState({
+          tenant: null, member: null, profile: null, entitlements: [],
+          loading: false, error: null,
+        });
+        return;
+      }
+
+      const [tenantRes, profileRes, entRes] = await Promise.all([
+        (supabase as any).from("tenants").select("*").eq("id", membership.tenant_id).single(),
+        (supabase as any).from("onboarding_profiles").select("*").eq("tenant_id", membership.tenant_id).maybeSingle(),
+        (supabase as any).from("app_entitlements").select("*").eq("tenant_id", membership.tenant_id),
+      ]);
+
+      setState({
+        tenant: (tenantRes.data as TenantRow) || null,
+        member: membership as TenantMemberRow,
+        profile: (profileRes.data as OnboardingProfileRow) || null,
+        entitlements: (entRes.data as EntitlementRow[]) || [],
+        loading: false,
+        error: tenantRes.error?.message || entRes.error?.message || null,
+      });
+    } catch (err) {
       setState({
         tenant: null, member: null, profile: null, entitlements: [],
-        loading: false, error: null,
+        loading: false,
+        error: err instanceof Error ? err.message : "load failed",
       });
-      return;
     }
-
-    const [tenantRes, profileRes, entRes] = await Promise.all([
-      (supabase as any).from("tenants").select("*").eq("id", membership.tenant_id).single(),
-      (supabase as any).from("onboarding_profiles").select("*").eq("tenant_id", membership.tenant_id).maybeSingle(),
-      (supabase as any).from("app_entitlements").select("*").eq("tenant_id", membership.tenant_id),
-    ]);
-
-    setState({
-      tenant: (tenantRes.data as TenantRow) || null,
-      member: membership as TenantMemberRow,
-      profile: (profileRes.data as OnboardingProfileRow) || null,
-      entitlements: (entRes.data as EntitlementRow[]) || [],
-      loading: false,
-      error: tenantRes.error?.message || entRes.error?.message || null,
-    });
   }, [user]);
 
   useEffect(() => {
