@@ -282,6 +282,20 @@ const Onboarding = () => {
     }
 
     completeOnboarding();
+
+    // Notify the Autocurb mothership of this direct-signup tenant so
+    // the rest of the family can offer them additional apps. No-ops
+    // if AUTOCURB_API_BASE / AUTOCURB_NOTIFY_SECRET aren't configured.
+    if (tenant && tenant.source !== "autocurb" && !tenant.autocurb_tenant_id) {
+      try {
+        await supabase.functions.invoke("notify-autocurb", {
+          body: { tenant_id: tenant.id },
+        });
+      } catch {
+        // best-effort; ignore failures so the dealer still lands in the app
+      }
+    }
+
     toast.success("Welcome aboard! Setup complete.");
     navigate("/dashboard");
   };

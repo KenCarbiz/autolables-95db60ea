@@ -47,6 +47,58 @@ update.
 - Match existing styling patterns (Tailwind utility classes, shadcn
   primitives, `rounded-2xl`, `shadow-premium`, `font-display`).
 
+## Cross-app contract (Autocurb.io ↔ AutoLabels.io)
+
+Autocurb is the mothership. Dealers usually sign up there and pick
+which family apps to enable. AutoLabels can also be a standalone
+signup; in either case the dealer ends up with **one shared dealer
+profile** and per-app entitlements.
+
+**Identity model.** One Supabase project backs the whole family. One
+`auth.users` row per dealer. One `tenants` row per dealership. A
+`tenant_members(user_id, tenant_id, role)` row joins them. All apps
+read the same `onboarding_profiles(tenant_id)` and
+`app_entitlements(tenant_id, app_slug, plan_tier, status)`.
+
+**Sign-in flow** (handled by `EntitlementGate`):
+1. Not signed in → `/login`.
+2. Signed in but **no local tenant_members** → invoke
+   `autocurb-pull` (no-op in shared-project mode; calls Autocurb's
+   `/api/v1/dealers/by-email` API in external-project mode). On
+   match: tenant + profile + entitlement are bootstrapped locally.
+   On miss: `/onboarding` runs the standalone wizard.
+3. Tenant exists but **no autolabels entitlement**:
+   - If tenant came from Autocurb (`source==='autocurb'` OR active
+     `autocurb` entitlement), `EntitlementGate` auto-provisions the
+     bundled "essential" tier silently.
+   - Otherwise `<ActivatePaywall />` shows. Free/bundled tiers flip
+     the entitlement directly; paid tiers route to
+     `stripe-checkout` → Stripe Checkout → `stripe-webhook` flips
+     the entitlement on `checkout.session.completed`.
+4. Entitlement OK → app renders.
+
+**Reverse direction** (standalone-on-AutoLabels notification):
+when the wizard completes for a tenant with `source !== 'autocurb'`
+and no `autocurb_tenant_id` link, `Onboarding.finish()` invokes
+`notify-autocurb`, which posts the dealer profile to Autocurb's
+`/api/v1/inbound/dealers` with an `X-Autolabels-Signature` HMAC
+(`AUTOCURB_NOTIFY_SECRET`). Autocurb returns `autocurb_tenant_id`,
+which we persist to prevent re-notification.
+
+**Inventory sync** (Autocurb → AutoLabels): `autocurb-sync` accepts
+HMAC-signed vehicle pushes (`AUTOCURB_SYNC_SECRET`) and upserts
+draft `vehicle_listings` keyed on `(tenant_id, vin)`.
+
+**Required env on the AutoLabels Supabase project** (when Autocurb
+is in a separate project):
+- `AUTOCURB_API_BASE` — base URL for autocurb-pull + notify-autocurb
+- `AUTOCURB_API_TOKEN` — bearer token for autocurb-pull's GET
+- `AUTOCURB_NOTIFY_SECRET` — HMAC for notify-autocurb's outbound POST
+- `AUTOCURB_SYNC_SECRET` — HMAC for inbound autocurb-sync POSTs
+
+In shared-project mode all four can be omitted; the cross-app rows
+are written directly by Autocurb against the same DB.
+
 ## Architecture cheat-sheet
 
 - **Public routes** (no auth gate): `/`, `/login`, `/onboarding`,

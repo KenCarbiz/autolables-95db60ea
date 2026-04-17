@@ -87,6 +87,11 @@ const Login = () => {
                 ? "Get started with a free account"
                 : "Sign in to your dealership account"}
             </p>
+            <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+              Already on Autocurb.io? Use the same email and password —
+              your dealership profile and entitlements come with you, no
+              re-onboarding required.
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
