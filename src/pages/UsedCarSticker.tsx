@@ -157,8 +157,8 @@ const UsedCarSticker = () => {
         createdBy: user?.id ?? null,
       });
       if (!listing) { toast.error("Failed to create listing"); return; }
-      const ok = await publishListing(listing.id);
-      if (!ok) { toast.error("Created but could not publish"); return; }
+      const result = await publishListing(listing.id);
+      if (!result.ok) { toast.error(result.reason || "Created but could not publish"); return; }
       setPublishedSlug(listing.slug);
       const url = publicUrl(listing.slug);
       try { await navigator.clipboard.writeText(url); } catch { /* ignore */ }

@@ -149,13 +149,24 @@ export const useVehicleListing = (storeId: string) => {
   );
 
   const publishListing = useCallback(
-    async (id: string) => {
+    async (id: string): Promise<{ ok: boolean; reason?: string }> => {
       const { error } = await (supabase as any)
         .from("vehicle_listings")
         .update({ status: "published", published_at: new Date().toISOString() })
         .eq("id", id);
-      if (!error) await load();
-      return !error;
+      if (!error) {
+        await load();
+        return { ok: true };
+      }
+      const msg = String(error.message || "");
+      if (msg.includes("prep_gate_blocked")) {
+        return {
+          ok: false,
+          reason:
+            "This vehicle has no signed prep sign-off with listing unlocked. Complete /prep first.",
+        };
+      }
+      return { ok: false, reason: msg || "Publish failed" };
     },
     [load]
   );

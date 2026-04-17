@@ -11,6 +11,8 @@ import {
   fetchClientIp,
   hashPayload,
 } from "@/lib/esign";
+import { isSb766Applicable, type FinancingDisclosure } from "@/lib/sb766";
+import SB766DisclosurePanel from "@/components/addendum/SB766DisclosurePanel";
 
 interface ProductSnapshot {
   id: string;
@@ -50,6 +52,9 @@ const MobileSigning = () => {
   // E-SIGN Act consent — required before any signature can be captured
   const [esignConsent, setEsignConsent] = useState(false);
   const [showFullConsent, setShowFullConsent] = useState(false);
+  // CA SB 766 (eff 10/1/2026) — 3-day return ack + financing disclosure
+  const [sb766ThreeDayAck, setSb766ThreeDayAck] = useState(false);
+  const [sb766Disclosure, setSb766Disclosure] = useState<FinancingDisclosure | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -113,6 +118,10 @@ const MobileSigning = () => {
       toast.error("Please acknowledge the window sticker matches this addendum.");
       return;
     }
+    if (isSb766Applicable(addendum?.vehicle_state, addendum?.vehicle_price) && !sb766ThreeDayAck) {
+      toast.error("Please acknowledge the California 3-Day Right to Cancel notice.");
+      return;
+    }
     if (!customerSig.data) {
       toast.error("Please provide your signature.");
       return;
@@ -137,6 +146,8 @@ const MobileSigning = () => {
       sticker_match_ack: stickerMatchAck,
       delivery_mileage: deliveryMileage,
       esign_consent_version: consent.version,
+      sb766_three_day_return_ack: sb766ThreeDayAck || null,
+      sb766_financing_disclosure: sb766Disclosure,
       signed_at: new Date().toISOString(),
     };
     const contentHash = await hashPayload(canonicalPayload);
@@ -161,6 +172,9 @@ const MobileSigning = () => {
         sticker_match_ack: stickerMatchAck,
         warranty_ack: warrantyAck,
         customer_ip: customerIp,
+        sb766_three_day_return_ack: sb766ThreeDayAck || null,
+        sb766_financing_disclosure: sb766Disclosure as any,
+        price_overrides: priceOverrides as any,
       } as any)
       .eq("signing_token", token!);
 
@@ -476,6 +490,16 @@ const MobileSigning = () => {
             </div>
           </button>
         </div>
+
+        {/* CA SB 766 — only renders for California vehicles under $50k after 10/1/2026 */}
+        <SB766DisclosurePanel
+          vehicleState={addendum?.vehicle_state}
+          vehiclePrice={addendum?.vehicle_price}
+          financingInput={addendum?.financing_input}
+          threeDayAck={sb766ThreeDayAck}
+          onThreeDayAck={setSb766ThreeDayAck}
+          onDisclosureChange={setSb766Disclosure}
+        />
 
         {/* E-SIGN Act consent — REQUIRED before signature */}
         <div className="bg-card rounded-xl p-5 shadow-sm space-y-3">

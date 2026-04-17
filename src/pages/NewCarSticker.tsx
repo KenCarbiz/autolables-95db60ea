@@ -138,8 +138,8 @@ const NewCarSticker = () => {
         createdBy: user?.id ?? null,
       });
       if (!listing) { toast.error("Failed to create listing"); return; }
-      const ok = await publishListing(listing.id);
-      if (!ok) { toast.error("Created but could not publish"); return; }
+      const result = await publishListing(listing.id);
+      if (!result.ok) { toast.error(result.reason || "Created but could not publish"); return; }
       setPublishedSlug(listing.slug);
       try { await navigator.clipboard.writeText(publicUrl(listing.slug)); } catch { /* */ }
       toast.success("Published — link copied");
