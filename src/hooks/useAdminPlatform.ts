@@ -163,6 +163,52 @@ export const useAdminPlatform = () => {
     [qc]
   );
 
+  const createTenant = useCallback(
+    async (args: {
+      name: string;
+      slug?: string;
+      domain?: string;
+      ownerEmail: string;
+      appSlug?: string;
+      planTier?: string;
+      trialDays?: number;
+    }): Promise<string | null> => {
+      const { data, error } = await (supabase as any).rpc("admin_create_tenant", {
+        _name: args.name,
+        _slug: args.slug || null,
+        _domain: args.domain || null,
+        _owner_email: args.ownerEmail,
+        _app_slug: args.appSlug || "autolabels",
+        _plan_tier: args.planTier || "essential",
+        _trial_days: args.trialDays ?? 14,
+      });
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error("createTenant", error);
+        return null;
+      }
+      await qc.invalidateQueries({ queryKey: ["admin", "tenants"] });
+      await qc.invalidateQueries({ queryKey: ["admin", "members"] });
+      await qc.invalidateQueries({ queryKey: ["admin", "entitlements"] });
+      return data as string;
+    },
+    [qc]
+  );
+
+  const inviteMember = useCallback(
+    async (args: { tenantId: string; email: string; role?: MemberRow["role"] }): Promise<boolean> => {
+      const { error } = await (supabase as any).rpc("admin_invite_member", {
+        _tenant_id: args.tenantId,
+        _email: args.email,
+        _role: args.role || "staff",
+      });
+      if (error) return false;
+      await qc.invalidateQueries({ queryKey: ["admin", "members"] });
+      return true;
+    },
+    [qc]
+  );
+
   const searchAudit = useCallback(
     async (args: {
       tenantId?: string;
@@ -196,6 +242,8 @@ export const useAdminPlatform = () => {
     overrideEntitlement,
     setMemberRole,
     removeMember,
+    createTenant,
+    inviteMember,
     searchAudit,
   };
 };

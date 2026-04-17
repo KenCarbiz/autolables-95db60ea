@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useAdminPlatform, type TenantSummary } from "@/hooks/useAdminPlatform";
 import { toast } from "sonner";
-import { Building2, Search, Power, PowerOff, Calendar, Users, AppWindow } from "lucide-react";
+import { Building2, Search, Power, PowerOff, Calendar, Users, AppWindow, Plus, X } from "lucide-react";
 
 const formatDate = (s: string | null) => {
   if (!s) return "—";
@@ -19,9 +19,10 @@ const sourceBadge = (source: TenantSummary["source"]) => {
 };
 
 export const PlatformTenants = () => {
-  const { tenants, setTenantActive } = useAdminPlatform();
+  const { tenants, setTenantActive, createTenant } = useAdminPlatform();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
+  const [creating, setCreating] = useState(false);
 
   const rows = useMemo(() => {
     const all = tenants.data || [];
@@ -59,6 +60,13 @@ export const PlatformTenants = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCreating(true)}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-semibold"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New Tenant
+          </button>
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <input
@@ -79,6 +87,21 @@ export const PlatformTenants = () => {
           </select>
         </div>
       </div>
+
+      {creating && (
+        <CreateTenantForm
+          onClose={() => setCreating(false)}
+          onCreate={async (form) => {
+            const id = await createTenant(form);
+            if (id) {
+              toast.success(`Tenant "${form.name}" created. Invite sent to ${form.ownerEmail}.`);
+              setCreating(false);
+            } else {
+              toast.error("Tenant create failed. See console.");
+            }
+          }}
+        />
+      )}
 
       {tenants.isLoading ? (
         <div className="py-10 text-center text-sm text-muted-foreground">Loading tenants…</div>
@@ -163,5 +186,150 @@ export const PlatformTenants = () => {
     </div>
   );
 };
+
+interface CreateFormProps {
+  onClose: () => void;
+  onCreate: (form: {
+    name: string;
+    slug?: string;
+    domain?: string;
+    ownerEmail: string;
+    appSlug?: string;
+    planTier?: string;
+    trialDays?: number;
+  }) => Promise<void>;
+}
+
+const CreateTenantForm = ({ onClose, onCreate }: CreateFormProps) => {
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [domain, setDomain] = useState("");
+  const [ownerEmail, setOwnerEmail] = useState("");
+  const [appSlug, setAppSlug] = useState("autolabels");
+  const [planTier, setPlanTier] = useState("essential");
+  const [trialDays, setTrialDays] = useState(14);
+  const [submitting, setSubmitting] = useState(false);
+
+  const autoSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    if (!ownerEmail.includes("@")) return;
+    setSubmitting(true);
+    await onCreate({
+      name: name.trim(),
+      slug: autoSlug || undefined,
+      domain: domain.trim() || undefined,
+      ownerEmail: ownerEmail.trim(),
+      appSlug,
+      planTier,
+      trialDays,
+    });
+    setSubmitting(false);
+  };
+
+  return (
+    <form onSubmit={submit} className="rounded-xl border-2 border-primary bg-card p-4 shadow-lg space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-foreground">Create a new tenant</h3>
+        <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Sets up the dealership row, shared profile, trial entitlement, and an owner
+        invitation tied to the email below. When the owner signs up (or signs in, if
+        they already have a Supabase account), they'll be auto-linked.
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Field label="Dealership name *" value={name} onChange={setName} placeholder="Freeman Ford" />
+        <Field label="Slug" value={autoSlug} onChange={setSlug} placeholder="freeman-ford" mono />
+        <Field label="Domain" value={domain} onChange={setDomain} placeholder="freemanford.com" />
+        <Field label="Owner email *" value={ownerEmail} onChange={setOwnerEmail} placeholder="owner@freemanford.com" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <Select label="App" value={appSlug} onChange={setAppSlug} options={["autolabels", "autocurb", "autoframe", "autovideo"]} />
+        <Select label="Plan tier" value={planTier} onChange={setPlanTier} options={["starter", "essential", "professional", "unlimited", "enterprise"]} />
+        <div>
+          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+            Trial length
+          </label>
+          <select
+            value={trialDays}
+            onChange={(e) => setTrialDays(parseInt(e.target.value, 10))}
+            className="mt-1 w-full h-9 px-2 rounded-md border border-border bg-background text-sm"
+          >
+            <option value={0}>Active immediately (no trial)</option>
+            <option value={7}>7-day trial</option>
+            <option value={14}>14-day trial</option>
+            <option value={30}>30-day trial</option>
+            <option value={90}>90-day trial</option>
+          </select>
+        </div>
+      </div>
+      <div className="flex items-center justify-end gap-2 pt-1">
+        <button type="button" onClick={onClose} className="h-9 px-3 rounded-md text-sm text-muted-foreground">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={submitting || !name.trim() || !ownerEmail.includes("@")}
+          className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+        >
+          {submitting ? "Creating…" : "Create tenant"}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+interface FieldProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  mono?: boolean;
+}
+
+const Field = ({ label, value, onChange, placeholder, mono }: FieldProps) => (
+  <div>
+    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+      {label}
+    </label>
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={`mt-1 w-full h-9 px-2 rounded-md border border-border bg-background text-sm ${
+        mono ? "font-mono" : ""
+      }`}
+    />
+  </div>
+);
+
+interface SelectProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+}
+
+const Select = ({ label, value, onChange, options }: SelectProps) => (
+  <div>
+    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+      {label}
+    </label>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="mt-1 w-full h-9 px-2 rounded-md border border-border bg-background text-sm"
+    >
+      {options.map((o) => (
+        <option key={o} value={o}>{o}</option>
+      ))}
+    </select>
+  </div>
+);
 
 export default PlatformTenants;

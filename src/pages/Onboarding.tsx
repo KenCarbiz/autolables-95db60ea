@@ -77,7 +77,7 @@ const Onboarding = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { updateTenant, addStore, stores, updateStore, completeOnboarding, isEmbedded } = useTenant();
   const { scrapeDealer, scraping, error: scrapeError } = useDealerScraper();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const { tenant, profile, bootstrapTenant, reload: reloadEntitlements } = useEntitlements();
 
   const [step, setStep] = useState(1);
@@ -144,21 +144,26 @@ const Onboarding = () => {
     setPrefilledFrom(profile.source === "autocurb" ? "autocurb" : "profile");
   }, [profile, prefilledFrom]);
 
-  // Gate: you must be signed in to run the wizard (it writes to
-  // Supabase tables scoped to auth.uid()). If not, bounce to /login
-  // in signup mode and come back here after email confirmation.
-  // Wait for the auth session to finish loading before deciding.
+  // Onboarding is now invite-only. Only users who (a) already have a
+  // tenant (they were invited by an admin and the signup trigger
+  // attached them to tenant_members), (b) arrived via an Autocurb
+  // handoff token, or (c) hold the platform admin role can run the
+  // wizard. Everyone else bounces to /dashboard, which renders the
+  // NoTenantScreen "contact admin" message.
   useEffect(() => {
     if (authLoading || isEmbedded) return;
     if (!user) {
-      const handoff = searchParams.get("handoff");
-      const next = handoff
-        ? `/onboarding?handoff=${encodeURIComponent(handoff)}`
-        : "/onboarding";
-      navigate(`/login?signup=1&next=${encodeURIComponent(next)}`, { replace: true });
+      navigate("/login", { replace: true });
+      return;
     }
+    const handoff = searchParams.get("handoff");
+    // Allow: active handoff token, existing tenant, or admin role.
+    if (handoff || tenant || isAdmin) return;
+    // Otherwise send the user to the "not linked to a dealership" page
+    // via the dashboard route, which runs EntitlementGate.
+    navigate("/dashboard", { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading, isEmbedded]);
+  }, [user, authLoading, isEmbedded, tenant, isAdmin]);
 
   // If running embedded, onboarding doesn't apply
   if (isEmbedded) {

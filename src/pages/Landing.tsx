@@ -101,18 +101,18 @@ const Landing = () => {
             </button>
           ) : (
             <>
+              <a
+                href="mailto:hello@autolabels.io?subject=AutoLabels.io%20access%20request"
+                className="text-sm px-4 py-2 text-gray-700 hover:text-gray-900 font-medium"
+              >
+                Request access
+              </a>
               <button
                 onClick={() => navigate("/login")}
-                className="text-sm px-4 py-2 text-gray-700 hover:text-gray-900 font-medium flex items-center gap-2"
+                className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2"
               >
                 <LogIn size={16} />
                 Dealer Login
-              </button>
-              <button
-                onClick={() => navigate(user ? "/dashboard" : "/login?signup=1&next=/onboarding")}
-                className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-              >
-                Start Free
               </button>
             </>
           )}
@@ -143,7 +143,7 @@ const Landing = () => {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <button
-            onClick={() => navigate(user ? "/dashboard" : "/login?signup=1&next=/onboarding")}
+            onClick={() => user ? navigate("/dashboard") : (window.location.href = "mailto:hello@autolabels.io?subject=AutoLabels.io%20access%20request")}
             className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2 shimmer-cta"
           >
             Start free trial
@@ -626,7 +626,7 @@ const Landing = () => {
                 onClick={() =>
                   tier.cta === "Talk to sales"
                     ? window.open("mailto:hello@autolabels.io")
-                    : navigate(user ? "/dashboard" : "/login?signup=1&next=/onboarding")
+                    : user ? navigate("/dashboard") : (window.location.href = "mailto:hello@autolabels.io?subject=AutoLabels.io%20access%20request")
                 }
                 className={`w-full py-3 rounded-lg font-medium mb-6 ${
                   tier.featured
@@ -733,7 +733,7 @@ const Landing = () => {
           <h2 className="font-display text-4xl font-bold text-white mb-6">Stop printing stickers the 2010 way.</h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => navigate(user ? "/dashboard" : "/login?signup=1&next=/onboarding")}
+              onClick={() => user ? navigate("/dashboard") : (window.location.href = "mailto:hello@autolabels.io?subject=AutoLabels.io%20access%20request")}
               className="px-8 py-3 bg-white text-blue-600 rounded-lg hover:bg-gray-100 font-medium flex items-center justify-center gap-2"
             >
               Start free trial
@@ -790,10 +790,20 @@ const Landing = () => {
             </ul>
           </div>
         </div>
-        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between">
+        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Logo variant="full" size={24} />
             <p className="text-sm text-gray-500">© 2026 AutoLabels.io — Built for the American dealer.</p>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-gray-500">
+            <a href="mailto:hello@autolabels.io" className="hover:text-gray-300">hello@autolabels.io</a>
+            <span className="text-gray-700">·</span>
+            <button
+              onClick={() => navigate("/login?admin=1")}
+              className="hover:text-gray-300"
+            >
+              Admin
+            </button>
           </div>
         </div>
       </div>

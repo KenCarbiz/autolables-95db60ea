@@ -13,23 +13,22 @@ const safeNext = (raw: string | null): string => {
 };
 
 const Login = () => {
-  const { signIn, signUp, user, isAdmin } = useAuth();
+  const { signIn, user, isAdmin } = useAuth();
   const { tenant } = useTenant();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const explicitNext = searchParams.get("next");
-  // Admins don't operate a dealership — send them to /admin by default.
-  // If the URL specified ?next= we honor it (same-origin only).
+  const isAdminMode = searchParams.get("admin") === "1";
+  // Admins default to /admin, dealers to /dashboard. Same-origin
+  // ?next= overrides.
   const resolveNext = () =>
     explicitNext ? safeNext(explicitNext) : isAdmin ? "/admin" : "/dashboard";
   const nextPath = resolveNext();
-  const wantsSignUp = searchParams.get("signup") === "1";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(wantsSignUp);
   const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
+  const [info] = useState("");
   const [loading, setLoading] = useState(false);
 
   // If we're already signed in, don't make the user log in again —
@@ -41,21 +40,13 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setInfo("");
     setLoading(true);
-    const { error: err } = isSignUp ? await signUp(email, password) : await signIn(email, password);
+    const { error: err } = await signIn(email, password);
     setLoading(false);
-    if (err) {
-      setError(err.message);
-    } else if (isSignUp) {
-      setInfo(
-        `Check ${email} to confirm your account. After confirming, return to this page to sign in.`
-      );
-    }
+    if (err) setError(err.message);
     // On successful sign-in we deliberately do NOT navigate here.
     // The useEffect below waits for both user + isAdmin to resolve,
-    // then routes admins to /admin and dealers to /dashboard (or the
-    // ?next= target).
+    // then routes admins to /admin and dealers to /dashboard.
   };
 
   return (
@@ -105,19 +96,29 @@ const Login = () => {
           </div>
 
           <div className="mb-8">
+            {isAdminMode ? (
+              <span className="inline-flex items-center gap-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded mb-2">
+                Admin
+              </span>
+            ) : null}
             <h1 className="text-2xl font-semibold tracking-tight font-display text-foreground">
-              {isSignUp ? "Create your account" : "Welcome back"}
+              {isAdminMode ? "Admin sign-in" : "Welcome back"}
             </h1>
             <p className="text-sm text-muted-foreground mt-1.5">
-              {isSignUp
-                ? "Get started with a free account"
+              {isAdminMode
+                ? "Platform operators — sign in to manage tenants and billing."
                 : "Sign in to your dealership account"}
             </p>
-            <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-              Already on Autocurb.io? Use the same email and password —
-              your dealership profile and entitlements come with you, no
-              re-onboarding required.
-            </p>
+            {!isAdminMode && (
+              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                AutoLabels.io is currently invite-only. If your dealership has an
+                account and your email has been added, you're good to sign in. If
+                not, ask your admin to add you, or email{" "}
+                <a href="mailto:hello@autolabels.io" className="text-[#1E90FF] hover:underline">
+                  hello@autolabels.io
+                </a>.
+              </p>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -147,7 +148,7 @@ const Login = () => {
                 placeholder="••••••••"
                 required
                 minLength={6}
-                autoComplete={isSignUp ? "new-password" : "current-password"}
+                autoComplete="current-password"
                 className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               />
             </div>
@@ -168,21 +169,26 @@ const Login = () => {
               disabled={loading}
               className="w-full h-10 rounded-md shimmer-cta font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50"
             >
-              {loading ? "Please wait..." : isSignUp ? "Create account" : "Sign in"}
+              {loading ? "Please wait..." : isAdminMode ? "Sign in as admin" : "Sign in"}
             </button>
           </form>
 
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setError("");
-              setInfo("");
-            }}
-            className="mt-6 w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
-          </button>
+          {isAdminMode ? (
+            <button
+              type="button"
+              onClick={() => navigate("/login")}
+              className="mt-6 w-full text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Back to dealer sign-in
+            </button>
+          ) : (
+            <p className="mt-6 text-[11px] text-muted-foreground text-center">
+              Trouble signing in? Email{" "}
+              <a href="mailto:hello@autolabels.io" className="text-[#1E90FF] hover:underline">
+                hello@autolabels.io
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </div>

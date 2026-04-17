@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEntitlements, type AppSlug } from "@/hooks/useEntitlements";
 import ActivatePaywall from "@/components/layout/ActivatePaywall";
+import NoTenantScreen from "@/components/layout/NoTenantScreen";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
@@ -120,9 +121,11 @@ const EntitlementGate = ({ app, children }: Props) => {
     return <>{children}</>;
   }
 
+  // Invite-only: users without a tenant are NOT auto-routed into an
+  // onboarding wizard. They see the "not linked to a dealership" page
+  // with a request-access CTA. Admins provision tenants from /admin.
   if (needsOnboarding || !tenant) {
-    setTimeout(() => navigate("/onboarding"), 0);
-    return null;
+    return <NoTenantScreen />;
   }
 
   if (!hasApp(app)) {
