@@ -168,7 +168,7 @@ export const useEntitlements = () => {
   // Provision or re-activate the autolabels entitlement for the current tenant.
   // Used by the "Activate AutoLabels" paywall for users who came from autocurb.
   const activateApp = useCallback(
-    async (slug: AppSlug, planTier: string = "sticker"): Promise<boolean> => {
+    async (slug: AppSlug, planTier: string = "essential"): Promise<boolean> => {
       if (!state.tenant) return false;
       const existing = state.entitlements.find((e) => e.app_slug === slug);
       if (existing) {
@@ -215,7 +215,7 @@ export const useEntitlements = () => {
         _slug: slug,
         _source: input.source || "autolabels",
         _app_slug: input.app,
-        _plan_tier: input.tier || "sticker",
+        _plan_tier: input.tier || "essential",
       });
       if (error) return { tenantId: null, error: error.message };
       await load();

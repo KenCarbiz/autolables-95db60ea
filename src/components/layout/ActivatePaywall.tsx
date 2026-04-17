@@ -103,7 +103,7 @@ const ActivatePaywall = ({ app, tenant, entitlement }: Props) => {
         {/* Plans */}
         <div className="grid md:grid-cols-3 gap-5">
           {PLAN_DEFINITIONS.map((plan) => {
-            const featured = plan.tier === "compliance";
+            const featured = plan.tier === "unlimited";
             return (
               <div
                 key={plan.tier}

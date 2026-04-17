@@ -4,11 +4,23 @@
 // Each tier enables a specific set of features. When a dealer
 // picks a tier during onboarding (or upgrades later), all the
 // right feature flags flip automatically.
+//
+// Pricing (per rooftop/month):
+//   - essential      $299 — window stickers + addendums, up to 75 VINs/mo
+//   - unlimited      $499 — unlimited VINs, product rules, analytics
+//   - compliance_pro $999 — full scan-to-signed FTC compliance flow
 // ──────────────────────────────────────────────────────────────
 
 import type { DealerSettings } from "@/contexts/DealerSettingsContext";
 
-export type PlanTier = "sticker" | "compliance" | "enterprise";
+export type PlanTier = "essential" | "unlimited" | "compliance_pro";
+
+// ── Per-tier monthly VIN ceiling. null = unlimited.
+export const TIER_VIN_LIMITS: Record<PlanTier, number | null> = {
+  essential: 75,
+  unlimited: null,
+  compliance_pro: null,
+};
 
 export interface PlanDefinition {
   tier: PlanTier;
@@ -22,103 +34,90 @@ export interface PlanDefinition {
 
 export const PLAN_DEFINITIONS: PlanDefinition[] = [
   {
-    tier: "sticker",
-    name: "Sticker",
-    tagline: "Window stickers + labels. No signing, no compliance trail.",
-    price: "Free",
-    priceNote: "Free with AutoLabels.io subscription",
+    tier: "essential",
+    name: "Essential",
+    tagline: "Window stickers + addendums, up to 75 VINs/month.",
+    price: "$299",
+    priceNote: "per rooftop / month",
     features: [
-      "Used car window sticker",
-      "New car addendum sticker",
-      "FTC Buyers Guide (print only)",
-      "CPO info sheet",
-      "Trade-up promotional stickers (28 templates)",
-      "VIN decode (NHTSA free)",
-      "Stock number labels (Zebra-ready)",
-      "Product icons on stickers",
-      "VIN barcode on stickers",
-      "URL import from dealer website",
-      "Ink-saving print mode",
-      "Basic inventory (print queue)",
-      "Mobile lot scanner",
-      "Scalable paper sizes",
-      "SEO description writer",
+      "Up to 75 VINs / month",
+      "New + used car window stickers",
+      "Full addendum builder",
+      "VIN decode (NHTSA)",
+      "NHTSA recall + Takata stop-sale banner",
+      "Shopper-facing public portal (QR + embed)",
+      "Zebra / Brother / DYMO / CUPS print",
+      "FTC Buyers Guide (English)",
+      "Dealer branding + logo",
+      "Email support",
     ],
     notIncluded: [
-      "Digital signing",
-      "Compliance audit trail",
-      "State compliance engine",
-      "Vehicle file system",
-      "Get-ready tracker",
-      "Financing impact disclosure",
-      "Customer transparency portal",
+      "Unlimited VINs",
+      "Product rules engine",
       "Leads + analytics",
-      "Deal jacket",
-      "Email distribution",
+      "Digital signing + audit vault",
+      "Prep + install compliance gate",
+      "50-state disclosure engine",
+      "Multi-language addendums",
+      "DMS webhooks",
     ],
   },
   {
-    tier: "compliance",
-    name: "Compliance Suite",
-    tagline: "Full FTC + state compliance with digital signing and audit trail.",
-    price: "$495",
-    priceNote: "per location / month",
+    tier: "unlimited",
+    name: "Unlimited",
+    tagline: "Unlimited vehicles for high-volume dealers.",
+    price: "$499",
+    priceNote: "per rooftop / month",
     features: [
-      "Everything in Sticker, PLUS:",
-      "Digital signing (customer + co-buyer + employee)",
-      "FTC compliance audit trail (immutable, timestamped)",
-      "State compliance engine (50 states auto-applied)",
-      "CA CARS Act compliance (SB 766)",
-      "Vehicle file system with tracking codes (UPC)",
-      "Get-ready tracker with timeline validation",
-      "Financing impact disclosure",
-      "Customer transparency portal",
-      "Mobile signing with FTC warranty + mileage sign-off",
-      "Price override at signing (doc fee locked)",
-      "Privacy notice inclusion",
-      "Buyer + co-buyer info capture",
-      "Lead capture + CSV export",
-      "Analytics dashboard",
-      "Deal jacket",
-      "Email distribution (PDF to F&I, GSM, GM, customer)",
-      "Compliance knowledge center",
-      "Dealer legal sign-off agreement",
-      "Multi-language disclosures (EN/ES/ZH/TL/VI/KO)",
+      "Everything in Essential, plus:",
+      "Unlimited VINs",
+      "Product rules engine (YMM auto-match)",
+      "Custom branding + full logo kit",
+      "Leads + analytics dashboard",
+      "CSV lead export",
+      "Inventory management + CSV import",
+      "Mobile lot scanner + GPS",
+      "AI vehicle descriptions",
+      "Co-buyer signature capture",
+      "Priority support",
+      "Onboarding assist",
+    ],
+    notIncluded: [
+      "Digital signing + tamper-evident audit vault",
+      "Prep + install compliance gate",
+      "50-state disclosure engine (CA SB 766, NY, FL, etc.)",
+      "Multi-language addendums",
+      "DMS webhook integrations",
     ],
   },
   {
-    tier: "enterprise",
-    name: "Enterprise",
-    tagline: "Multi-store, DMS integration, AI, and dedicated support.",
-    price: "Custom",
-    priceNote: "Contact sales",
+    tier: "compliance_pro",
+    name: "Compliance Pro",
+    tagline: "Full scan-to-signed FTC flow for airtight deals.",
+    price: "$999",
+    priceNote: "per rooftop / month",
     features: [
-      "Everything in Compliance Suite, PLUS:",
-      "Multi-store management",
-      "OEM build sheet API (DataOne)",
-      "Black Book live market data",
-      "DMS integration (CDK, Reynolds, Dealertrack)",
-      "AI vehicle descriptions (Claude)",
-      "Website syndication feed",
+      "Everything in Unlimited, plus:",
+      "50-state disclosure engine (CA, NY, FL, TX, IL, MA, NJ, +44)",
+      "California SB 766 ready (effective Oct 1, 2026)",
+      "Prep + install compliance gate (foreman sign-off with photos)",
+      "Digital signing (customer + co-buyer + F&I manager)",
+      "UETA / E-SIGN tamper-evident content hash",
+      "Immutable audit vault with CSV export",
+      "Multi-language addendums (en / es / zh / tl / vi / ko)",
+      "Financing impact disclosure (TILA-aligned)",
+      "Deal jacket + email distribution",
+      "DMS webhooks (vAuto / VinSolutions / CDK / Reynolds)",
+      "Black Book + OEM factory build sheet",
       "SMS delivery (Twilio)",
-      "Zebra CloudPrint integration",
-      "GPS lot tracking",
-      "Video walkarounds",
-      "Photo capture + background removal",
-      "Predictive product acceptance AI",
-      "Trade-in lifecycle automation",
-      "Post-sale review request automation",
-      "Service drive stickers",
-      "White-label / custom branding",
-      "Dedicated account manager",
-      "Custom API access",
+      "Dedicated success manager",
     ],
   },
 ];
 
 // Feature flag presets for each tier
 export const TIER_FEATURE_FLAGS: Record<PlanTier, Partial<DealerSettings>> = {
-  sticker: {
+  essential: {
     feature_vin_decode: true,
     feature_buyers_guide: true,
     feature_product_rules: false,
@@ -140,7 +139,7 @@ export const TIER_FEATURE_FLAGS: Record<PlanTier, Partial<DealerSettings>> = {
     feature_blackbook: false,
     privacy_notice_enabled: false,
   },
-  compliance: {
+  unlimited: {
     feature_vin_decode: true,
     feature_buyers_guide: true,
     feature_product_rules: true,
@@ -150,7 +149,7 @@ export const TIER_FEATURE_FLAGS: Record<PlanTier, Partial<DealerSettings>> = {
     feature_cobuyer_signature: true,
     feature_custom_branding: true,
     feature_ink_saving: true,
-    feature_spanish_buyers_guide: true,
+    feature_spanish_buyers_guide: false,
     feature_url_scrape: true,
     feature_inventory: true,
     feature_invoicing: false,
@@ -158,11 +157,11 @@ export const TIER_FEATURE_FLAGS: Record<PlanTier, Partial<DealerSettings>> = {
     feature_payroll: false,
     feature_analytics: true,
     feature_sms: false,
-    feature_ai_descriptions: false,
+    feature_ai_descriptions: true,
     feature_blackbook: false,
     privacy_notice_enabled: true,
   },
-  enterprise: {
+  compliance_pro: {
     feature_vin_decode: true,
     feature_buyers_guide: true,
     feature_product_rules: true,
