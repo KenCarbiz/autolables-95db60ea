@@ -37,6 +37,8 @@ const Index = lazy(() => import("./pages/Index"));
 const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
 const Admin = lazy(() => import("./pages/Admin"));
+const Inventory = lazy(() => import("./pages/Inventory"));
+const VehicleFile = lazy(() => import("./pages/VehicleFile"));
 const SavedAddendums = lazy(() => import("./pages/SavedAddendums"));
 const BuyersGuide = lazy(() => import("./pages/BuyersGuide"));
 const MobileSigning = lazy(() => import("./pages/MobileSigning"));
@@ -98,6 +100,8 @@ const App = () => (
                       {/* Signed-in routes — wrapped in AppShell + entitlement gate */}
                       <Route path="/addendum" element={<Gated><Index /></Gated>} />
                       <Route path="/dashboard" element={<Gated><Dashboard /></Gated>} />
+                      <Route path="/inventory" element={<Gated><Inventory /></Gated>} />
+                      <Route path="/vehicle-file/:id" element={<Gated><VehicleFile /></Gated>} />
                       <Route path="/admin" element={<AdminOnly><Admin /></AdminOnly>} />
                       <Route path="/saved" element={<Gated><SavedAddendums /></Gated>} />
                       <Route path="/buyers-guide" element={<Gated><BuyersGuide /></Gated>} />

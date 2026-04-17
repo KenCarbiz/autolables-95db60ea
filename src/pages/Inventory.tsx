@@ -1,0 +1,672 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
+import { useVinDecode } from "@/hooks/useVinDecode";
+import { toast } from "sonner";
+import {
+  Plus, Search, Upload, Car, FileText, Printer, Signature,
+  X, CheckCircle2, AlertTriangle,
+} from "lucide-react";
+
+// ──────────────────────────────────────────────────────────────
+// Inventory — dealer's primary workspace.
+//
+// AutoLabels is not a DMS. This list is the single source of
+// truth for vehicles the dealer is tracking addenda for. Adding
+// a vehicle is the entry point for every downstream workflow:
+// window sticker → addendum → prep sign-off → customer signing →
+// shopper portal. Every action that follows is scoped to a
+// vehicle_listings row.
+// ──────────────────────────────────────────────────────────────
+
+interface VehicleRow {
+  id: string;
+  vin: string;
+  ymm: string | null;
+  trim: string | null;
+  mileage: number | null;
+  condition: "new" | "used" | "cpo" | null;
+  price: number | null;
+  status: "draft" | "published" | "archived";
+  slug: string;
+  published_at: string | null;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+type StatusFilter = "all" | "draft" | "published" | "archived";
+type ConditionFilter = "all" | "new" | "used" | "cpo";
+
+const Inventory = () => {
+  const { user } = useAuth();
+  const { tenant } = useTenant();
+  const navigate = useNavigate();
+  const [rows, setRows] = useState<VehicleRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const [condition, setCondition] = useState<ConditionFilter>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showAdd, setShowAdd] = useState(searchParams.get("add") === "1");
+  const [showImport, setShowImport] = useState(false);
+
+  // Clear the ?add=1 flag so a back-nav doesn't re-open the modal.
+  useEffect(() => {
+    if (searchParams.get("add") === "1") {
+      const next = new URLSearchParams(searchParams);
+      next.delete("add");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const load = async () => {
+    if (!tenant?.id) return;
+    setLoading(true);
+    const { data, error } = await (supabase as any)
+      .from("vehicle_listings")
+      .select(
+        "id,vin,ymm,trim,mileage,condition,price,status,slug,published_at,view_count,created_at,updated_at"
+      )
+      .or(`tenant_id.eq.${tenant.id},tenant_id.is.null`)
+      .order("updated_at", { ascending: false })
+      .limit(500);
+    if (error) {
+      toast.error("Failed to load inventory");
+      setRows([]);
+    } else {
+      setRows((data || []) as VehicleRow[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [tenant?.id]);
+
+  const filtered = useMemo(() => {
+    const lc = q.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (status !== "all" && r.status !== status) return false;
+      if (condition !== "all" && r.condition !== condition) return false;
+      if (!lc) return true;
+      return (
+        r.vin.toLowerCase().includes(lc) ||
+        (r.ymm || "").toLowerCase().includes(lc) ||
+        (r.trim || "").toLowerCase().includes(lc)
+      );
+    });
+  }, [rows, q, status, condition]);
+
+  const counts = useMemo(() => ({
+    total: rows.length,
+    draft: rows.filter((r) => r.status === "draft").length,
+    published: rows.filter((r) => r.status === "published").length,
+  }), [rows]);
+
+  return (
+    <div className="p-4 lg:p-6 max-w-[1400px] mx-auto space-y-4">
+      {/* Shimmer banner — matches Landing aesthetic */}
+      <div className="shimmer-hero relative overflow-hidden rounded-2xl px-6 py-5 text-white">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <div className="inline-flex items-center gap-1.5 bg-white/15 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+              <Car className="w-3 h-3" />
+              Inventory
+            </div>
+            <h1 className="mt-1.5 text-xl md:text-2xl font-black tracking-tight font-display">
+              Your vehicles
+            </h1>
+            <p className="text-xs text-white/70 mt-1">
+              Every sticker, addendum, prep sign-off, and customer signature
+              attaches to a vehicle file here.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowImport(true)}
+              className="h-9 px-3 rounded-md bg-white/15 backdrop-blur text-white text-xs font-semibold inline-flex items-center gap-1.5 hover:bg-white/25"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              CSV Import
+            </button>
+            <button
+              onClick={() => setShowAdd(true)}
+              className="h-9 px-4 rounded-md bg-white text-[#0B2041] text-sm font-semibold inline-flex items-center gap-1.5 hover:bg-white/90"
+            >
+              <Plus className="w-4 h-4" />
+              Add Vehicle
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI strip */}
+      <div className="grid grid-cols-3 gap-3">
+        <Stat label="Total" value={counts.total} />
+        <Stat label="Draft" value={counts.draft} accent="amber" />
+        <Stat label="Published" value={counts.published} accent="emerald" />
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search VIN, year, make, model, trim…"
+            className="w-full h-9 pl-7 pr-3 rounded-md border border-border bg-background text-sm"
+          />
+        </div>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as StatusFilter)}
+          className="h-9 px-2 rounded-md border border-border bg-background text-sm"
+        >
+          <option value="all">All statuses</option>
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+          <option value="archived">Archived</option>
+        </select>
+        <select
+          value={condition}
+          onChange={(e) => setCondition(e.target.value as ConditionFilter)}
+          className="h-9 px-2 rounded-md border border-border bg-background text-sm"
+        >
+          <option value="all">New & used</option>
+          <option value="new">New</option>
+          <option value="used">Used</option>
+          <option value="cpo">CPO</option>
+        </select>
+      </div>
+
+      {/* Add Vehicle modal */}
+      {showAdd && (
+        <AddVehicleModal
+          tenantId={tenant?.id || null}
+          userId={user?.id || null}
+          onClose={() => setShowAdd(false)}
+          onCreated={(id) => {
+            setShowAdd(false);
+            navigate(`/vehicle-file/${id}`);
+          }}
+        />
+      )}
+
+      {showImport && (
+        <CsvImportModal
+          tenantId={tenant?.id || null}
+          userId={user?.id || null}
+          onClose={() => setShowImport(false)}
+          onImported={() => { setShowImport(false); load(); }}
+        />
+      )}
+
+      {/* Vehicle table */}
+      {loading ? (
+        <div className="py-16 text-center text-sm text-muted-foreground">Loading inventory…</div>
+      ) : filtered.length === 0 ? (
+        <EmptyState onAdd={() => setShowAdd(true)} total={rows.length} />
+      ) : (
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-[11px] uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2 font-semibold">Vehicle</th>
+                <th className="text-left px-3 py-2 font-semibold">VIN</th>
+                <th className="text-left px-3 py-2 font-semibold">Condition</th>
+                <th className="text-right px-3 py-2 font-semibold">Mileage</th>
+                <th className="text-right px-3 py-2 font-semibold">Price</th>
+                <th className="text-left px-3 py-2 font-semibold">Status</th>
+                <th className="text-right px-3 py-2 font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filtered.map((r) => (
+                <tr
+                  key={r.id}
+                  className="hover:bg-muted/30 cursor-pointer"
+                  onClick={() => navigate(`/vehicle-file/${r.id}`)}
+                >
+                  <td className="px-3 py-2.5">
+                    <div className="font-semibold text-foreground">{r.ymm || "(needs decode)"}</div>
+                    <div className="text-[11px] text-muted-foreground">{r.trim || ""}</div>
+                  </td>
+                  <td className="px-3 py-2.5 font-mono text-xs">{r.vin}</td>
+                  <td className="px-3 py-2.5">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                      r.condition === "new" ? "bg-blue-100 text-blue-700" :
+                      r.condition === "cpo" ? "bg-violet-100 text-violet-700" :
+                      "bg-slate-100 text-slate-700"
+                    }`}>
+                      {r.condition || "—"}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums">
+                    {r.mileage ? r.mileage.toLocaleString() : "—"}
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums">
+                    {r.price ? `$${r.price.toLocaleString()}` : "—"}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <StatusPill status={r.status} />
+                  </td>
+                  <td className="px-3 py-2.5 text-right">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate(`/vehicle-file/${r.id}`); }}
+                      className="text-[11px] font-semibold px-2.5 h-7 rounded-md text-primary hover:bg-primary/10"
+                    >
+                      Open file →
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Stat = ({ label, value, accent }: { label: string; value: number; accent?: "amber" | "emerald" }) => (
+  <div className="rounded-xl border border-border bg-card p-4">
+    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+    <p className={`mt-1 text-2xl font-black tabular-nums ${
+      accent === "amber" ? "text-amber-600" :
+      accent === "emerald" ? "text-emerald-600" :
+      "text-foreground"
+    }`}>
+      {value}
+    </p>
+  </div>
+);
+
+const StatusPill = ({ status }: { status: VehicleRow["status"] }) => {
+  const cls =
+    status === "published" ? "bg-emerald-100 text-emerald-700" :
+    status === "archived"  ? "bg-slate-100 text-slate-600" :
+    "bg-amber-100 text-amber-700";
+  return (
+    <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${cls}`}>
+      {status}
+    </span>
+  );
+};
+
+const EmptyState = ({ onAdd, total }: { onAdd: () => void; total: number }) => (
+  <div className="rounded-xl border-2 border-dashed border-border bg-card py-16 text-center space-y-3">
+    <Car className="w-10 h-10 text-muted-foreground/40 mx-auto" />
+    <h3 className="text-base font-bold text-foreground">
+      {total === 0 ? "Let's add your first vehicle" : "No vehicles match your filters"}
+    </h3>
+    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+      Enter a VIN, mileage, and stock number. We'll decode the year, make, model,
+      and equipment, then open the vehicle's file so you can generate stickers,
+      addenda, and signing links.
+    </p>
+    <button
+      onClick={onAdd}
+      className="inline-flex items-center gap-1.5 h-10 px-5 rounded-md bg-primary text-primary-foreground text-sm font-semibold"
+    >
+      <Plus className="w-4 h-4" />
+      Add Vehicle
+    </button>
+  </div>
+);
+
+interface AddProps {
+  tenantId: string | null;
+  userId: string | null;
+  onClose: () => void;
+  onCreated: (id: string) => void;
+}
+
+const makeSlug = (seed: string) => {
+  const clean = seed.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 24);
+  const rand = Math.random().toString(36).slice(2, 6);
+  return `${clean || "veh"}-${rand}`;
+};
+
+const AddVehicleModal = ({ tenantId, userId, onClose, onCreated }: AddProps) => {
+  const { decode, decoding } = useVinDecode();
+  const [vin, setVin] = useState("");
+  const [stock, setStock] = useState("");
+  const [mileage, setMileage] = useState("");
+  const [price, setPrice] = useState("");
+  const [condition, setCondition] = useState<"new" | "used" | "cpo">("used");
+  const [state, setState] = useState("");
+  const [decoded, setDecoded] = useState<{
+    year?: string; make?: string; model?: string; trim?: string;
+    bodyStyle?: string; engine?: string; fuelType?: string;
+  } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleDecode = async () => {
+    if (vin.length < 11) {
+      toast.error("Enter a full 17-character VIN to decode");
+      return;
+    }
+    const result = await decode(vin);
+    if (result) {
+      setDecoded({
+        year: result.year,
+        make: result.make,
+        model: result.model,
+        trim: result.trim,
+        bodyStyle: result.bodyStyle,
+        engine: result.engineDescription,
+        fuelType: result.fuelType,
+      });
+      if (result.year && parseInt(result.year) >= new Date().getFullYear()) {
+        setCondition("new");
+      }
+      toast.success(`Decoded: ${result.year} ${result.make} ${result.model}`);
+    } else {
+      toast.error("VIN decode failed — you can still continue manually");
+    }
+  };
+
+  const canSubmit = vin.trim().length >= 11 && stock.trim().length > 0;
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    const ymm = decoded
+      ? [decoded.year, decoded.make, decoded.model].filter(Boolean).join(" ")
+      : null;
+    const slug = makeSlug(`${decoded?.make || ""}-${decoded?.model || vin.slice(-6)}`);
+    const { data, error } = await (supabase as any)
+      .from("vehicle_listings")
+      .insert({
+        tenant_id: tenantId,
+        vin: vin.trim().toUpperCase(),
+        slug,
+        ymm,
+        trim: decoded?.trim || null,
+        mileage: mileage ? parseInt(mileage.replace(/[^0-9]/g, ""), 10) : null,
+        condition,
+        price: price ? parseFloat(price.replace(/[^0-9.]/g, "")) : null,
+        sticker_snapshot: decoded ? { decoded } : {},
+        dealer_snapshot: {},
+        status: "draft",
+        created_by: userId,
+      })
+      .select()
+      .single();
+    setSubmitting(false);
+    if (error) {
+      toast.error(`Failed: ${error.message}`);
+      return;
+    }
+    onCreated(data.id);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-card rounded-2xl shadow-2xl max-w-2xl w-full my-10 p-6 space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Car className="w-5 h-5 text-primary" />
+            Add Vehicle
+          </h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          Paste the VIN and click Decode to auto-fill year / make / model / trim / equipment
+          from NHTSA. You can also continue without decoding.
+        </p>
+
+        <div className="space-y-3">
+          <Field label="VIN *" required>
+            <div className="flex items-center gap-2">
+              <input
+                value={vin}
+                onChange={(e) => setVin(e.target.value.toUpperCase())}
+                placeholder="17 characters"
+                maxLength={17}
+                className="flex-1 h-10 px-3 rounded-md border border-border bg-background text-sm font-mono tracking-wider"
+              />
+              <button
+                onClick={handleDecode}
+                disabled={decoding || vin.length < 11}
+                className="h-10 px-4 rounded-md bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+              >
+                {decoding ? "Decoding…" : "Decode"}
+              </button>
+            </div>
+          </Field>
+
+          {decoded && (
+            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs space-y-1">
+              <div className="flex items-center gap-2 text-emerald-800 font-semibold">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Decoded
+              </div>
+              <p className="text-emerald-900">
+                {[decoded.year, decoded.make, decoded.model, decoded.trim].filter(Boolean).join(" ")}
+                {decoded.bodyStyle ? ` · ${decoded.bodyStyle}` : ""}
+                {decoded.engine ? ` · ${decoded.engine}` : ""}
+                {decoded.fuelType ? ` · ${decoded.fuelType}` : ""}
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Stock # *" required>
+              <input
+                value={stock}
+                onChange={(e) => setStock(e.target.value)}
+                placeholder="e.g. T5892"
+                className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm"
+              />
+            </Field>
+            <Field label="Mileage">
+              <input
+                value={mileage}
+                onChange={(e) => setMileage(e.target.value)}
+                placeholder="e.g. 42850"
+                inputMode="numeric"
+                className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm"
+              />
+            </Field>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <Field label="Price (optional)">
+              <input
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="$"
+                className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm"
+              />
+            </Field>
+            <Field label="Condition">
+              <select
+                value={condition}
+                onChange={(e) => setCondition(e.target.value as typeof condition)}
+                className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm"
+              >
+                <option value="new">New</option>
+                <option value="used">Used</option>
+                <option value="cpo">CPO</option>
+              </select>
+            </Field>
+            <Field label="Sale state">
+              <input
+                value={state}
+                onChange={(e) => setState(e.target.value.slice(0, 2).toUpperCase())}
+                placeholder="e.g. CA"
+                maxLength={2}
+                className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm uppercase"
+              />
+            </Field>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <button onClick={onClose} className="h-9 px-4 rounded-md text-sm font-semibold text-muted-foreground">
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit || submitting}
+            className="h-9 px-5 rounded-md bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 inline-flex items-center gap-1.5"
+          >
+            {submitting ? "Creating…" : "Create & open file"}
+            {!submitting && <FileText className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface ImportProps {
+  tenantId: string | null;
+  userId: string | null;
+  onClose: () => void;
+  onImported: () => void;
+}
+
+const CsvImportModal = ({ tenantId, userId, onClose, onImported }: ImportProps) => {
+  const [text, setText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleImport = async () => {
+    if (!tenantId) return;
+    setSubmitting(true);
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    if (lines.length < 2) {
+      toast.error("Paste at least a header row and one vehicle");
+      setSubmitting(false);
+      return;
+    }
+    const header = lines[0].toLowerCase().split(/[,\t]/).map((h) => h.trim());
+    const col = (name: string) => header.findIndex((h) => h === name || h === name.replace(/_/g, " "));
+    const idx = {
+      vin: col("vin"),
+      stock: col("stock"),
+      mileage: col("mileage"),
+      condition: col("condition"),
+      price: col("price"),
+      year: col("year"),
+      make: col("make"),
+      model: col("model"),
+      trim: col("trim"),
+    };
+    if (idx.vin < 0 || idx.stock < 0) {
+      toast.error("CSV must have at least 'vin' and 'stock' columns");
+      setSubmitting(false);
+      return;
+    }
+    const toInsert = lines.slice(1).map((line) => {
+      const cells = line.split(/[,\t]/).map((c) => c.trim());
+      const vin = (cells[idx.vin] || "").toUpperCase();
+      if (vin.length < 11) return null;
+      const year = idx.year >= 0 ? cells[idx.year] : "";
+      const make = idx.make >= 0 ? cells[idx.make] : "";
+      const model = idx.model >= 0 ? cells[idx.model] : "";
+      const ymm = [year, make, model].filter(Boolean).join(" ");
+      return {
+        tenant_id: tenantId,
+        vin,
+        slug: makeSlug(`${make}-${model || vin.slice(-6)}`),
+        ymm: ymm || null,
+        trim: idx.trim >= 0 ? cells[idx.trim] : null,
+        mileage: idx.mileage >= 0 && cells[idx.mileage] ? parseInt(cells[idx.mileage].replace(/[^0-9]/g, ""), 10) : null,
+        price: idx.price >= 0 && cells[idx.price] ? parseFloat(cells[idx.price].replace(/[^0-9.]/g, "")) : null,
+        condition: idx.condition >= 0 ? (cells[idx.condition] || "used").toLowerCase() as "new" | "used" | "cpo" : "used",
+        sticker_snapshot: {},
+        dealer_snapshot: {},
+        status: "draft",
+        created_by: userId,
+      };
+    }).filter(Boolean) as Record<string, unknown>[];
+
+    const { error, data } = await (supabase as any)
+      .from("vehicle_listings")
+      .insert(toInsert)
+      .select("id");
+    setSubmitting(false);
+    if (error) {
+      toast.error(`Import failed: ${error.message}`);
+      return;
+    }
+    toast.success(`Imported ${data?.length ?? 0} vehicle(s)`);
+    onImported();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-card rounded-2xl shadow-2xl max-w-2xl w-full my-10 p-6 space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Upload className="w-5 h-5 text-primary" />
+            CSV Import
+          </h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900 flex items-start gap-2">
+          <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-semibold mb-1">Format</p>
+            <p>
+              First row is the header with column names. Minimum columns:{" "}
+              <span className="font-mono">vin,stock</span>. Supported:{" "}
+              <span className="font-mono">vin, stock, mileage, condition, price, year, make, model, trim</span>.
+            </p>
+          </div>
+        </div>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={"vin,stock,mileage,condition,price,year,make,model,trim\n1HGCM82633A123456,T5892,42850,used,24995,2023,Honda,Accord,EX-L"}
+          rows={10}
+          className="w-full rounded-md border border-border bg-background text-xs font-mono p-3"
+        />
+        <div className="flex items-center justify-end gap-2">
+          <button onClick={onClose} className="h-9 px-4 rounded-md text-sm font-semibold text-muted-foreground">
+            Cancel
+          </button>
+          <button
+            onClick={handleImport}
+            disabled={!text.trim() || submitting}
+            className="h-9 px-5 rounded-md bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+          >
+            {submitting ? "Importing…" : "Import"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Field = ({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) => (
+  <div>
+    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+      {label}
+      {required ? <span className="text-destructive ml-0.5">*</span> : null}
+    </label>
+    <div className="mt-1">{children}</div>
+  </div>
+);
+
+export default Inventory;

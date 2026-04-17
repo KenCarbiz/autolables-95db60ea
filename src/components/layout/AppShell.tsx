@@ -110,6 +110,7 @@ const AppShell = ({ children }: AppShellProps) => {
       title: "INVENTORY",
       defaultOpen: true,
       items: [
+        { label: "All Vehicles", path: "/inventory", icon: Car },
         { label: "Saved Addendums", path: "/saved", icon: FolderOpen },
         { label: "Get-Ready", path: "/admin?tab=getready", icon: Clock },
         { label: "Vehicle Files", path: "/admin?tab=files", icon: FolderOpen },
@@ -247,6 +248,21 @@ const AppShell = ({ children }: AppShellProps) => {
             className="lg:hidden p-1 rounded hover:bg-sidebar-accent text-sidebar-foreground"
           >
             <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Primary action — every workflow starts with adding a vehicle.
+            Takes the user to /inventory with the Add modal auto-open. */}
+        <div className="px-3 pt-3 flex-shrink-0">
+          <button
+            onClick={() => {
+              setMobileOpen(false);
+              navigate("/inventory?add=1");
+            }}
+            className="w-full h-11 rounded-xl bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white font-bold text-sm inline-flex items-center justify-center gap-2 shadow-premium hover:brightness-110 transition-all"
+          >
+            <Car className="w-4 h-4" />
+            Add Vehicle
           </button>
         </div>
 
