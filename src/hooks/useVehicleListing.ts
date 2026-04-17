@@ -1,0 +1,212 @@
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+// ──────────────────────────────────────────────────────────────
+// useVehicleListing — the public shopper-facing addendum record.
+// A dealer publishes a `vehicle_listings` row and the shopper
+// views it at /v/<slug>. Matches migration 20260417_platform_expansion.
+// ──────────────────────────────────────────────────────────────
+
+export interface ListingProductSnapshot {
+  id: string;
+  name: string;
+  subtitle?: string | null;
+  warranty?: string | null;
+  badge_type: string;
+  price: number;
+  price_label?: string | null;
+  disclosure?: string | null;
+}
+
+export interface ListingTotals {
+  base_price?: number;
+  accessories_total?: number;
+  doc_fee?: number;
+  final_price?: number;
+}
+
+export interface StickerSnapshot {
+  products_snapshot?: ListingProductSnapshot[];
+  totals?: ListingTotals;
+  tracking_code?: string;
+  created_at?: string;
+}
+
+export interface DealerSnapshot {
+  name?: string;
+  phone?: string;
+  tagline?: string;
+  logo_url?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  primary_color?: string;
+}
+
+export interface ValueProp {
+  title: string;
+  description: string;
+  price: string;
+}
+
+export interface VehicleListing {
+  id: string;
+  store_id: string;
+  vin: string;
+  slug: string;
+  ymm: string | null;
+  trim: string | null;
+  mileage: number | null;
+  condition: "new" | "used" | "cpo" | null;
+  price: number | null;
+  sticker_snapshot: StickerSnapshot;
+  dealer_snapshot: DealerSnapshot;
+  value_props: ValueProp[];
+  documents: { name: string; url: string; type: string }[];
+  videos: { id: string; url: string; caption?: string }[];
+  prep_status: { all_accessories_installed?: boolean; foreman_signed_at?: string } | null;
+  status: "draft" | "published" | "archived";
+  published_at: string | null;
+  view_count: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Short URL-safe slug — e.g. "koons-lx-9k2a". Collision-resistant but short.
+const makeSlug = (seed: string) => {
+  const clean = seed.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 24);
+  const rand = Math.random().toString(36).slice(2, 6);
+  return `${clean}-${rand}`;
+};
+
+export const useVehicleListing = (storeId: string) => {
+  const [listings, setListings] = useState<VehicleListing[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!storeId) return;
+    setLoading(true);
+    const { data } = await (supabase as any)
+      .from("vehicle_listings")
+      .select("*")
+      .eq("store_id", storeId)
+      .order("updated_at", { ascending: false });
+    setListings((data as VehicleListing[]) || []);
+    setLoading(false);
+  }, [storeId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const createListing = useCallback(
+    async (input: {
+      vin: string;
+      ymm?: string;
+      trim?: string;
+      mileage?: number;
+      condition?: "new" | "used" | "cpo";
+      price?: number;
+      sticker_snapshot?: StickerSnapshot;
+      dealer_snapshot?: DealerSnapshot;
+      value_props?: ValueProp[];
+      documents?: { name: string; url: string; type: string }[];
+      videos?: { id: string; url: string; caption?: string }[];
+      slugSeed?: string;
+      createdBy?: string | null;
+    }): Promise<VehicleListing | null> => {
+      const slug = makeSlug(input.slugSeed || `${input.vin.slice(-6)}-${input.ymm || "veh"}`);
+      const { data, error } = await (supabase as any)
+        .from("vehicle_listings")
+        .insert({
+          store_id: storeId,
+          vin: input.vin,
+          slug,
+          ymm: input.ymm || null,
+          trim: input.trim || null,
+          mileage: input.mileage ?? null,
+          condition: input.condition || null,
+          price: input.price ?? null,
+          sticker_snapshot: input.sticker_snapshot || {},
+          dealer_snapshot: input.dealer_snapshot || {},
+          value_props: input.value_props || [],
+          documents: input.documents || [],
+          videos: input.videos || [],
+          status: "draft",
+          created_by: input.createdBy || null,
+        })
+        .select()
+        .single();
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error("createListing error", error);
+        return null;
+      }
+      await load();
+      return data as VehicleListing;
+    },
+    [storeId, load]
+  );
+
+  const publishListing = useCallback(
+    async (id: string) => {
+      const { error } = await (supabase as any)
+        .from("vehicle_listings")
+        .update({ status: "published", published_at: new Date().toISOString() })
+        .eq("id", id);
+      if (!error) await load();
+      return !error;
+    },
+    [load]
+  );
+
+  const archiveListing = useCallback(
+    async (id: string) => {
+      const { error } = await (supabase as any)
+        .from("vehicle_listings")
+        .update({ status: "archived" })
+        .eq("id", id);
+      if (!error) await load();
+      return !error;
+    },
+    [load]
+  );
+
+  const updateListing = useCallback(
+    async (id: string, patch: Partial<VehicleListing>) => {
+      const { error } = await (supabase as any).from("vehicle_listings").update(patch).eq("id", id);
+      if (!error) await load();
+      return !error;
+    },
+    [load]
+  );
+
+  const getBySlug = useCallback(async (slug: string): Promise<VehicleListing | null> => {
+    const { data, error } = await (supabase as any).rpc("get_vehicle_listing_by_slug", { _slug: slug });
+    if (error || !data || (Array.isArray(data) && data.length === 0)) return null;
+    return Array.isArray(data) ? (data[0] as VehicleListing) : (data as VehicleListing);
+  }, []);
+
+  const recordView = useCallback(async (slug: string) => {
+    await (supabase as any).rpc("increment_listing_view", { _slug: slug });
+  }, []);
+
+  const embedSnippet = (slug: string) =>
+    `<iframe src="${window.location.origin}/v/${slug}" width="100%" height="900" style="border:0" loading="lazy" title="Vehicle Details"></iframe>`;
+
+  const publicUrl = (slug: string) => `${window.location.origin}/v/${slug}`;
+
+  return {
+    listings,
+    loading,
+    load,
+    createListing,
+    publishListing,
+    archiveListing,
+    updateListing,
+    getBySlug,
+    recordView,
+    embedSnippet,
+    publicUrl,
+  };
+};

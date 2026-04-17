@@ -36,12 +36,16 @@ export interface AuditLogEntry {
   store_id: string;
   user_id: string;
   action: "addendum_created" | "addendum_signed" | "addendum_sent" | "addendum_printed" | "addendum_pdf"
+    | "addendum_consent_given" | "addendum_viewed"
     | "product_added" | "product_updated" | "product_deleted"
     | "rule_added" | "rule_updated" | "rule_deleted"
     | "settings_updated" | "buyers_guide_created"
     | "invoice_created" | "invoice_updated"
     | "lead_captured" | "lead_exported"
-    | "inventory_imported";
+    | "inventory_imported"
+    | "prep_sign_off_created" | "prep_sign_off_signed"
+    | "prep_sign_off_rejected" | "prep_sign_off_overridden"
+    | "listing_published" | "listing_viewed" | "listing_archived";
   entity_type: string;           // "addendum", "product", "rule", etc.
   entity_id: string;
   details: Record<string, any>;  // JSON payload of what changed

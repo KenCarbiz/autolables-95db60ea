@@ -35,6 +35,8 @@ const CpoSheet = lazy(() => import("./pages/CpoSheet"));
 const DescriptionWriter = lazy(() => import("./pages/DescriptionWriter"));
 const SaveCarInventory = lazy(() => import("./pages/SaveCarInventory"));
 const DealSigning = lazy(() => import("./pages/DealSigning"));
+const PublicListing = lazy(() => import("./pages/PublicListing"));
+const PrepSignOff = lazy(() => import("./pages/PrepSignOff"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -71,6 +73,7 @@ const App = () => (
                       <Route path="/onboarding" element={<Onboarding />} />
                       <Route path="/scan" element={<ScanPage />} />
                       <Route path="/vehicle/:vin" element={<VehiclePortal />} />
+                      <Route path="/v/:slug" element={<PublicListing />} />
                       <Route path="/deal/:token" element={<DealSigning />} />
                       <Route path="/about" element={<About />} />
                       <Route path="/brand" element={<BrandGuide />} />
@@ -88,6 +91,7 @@ const App = () => (
                       <Route path="/compliance" element={<AppShell><ComplianceCenter /></AppShell>} />
                     <Route path="/description-writer" element={<AppShell><DescriptionWriter /></AppShell>} />
                       <Route path="/add-inventory" element={<AppShell><SaveCarInventory /></AppShell>} />
+                      <Route path="/prep" element={<AppShell><PrepSignOff /></AppShell>} />
 
                       <Route path="*" element={<NotFound />} />
                     </Routes>

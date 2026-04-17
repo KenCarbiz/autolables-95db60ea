@@ -5,6 +5,12 @@ import SignaturePad from "@/components/addendum/SignaturePad";
 import { useEmailDistribution } from "@/hooks/useEmailDistribution";
 import { useReviewRequest } from "@/hooks/useReviewRequest";
 import { toast } from "sonner";
+import {
+  ESIGN_CONSENT_TEXT,
+  buildConsentRecord,
+  fetchClientIp,
+  hashPayload,
+} from "@/lib/esign";
 
 interface ProductSnapshot {
   id: string;
@@ -41,6 +47,9 @@ const MobileSigning = () => {
   // Price overrides — sales manager can discount accessories (NOT doc fee)
   const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
   const [showPriceEdit, setShowPriceEdit] = useState(false);
+  // E-SIGN Act consent — required before any signature can be captured
+  const [esignConsent, setEsignConsent] = useState(false);
+  const [showFullConsent, setShowFullConsent] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -78,6 +87,10 @@ const MobileSigning = () => {
   };
 
   const handleSubmit = async () => {
+    if (!esignConsent) {
+      toast.error("Please accept the Electronic Records Disclosure before signing.");
+      return;
+    }
     const missingInitials = products.filter((p) => !initials[p.id]?.trim());
     if (missingInitials.length > 0) {
       toast.error(`Please initial all ${missingInitials.length} product(s).`);
@@ -106,6 +119,30 @@ const MobileSigning = () => {
     }
 
     setSubmitting(true);
+
+    // Build canonical payload + tamper-evident hash. Anything that
+    // influences the customer's decision is included so we can prove
+    // what they saw at the moment of signature.
+    const consent = buildConsentRecord();
+    const canonicalPayload = {
+      addendum_id: addendum.id,
+      vehicle_vin: addendum.vehicle_vin,
+      vehicle_ymm: addendum.vehicle_ymm,
+      products_snapshot: addendum.products_snapshot,
+      price_overrides: priceOverrides,
+      initials,
+      optional_selections: optionalSelections,
+      customer_name: customerName,
+      warranty_ack: warrantyAck,
+      sticker_match_ack: stickerMatchAck,
+      delivery_mileage: deliveryMileage,
+      esign_consent_version: consent.version,
+      signed_at: new Date().toISOString(),
+    };
+    const contentHash = await hashPayload(canonicalPayload);
+    const customerIp = await fetchClientIp();
+
+    const signedAt = new Date().toISOString();
     const { error } = await supabase
       .from("addendums")
       .update({
@@ -114,10 +151,39 @@ const MobileSigning = () => {
         customer_name: customerName || null,
         customer_signature_data: customerSig.data,
         customer_signature_type: customerSig.type,
-        customer_signed_at: new Date().toISOString(),
+        customer_signed_at: signedAt,
         status: "signed",
+        // Hardening columns (see migration 20260417_platform_expansion.sql)
+        content_hash: contentHash,
+        esign_consent: consent as any,
+        user_agent: consent.user_agent,
+        delivery_mileage: deliveryMileage ? parseInt(deliveryMileage, 10) : null,
+        sticker_match_ack: stickerMatchAck,
+        warranty_ack: warrantyAck,
+        customer_ip: customerIp,
       } as any)
       .eq("signing_token", token!);
+
+    // Append to the server audit log (anon RLS permits this exact action).
+    (supabase as any)
+      .from("audit_log")
+      .insert({
+        action: "addendum_signed",
+        entity_type: "addendum",
+        entity_id: addendum.id,
+        details: {
+          vin: addendum.vehicle_vin,
+          ymm: addendum.vehicle_ymm,
+          token: token,
+          customer_name: customerName,
+          hash: contentHash,
+          consent_version: consent.version,
+        },
+        ip_address: customerIp,
+        user_agent: consent.user_agent,
+        content_hash: contentHash,
+      })
+      .then(() => undefined, () => undefined);
 
     setSubmitting(false);
     if (error) {
@@ -406,6 +472,55 @@ const MobileSigning = () => {
                 (2) I have been given time to review both documents; (3) my initials and signature
                 below constitute acceptance of the products and pricing as disclosed; (4) I understand
                 that optional items can be declined with no impact on my purchase or financing.
+              </p>
+            </div>
+          </button>
+        </div>
+
+        {/* E-SIGN Act consent — REQUIRED before signature */}
+        <div className="bg-card rounded-xl p-5 shadow-sm space-y-3">
+          <h2 className="text-sm font-bold font-barlow-condensed text-foreground">
+            Electronic Records & Signatures Consent
+          </h2>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Federal law (E-SIGN Act, 15 U.S.C. §7001) and your state's UETA
+            require that you consent before conducting this transaction electronically.
+          </p>
+
+          {!showFullConsent ? (
+            <button
+              onClick={() => setShowFullConsent(true)}
+              className="text-xs font-semibold text-[#1E90FF] hover:underline"
+            >
+              Read the full disclosure →
+            </button>
+          ) : (
+            <div className="max-h-48 overflow-y-auto rounded-lg bg-muted/40 border border-border p-3 text-[11px] text-foreground whitespace-pre-line leading-relaxed">
+              {ESIGN_CONSENT_TEXT}
+            </div>
+          )}
+
+          <button
+            onClick={() => setEsignConsent(!esignConsent)}
+            className={`w-full flex items-start gap-3 p-3 rounded-lg border-2 text-left transition-all ${
+              esignConsent ? "border-teal bg-teal/5" : "border-border"
+            }`}
+          >
+            <div
+              className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                esignConsent ? "border-teal bg-teal text-white" : "border-border"
+              }`}
+            >
+              {esignConsent && <span className="text-sm font-bold">✓</span>}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">
+                I consent to use electronic records and signatures for this transaction
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                I understand I can request a paper copy at no charge, I can withdraw
+                consent at any time before signing, and my electronic signature is
+                legally equivalent to a handwritten one under ESIGN/UETA.
               </p>
             </div>
           </button>

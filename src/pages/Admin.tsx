@@ -38,6 +38,18 @@ import {
   Printer,
   RotateCcw,
   Car,
+  Circle,
+  Check,
+  Copy,
+  PlayCircle,
+  TrendingUp,
+  ListChecks,
+  AlertTriangle,
+  FileSignature,
+  BookOpen,
+  Sparkles,
+  Library,
+  Plus,
 } from "lucide-react";
 
 interface Product {
@@ -54,7 +66,7 @@ interface Product {
   icon_type?: string;
 }
 
-type AdminTab = "products" | "rules" | "settings" | "branding" | "analytics" | "leads" | "audit" | "queue" | "files" | "getready" | "inventory" | "invoices" | "warranty";
+type AdminTab = "home" | "products" | "rules" | "settings" | "branding" | "analytics" | "leads" | "audit" | "queue" | "files" | "getready" | "inventory" | "invoices" | "warranty";
 
 const emptyProduct = {
   name: "",
@@ -103,7 +115,7 @@ const FEATURE_TOGGLES: { key: keyof DealerSettings; label: string; description: 
   { key: "feature_blackbook", label: "Black Book Data", description: "Pull factory equipment and live market data from Black Book (requires API key)" },
 ];
 
-const VALID_TABS: AdminTab[] = ["products", "rules", "settings", "branding", "analytics", "leads", "audit", "queue", "files", "getready", "inventory", "invoices", "warranty"];
+const VALID_TABS: AdminTab[] = ["home", "products", "rules", "settings", "branding", "analytics", "leads", "audit", "queue", "files", "getready", "inventory", "invoices", "warranty"];
 
 const Admin = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
@@ -116,9 +128,7 @@ const Admin = () => {
 
   // Read tab from URL ?tab= and keep in sync
   const urlTab = searchParams.get("tab") as AdminTab | null;
-  const [tab, setTabState] = useState<AdminTab>(
-    urlTab && VALID_TABS.includes(urlTab) ? urlTab : "products"
-  );
+  const [tab, setTabState] = useState<AdminTab>(urlTab && VALID_TABS.includes(urlTab) ? urlTab : "home");
 
   const setTab = (t: AdminTab) => {
     setTabState(t);
@@ -164,6 +174,9 @@ const Admin = () => {
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
   const [editingRule, setEditingRule] = useState<Partial<ProductRule & { _new?: boolean }> | null>(null);
   const [fetching, setFetching] = useState(true);
+  const [showComplianceBanner, setShowComplianceBanner] = useState<boolean>(
+    typeof window !== "undefined" ? localStorage.getItem("admin_home_compliance_banner_dismissed") !== "1" : true
+  );
 
   // Branding form
   const [branding, setBranding] = useState({
@@ -257,6 +270,7 @@ const Admin = () => {
   if (loading || fetching) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
 
   const tabs: { id: AdminTab; label: string }[] = [
+    { id: "home", label: "Home" },
     { id: "products", label: "Products" },
     ...(settings.feature_product_rules ? [{ id: "rules" as const, label: "Rules" }] : []),
     { id: "settings", label: "Settings" },
@@ -295,6 +309,301 @@ const Admin = () => {
           ))}
         </div>
 
+        {/* ─── Home Tab ─── */}
+        {tab === "home" && (() => {
+          const now = new Date();
+          const hour = now.getHours();
+          const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+          const displayName = user?.email ? user.email.split("@")[0] : "Dealer";
+          const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+          const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+          // This month's addendums = stickers printed since firstDayOfMonth
+          const thisMonthAddendums = vehicleFiles.reduce(
+            (sum, f) => sum + f.stickers.filter(s => s.printed_at && new Date(s.printed_at) >= firstDayOfMonth).length,
+            0
+          );
+          const lastMonthAddendums = vehicleFiles.reduce(
+            (sum, f) =>
+              sum +
+              f.stickers.filter(s => {
+                if (!s.printed_at) return false;
+                const d = new Date(s.printed_at);
+                return d >= firstDayLastMonth && d <= lastDayLastMonth;
+              }).length,
+            0
+          );
+          const addendumDelta = lastMonthAddendums > 0
+            ? Math.round(((thisMonthAddendums - lastMonthAddendums) / lastMonthAddendums) * 100)
+            : null;
+
+          const pendingGetReadyCount = getPendingGetReady().length;
+          const recentLeadsCount = leads.filter(l => l.captured_at && new Date(l.captured_at) >= thirtyDaysAgo).length;
+          const warrantyAlertsCount = expiringSoon.length;
+
+          // Setup checklist predicates
+          const brandedOk = !!settings.dealer_logo_url && !!settings.dealer_name && !!settings.dealer_tagline;
+          const productsOk = products.length >= 4;
+          const docFeeOk = !!settings.doc_fee_enabled && settings.doc_fee_amount > 0 && !!settings.doc_fee_state;
+          const firstStickerOk = fileStats.totalFiles > 0;
+          const addendumSignedOk = auditEntries.some(e => e.action === "addendum_signed");
+          const portalPublishedOk = fileStats.totalFiles > 0;
+
+          const checklist: { key: string; label: string; done: boolean; cta: string; onClick: () => void }[] = [
+            { key: "brand", label: "Brand your stickers", done: brandedOk, cta: "Open Branding", onClick: () => setTab("branding") },
+            { key: "products", label: "Add your products", done: productsOk, cta: "Manage Products", onClick: () => setTab("products") },
+            { key: "docfee", label: "Set your doc fee", done: docFeeOk, cta: "Open Settings", onClick: () => setTab("settings") },
+            { key: "print", label: "Print your first sticker", done: firstStickerOk, cta: "Open Lot", onClick: () => navigate("/dashboard") },
+            { key: "addendum", label: "Capture a signed addendum", done: addendumSignedOk, cta: "Create Addendum", onClick: () => navigate("/addendum") },
+            {
+              key: "portal",
+              label: "Publish your shopper portal link",
+              done: portalPublishedOk,
+              cta: "Copy embed code",
+              onClick: () => {
+                const embed = `<iframe src="${window.location.origin}/v/${currentStore?.slug || "demo"}" width="100%" height="900" frameborder="0"></iframe>`;
+                navigator.clipboard.writeText(embed);
+                toast.success("Embed code copied");
+              },
+            },
+          ];
+          const completedCount = checklist.filter(c => c.done).length;
+          const progressPct = Math.round((completedCount / checklist.length) * 100);
+
+          const quickActions: { icon: typeof FileText; title: string; subtitle: string; onClick: () => void }[] = [
+            { icon: ScanLine, title: "Scan VIN", subtitle: "Use your phone camera on the lot", onClick: () => navigate("/scan") },
+            { icon: FileSignature, title: "Build Addendum", subtitle: "Create a signable addendum", onClick: () => navigate("/addendum") },
+            { icon: Sparkles, title: "New Car Sticker", subtitle: "Monroney-style window label", onClick: () => navigate("/new-car-sticker") },
+            { icon: Car, title: "Used Car Sticker", subtitle: "Addendum for used inventory", onClick: () => navigate("/used-car-sticker") },
+            { icon: BookOpen, title: "Buyers Guide", subtitle: "FTC-compliant 16 CFR § 455", onClick: () => navigate("/buyers-guide") },
+            { icon: ShieldCheck, title: "Compliance Center", subtitle: "Audit trail and regs", onClick: () => navigate("/compliance") },
+          ];
+
+          const recentActivity = auditEntries.slice(-10).reverse();
+
+          return (
+            <div className="space-y-6">
+              {/* Compliance Banner */}
+              {showComplianceBanner && (
+                <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 text-xs text-amber-900">
+                    <strong className="font-semibold">California SB 766 takes effect October 1, 2026.</strong>{" "}
+                    Make sure your multi-language addendums are on.{" "}
+                    <button
+                      onClick={() => navigate("/compliance")}
+                      className="underline font-semibold hover:text-amber-700"
+                    >
+                      Learn more
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowComplianceBanner(false);
+                      localStorage.setItem("admin_home_compliance_banner_dismissed", "1");
+                    }}
+                    className="text-amber-700 hover:text-amber-900 text-xs font-medium flex-shrink-0"
+                    aria-label="Dismiss"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
+              {/* Welcome Banner */}
+              <div className="bg-card rounded-xl border border-border shadow-premium p-5">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground font-display">
+                      {greeting}, {displayName} — {currentStore?.name || "Your store"}
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {format(now, "EEEE, MMMM d, yyyy")}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 min-w-[200px]">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <ListChecks className="w-3.5 h-3.5" />
+                      <span>Setup checklist — {completedCount}/{checklist.length}</span>
+                    </div>
+                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] transition-all"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{progressPct}% complete</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Setup Checklist */}
+              <div className="bg-card rounded-xl border border-border shadow-premium p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <ListChecks className="w-4 h-4 text-blue-600" />
+                  <h3 className="text-sm font-semibold text-foreground">Setup checklist</h3>
+                </div>
+                <div className="space-y-2">
+                  {checklist.map(item => (
+                    <div
+                      key={item.key}
+                      className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-border hover:bg-muted/20 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {item.done ? (
+                          <Check className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-muted-foreground/50 flex-shrink-0" />
+                        )}
+                        <span className={`text-sm ${item.done ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}>
+                          {item.label}
+                        </span>
+                      </div>
+                      <button
+                        onClick={item.onClick}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors flex-shrink-0"
+                      >
+                        {item.key === "portal" ? <Copy className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+                        {item.cta}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* KPI Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* This month's addendums */}
+                <button
+                  onClick={() => setTab("files")}
+                  className="text-left bg-card rounded-xl border border-border shadow-premium p-4 hover:shadow-md transition-shadow"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#3BB4FF" }}>
+                    This month's addendums
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-4xl font-bold tabular-nums text-foreground">{thisMonthAddendums}</span>
+                    {addendumDelta !== null && (
+                      <span
+                        className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                          addendumDelta >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                        }`}
+                      >
+                        {addendumDelta >= 0 ? "+" : ""}{addendumDelta}%
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">vs last month</p>
+                </button>
+
+                {/* Pending get-ready */}
+                <button
+                  onClick={() => setTab("getready")}
+                  className="text-left bg-card rounded-xl border border-border shadow-premium p-4 hover:shadow-md transition-shadow"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+                    Pending get-ready
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-4xl font-bold tabular-nums text-foreground">{pendingGetReadyCount}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">awaiting prep/install before sale</p>
+                </button>
+
+                {/* Leads (30 days) */}
+                <button
+                  onClick={() => setTab("leads")}
+                  className="text-left bg-card rounded-xl border border-border shadow-premium p-4 hover:shadow-md transition-shadow"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#10B981" }}>
+                    Leads (30 days)
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-4xl font-bold tabular-nums text-foreground">{recentLeadsCount}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">captured from QR &amp; portal</p>
+                </button>
+
+                {/* Warranty alerts (30 days) */}
+                <button
+                  onClick={() => setTab("warranty")}
+                  className="text-left bg-card rounded-xl border border-border shadow-premium p-4 hover:shadow-md transition-shadow"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#DC2626" }}>
+                    Warranty alerts
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-4xl font-bold tabular-nums text-foreground">{warrantyAlertsCount}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">expiring in the next 30 days</p>
+                </button>
+              </div>
+
+              {/* Quick Actions */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <PlayCircle className="w-4 h-4 text-blue-600" />
+                  <h3 className="text-sm font-semibold text-foreground">Quick actions</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {quickActions.map((a) => (
+                    <button
+                      key={a.title}
+                      onClick={a.onClick}
+                      className="text-left rounded-xl border border-border bg-card p-4 hover:shadow-premium transition-shadow"
+                    >
+                      <a.icon className="w-5 h-5 text-blue-600 mb-2" />
+                      <p className="text-sm font-semibold text-foreground">{a.title}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{a.subtitle}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="bg-card rounded-xl border border-border shadow-premium p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-blue-600" />
+                    <h3 className="text-sm font-semibold text-foreground">Recent activity</h3>
+                  </div>
+                  <button
+                    onClick={() => setTab("audit")}
+                    className="text-xs font-medium text-blue-600 hover:underline"
+                  >
+                    View all
+                  </button>
+                </div>
+                {recentActivity.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-6 text-center">
+                    No activity yet. Create and sign your first addendum to see it here.
+                  </p>
+                ) : (
+                  <div className="space-y-1">
+                    {recentActivity.map(e => (
+                      <div key={e.id} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-foreground capitalize truncate">
+                            {e.action.replace(/_/g, " ")}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {e.entity_type}{e.entity_id ? ` · ${e.entity_id.slice(0, 8)}` : ""}
+                          </p>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground tabular-nums flex-shrink-0 ml-3">
+                          {format(new Date(e.created_at), "MMM d, h:mm a")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ─── Products Tab ─── */}
         {tab === "products" && (
           <div>
@@ -309,6 +618,77 @@ const Admin = () => {
               >
                 + Add Product
               </button>
+            </div>
+
+            {/* Product Library */}
+            <div className="mb-6 bg-card rounded-xl border border-border shadow-premium p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <Library className="w-4 h-4 text-blue-600" />
+                <h3 className="text-sm font-semibold text-foreground">Product Library</h3>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Browse your local product library. Click "Add to dealership" to copy a library entry into your active products list.
+              </p>
+              <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 mb-3">
+                <Plus className="w-3.5 h-3.5 text-blue-700 mt-0.5 flex-shrink-0" />
+                <p className="text-[11px] text-blue-900">
+                  Need a new product not in the library? Use the "+ Add Product" button above to create a custom one.
+                </p>
+              </div>
+              {productLibrary.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-6 text-center">
+                  Your product library is empty. Imported library entries will appear here.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {productLibrary.map(entry => {
+                    const defaultTier = entry.priceTiers.find(t => t.vehicleCategory === "default");
+                    const basePrice = defaultTier ? defaultTier.price : entry.defaultPrice;
+                    return (
+                      <div
+                        key={entry.id}
+                        className="rounded-lg border border-border bg-background p-3 flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-foreground truncate">{entry.name}</p>
+                            <span className="text-[9px] font-bold uppercase tracking-wider bg-muted text-muted-foreground px-1.5 py-0.5 rounded flex-shrink-0">
+                              {entry.category}
+                            </span>
+                          </div>
+                          {entry.subtitle && (
+                            <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{entry.subtitle}</p>
+                          )}
+                          <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
+                            ${basePrice.toFixed(2)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setEditing({
+                              ...emptyProduct,
+                              name: entry.name,
+                              subtitle: entry.subtitle,
+                              warranty: entry.warrantyDetails || entry.warranty || "",
+                              price: basePrice,
+                              badge_type: entry.badge_type,
+                              price_label: entry.price_label,
+                              disclosure: entry.disclosure,
+                              icon_type: entry.iconType || "",
+                              sort_order: products.length + 1,
+                              is_active: true,
+                            });
+                          }}
+                          className="mt-3 inline-flex items-center justify-center gap-1 h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 w-full"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add to dealership
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

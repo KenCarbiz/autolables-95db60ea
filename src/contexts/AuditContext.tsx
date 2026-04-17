@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import type { AuditLogEntry } from "@/types/tenant";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuditContextType {
   log: (entry: Omit<AuditLogEntry, "id" | "created_at" | "ip_address">) => void;
@@ -35,14 +36,30 @@ export const AuditProvider = ({ children }: { children: ReactNode }) => {
     const full: AuditLogEntry = {
       ...entry,
       id: crypto.randomUUID(),
-      ip_address: "",  // captured server-side in production
+      ip_address: "",  // real IP captured server-side (see audit_log insert below)
       created_at: new Date().toISOString(),
     };
+    // Local-first for instant UI, matches prior behavior
     setEntries(prev => {
       const next = [...prev, full];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next.slice(-MAX_ENTRIES)));
       return next.slice(-MAX_ENTRIES);
     });
+    // Mirror to the server-side audit_log (migration 20260417). Append-only,
+    // fire-and-forget. Never blocks the caller and never throws: audit loss
+    // is preferable to breaking the happy path.
+    (supabase as any)
+      .from("audit_log")
+      .insert({
+        action: entry.action,
+        entity_type: entry.entity_type,
+        entity_id: entry.entity_id,
+        store_id: entry.store_id || null,
+        user_id: entry.user_id || null,
+        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+        details: entry.details || {},
+      })
+      .then(() => undefined, () => undefined);
   }, []);
 
   const getByEntity = (entityType: string, entityId: string) =>

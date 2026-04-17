@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/brand/Logo";
 import AppSwitcher from "@/components/layout/AppSwitcher";
+import { AUTOCURB_BRAND } from "@/data/autocurbBrand";
 import {
   ArrowRight,
   ShieldCheck,
@@ -12,398 +14,781 @@ import {
   FileText,
   Signature,
   Check,
+  X,
+  Minus,
   Play,
   LogIn,
+  QrCode,
+  Printer,
+  Camera,
+  Wrench,
+  Languages,
+  Database,
+  Globe,
+  Quote,
+  Award,
+  Phone,
+  Mail,
+  ChevronDown,
+  TrendingUp,
+  Building2,
+  FileCheck,
+  Lock,
 } from "lucide-react";
-import { AUTOCURB_BRAND } from "@/data/autocurbBrand";
 
-/**
- * Public marketing landing — the dealer-facing front door for AutoLabels.io.
- *
- * Top-right hosts the cross-app AppSwitcher (so a HarteCash / Autocurb
- * customer can hop into AutoLabels) and a Dealer Login button. Logged-in
- * users are nudged to /dashboard.
- */
 const Landing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  return (
-    <div className="bg-background">
-      {/* ─────────── Top Nav ─────────── */}
-      <nav className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 lg:px-8 h-16 flex items-center justify-between gap-4">
-          <button
-            onClick={() => navigate("/")}
-            className="flex items-center"
-            aria-label="AutoLabels.io home"
+  // ─ Navigation ─
+  const Navigation = () => (
+    <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        <Logo variant="full" size={32} />
+        <div className="hidden md:flex gap-8 items-center justify-center flex-1">
+          <a
+            onClick={() => navigate("/about")}
+            className="text-sm text-gray-700 hover:text-gray-900 cursor-pointer"
           >
-            <Logo variant="full" size={26} />
-          </button>
-
-          <div className="hidden md:flex items-center gap-1 text-sm text-muted-foreground">
-            <NavLink onClick={() => navigate("/about")}>About</NavLink>
-            <NavLink onClick={() => navigate("/brand")}>Brand</NavLink>
-            <NavLink onClick={() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" })}>
-              How it works
-            </NavLink>
-            <NavLink onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}>
-              Pricing
-            </NavLink>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Cross-app switcher — visible to public so subscribers know we're part of a platform */}
-            <div className="hidden sm:block">
-              <PublicAppSwitcher />
-            </div>
-
-            {user ? (
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md shimmer-cta text-sm font-semibold hover:brightness-110 transition-all"
-              >
-                Open Dashboard
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={() => navigate("/login")}
-                  className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                >
-                  <LogIn className="w-3.5 h-3.5" />
-                  Dealer Login
-                </button>
-                <button
-                  onClick={() => navigate("/onboarding")}
-                  className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md shimmer-cta text-sm font-semibold hover:brightness-110 transition-all"
-                >
-                  Start Free
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </>
-            )}
-          </div>
+            About
+          </a>
+          <a
+            onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
+            className="text-sm text-gray-700 hover:text-gray-900 cursor-pointer"
+          >
+            Features
+          </a>
+          <a
+            onClick={() => document.getElementById("roi")?.scrollIntoView({ behavior: "smooth" })}
+            className="text-sm text-gray-700 hover:text-gray-900 cursor-pointer"
+          >
+            ROI
+          </a>
+          <a
+            onClick={() => document.getElementById("compare")?.scrollIntoView({ behavior: "smooth" })}
+            className="text-sm text-gray-700 hover:text-gray-900 cursor-pointer"
+          >
+            Compare
+          </a>
+          <a
+            onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
+            className="text-sm text-gray-700 hover:text-gray-900 cursor-pointer"
+          >
+            Pricing
+          </a>
+          <a
+            onClick={() => document.getElementById("faq")?.scrollIntoView({ behavior: "smooth" })}
+            className="text-sm text-gray-700 hover:text-gray-900 cursor-pointer"
+          >
+            FAQ
+          </a>
         </div>
-      </nav>
-
-      {/* ─────────── Hero ─────────── */}
-      <section className="relative overflow-hidden shimmer-hero text-white py-24 lg:py-32 px-6 lg:px-8">
-        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-[#3BB4FF]/25 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-[#1E90FF]/20 blur-3xl pointer-events-none" />
-
-        <div className="relative max-w-6xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-3 py-1 text-xs font-medium mb-6">
-            <Sparkles className="w-3 h-3 text-[#3BB4FF]" />
-            <span>The dealer label platform</span>
-          </div>
-
-          <h1 className="text-6xl lg:text-8xl font-black tracking-tighter font-display leading-none">
-            Clear.
-            <br />
-            Compliant.
-            <br />
-            <span className="bg-gradient-to-r from-[#3BB4FF] via-[#1E90FF] to-[#3BB4FF] bg-clip-text text-transparent italic">
-              Consistent.
-            </span>
-          </h1>
-
-          <p className="text-lg lg:text-xl text-white/65 mt-8 max-w-2xl mx-auto leading-relaxed">
-            Every sticker, addendum, and Buyers Guide that leaves your lot — perfectly priced,
-            fully disclosed, and ready to sign. Scan a VIN, build a label, capture a lead,
-            close the deal.
-          </p>
-
-          <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
+        <div className="flex items-center gap-4">
+          <AppSwitcher currentApp="autolabels" theme="light" />
+          {user ? (
             <button
-              onClick={() => navigate(user ? "/dashboard" : "/onboarding")}
-              className="inline-flex items-center gap-2 h-12 px-6 rounded-md bg-white text-slate-950 text-sm font-semibold hover:bg-white/90 transition-colors"
+              onClick={() => navigate("/dashboard")}
+              className="text-sm px-4 py-2 text-blue-600 hover:text-blue-700 font-medium"
             >
-              {user ? "Open Dashboard" : "Start free trial"}
-              <ArrowRight className="w-4 h-4" />
+              Open Dashboard
             </button>
-            <button
-              onClick={() => navigate("/about")}
-              className="inline-flex items-center gap-2 h-12 px-6 rounded-md border border-white/25 bg-white/5 text-white text-sm font-semibold hover:bg-white/10 transition-colors"
-            >
-              <Play className="w-4 h-4" />
-              See a demo
-            </button>
-          </div>
-
-          <div className="mt-12 flex items-center justify-center gap-6 text-xs text-white/50 flex-wrap">
-            <span className="flex items-center gap-1.5">
-              <Check className="w-3 h-3 text-emerald-400" />
-              No credit card required
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Check className="w-3 h-3 text-emerald-400" />
-              CARS Act compliant
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Check className="w-3 h-3 text-emerald-400" />
-              Set up in 5 minutes
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────── How it works ─────────── */}
-      <section id="how" className="py-24 px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#1E90FF]">How it works</p>
-            <h2 className="text-4xl lg:text-5xl font-black tracking-tighter font-display mt-2">
-              Four verbs. One platform.
-            </h2>
-            <p className="text-base text-muted-foreground mt-4 max-w-xl mx-auto">
-              Decode, stick, sign, close — that's the whole product.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-            <VerbCard num="01" icon={Scan} verb="Decode" body="VIN to full factory build sheet in under 800ms via the NHTSA database." />
-            <VerbCard num="02" icon={FileText} verb="Stick" body="Build a fully-compliant dealer addendum with FTC disclosures in under a minute." />
-            <VerbCard num="03" icon={Signature} verb="Sign" body="Customer scans a QR, signs on their phone, and every action lands in your audit log." />
-            <VerbCard num="04" icon={BarChart3} verb="Close" body="Every scan becomes a lead. Every addendum becomes data — live." />
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────── Power band ─────────── */}
-      <section className="py-24 px-6 lg:px-8 bg-muted/30 border-y border-border">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#1E90FF]">Under the hood</p>
-            <h2 className="text-4xl lg:text-5xl font-black tracking-tighter font-display mt-2">
-              Power where you need it
-            </h2>
-            <p className="text-base text-muted-foreground mt-4 max-w-xl mx-auto">
-              Compliance-grade tools, premium UX, zero learning curve.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <Feature icon={ShieldCheck} title="CARS Act ready" body="California SB 766 disclosures, multi-language support, 2-year retention — built in." />
-            <Feature icon={Zap} title="VIN decode + scrape" body="NHTSA free decode or Black Book live pricing. Or paste a VDP URL and let us scrape it." />
-            <Feature icon={Sparkles} title="Rules engine" body="Auto-assign products by year, make, model, trim, body style, or mileage." />
-            <Feature icon={Signature} title="Digital signing" body="Customer signs on their phone via QR. Every signature cryptographically logged." />
-            <Feature icon={FileText} title="Buyers Guide" body="FTC As-Is / Implied / Warranty guides in English + Spanish. Federal + state compliant." />
-            <Feature icon={BarChart3} title="Live analytics" body="Product acceptance rates, revenue per addendum, top hooks — every signal that matters." />
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────── Pricing teaser ─────────── */}
-      <section id="pricing" className="py-24 px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#1E90FF]">Pricing</p>
-            <h2 className="text-4xl lg:text-5xl font-black tracking-tighter font-display mt-2">
-              Per rooftop. No surprises.
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-5">
-            <PriceCard
-              tier="Starter"
-              price="$0"
-              cadence="forever"
-              description="Try it. Print 5 addendums per month."
-              highlights={["5 addendums / mo", "1 store", "Email support", "Brand watermark"]}
-              cta="Start free"
-              onCta={() => navigate("/onboarding")}
-            />
-            <PriceCard
-              tier="Dealer"
-              price="$199"
-              cadence="per rooftop / mo"
-              description="The standard for single-rooftop dealers."
-              highlights={["Unlimited labels", "VIN decode + scrape", "Digital signing", "Rules engine", "Buyers Guide"]}
-              cta="Start trial"
-              featured
-              onCta={() => navigate("/onboarding")}
-            />
-            <PriceCard
-              tier="Group"
-              price="Custom"
-              cadence="multi-rooftop"
-              description="White-label, SSO, multi-tenant for groups."
-              highlights={["Everything in Dealer", "Multi-store dashboards", "SSO + SAML", "Cross-app subscriptions", "Dedicated CSM"]}
-              cta="Talk to sales"
-              onCta={() => window.open("mailto:hello@autolabels.io", "_blank")}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────── CTA ─────────── */}
-      <section className="py-24 px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto shimmer-hero rounded-3xl px-8 lg:px-16 py-20 text-center text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-[#3BB4FF]/25 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full bg-[#1E90FF]/20 blur-3xl pointer-events-none" />
-
-          <div className="relative">
-            <h2 className="text-4xl lg:text-5xl font-black tracking-tighter font-display leading-none">
-              Ready to label your lot
-              <br />
-              the right way?
-            </h2>
-            <p className="text-lg text-white/65 mt-6">
-              Set up in 5 minutes. No credit card required. Cancel anytime.
-            </p>
-            <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
-              <button
-                onClick={() => navigate(user ? "/dashboard" : "/onboarding")}
-                className="inline-flex items-center gap-2 h-12 px-6 rounded-md bg-white text-slate-950 text-sm font-semibold hover:bg-white/90 transition-colors"
-              >
-                {user ? "Open Dashboard" : "Start free trial"}
-                <ArrowRight className="w-4 h-4" />
-              </button>
+          ) : (
+            <>
               <button
                 onClick={() => navigate("/login")}
-                className="inline-flex items-center gap-2 h-12 px-6 rounded-md border border-white/25 bg-white/5 text-white text-sm font-semibold hover:bg-white/10 transition-colors"
+                className="text-sm px-4 py-2 text-gray-700 hover:text-gray-900 font-medium flex items-center gap-2"
               >
+                <LogIn size={16} />
                 Dealer Login
               </button>
+              <button
+                onClick={() => navigate("/onboarding")}
+                className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              >
+                Start Free
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+
+  // ─ Hero ─
+  const Hero = () => (
+    <section className="relative py-20 md:py-28 overflow-hidden">
+      <div className="absolute inset-0 opacity-40">
+        <div className="absolute top-20 left-10 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+        <div className="absolute top-40 right-20 w-96 h-96 bg-cyan-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+      </div>
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="inline-block px-4 py-2 bg-gray-100 rounded-full mb-6">
+          <span className="text-sm font-medium text-gray-700">The dealer label & compliance platform</span>
+        </div>
+        <h1 className="font-display text-6xl md:text-8xl tracking-tighter font-bold mb-6 leading-tight">
+          Decode. Disclose.{" "}
+          <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent italic">
+            Deliver.
+          </span>
+        </h1>
+        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          Generate NHTSA-compliant window stickers, digital addendums, tamper-evident e-signatures, and a shopper portal—all in one platform.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          <button
+            onClick={() => navigate("/onboarding")}
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2 shimmer-cta"
+          >
+            Start free trial
+            <ArrowRight size={18} />
+          </button>
+          <button
+            onClick={() => document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" })}
+            className="px-8 py-3 border-2 border-gray-300 text-gray-900 rounded-lg hover:border-gray-400 font-medium flex items-center justify-center gap-2"
+          >
+            <Play size={18} />
+            Watch 90-sec demo
+          </button>
+        </div>
+        <div className="text-sm text-gray-600 space-y-2">
+          <p>No credit card · FTC-aligned · 50-state disclosure engine</p>
+          <p>California SB 766 ready (Oct 2026)</p>
+        </div>
+      </div>
+    </section>
+  );
+
+  // ─ Logo Wall ─
+  const LogoWall = () => (
+    <section className="py-12 bg-gray-50 border-y border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p className="text-center text-gray-700 font-medium mb-8">Trusted by dealers from coast to coast.</p>
+        {/* TODO: replace with real customer logos */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {[
+            "Freeman Ford",
+            "Koons Lexus",
+            "Westside Nissan",
+            "Desert Mitsubishi",
+            "River City Chevrolet",
+            "Premier Select Auto Group",
+          ].map((name) => (
+            <div
+              key={name}
+              className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center text-center text-xs font-mono text-gray-500 h-20"
+            >
+              {name}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  // ─ Demo ─
+  const Demo = () => (
+    <section id="demo" className="py-16 bg-white">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl overflow-hidden aspect-video flex items-center justify-center mb-8">
+          <div className="text-center">
+            <Play size={64} className="text-white mx-auto mb-4" />
+            <p className="text-white font-semibold">Demo – 0:90</p>
+          </div>
+        </div>
+        <p className="text-gray-700 font-medium mb-4">What you'll see:</p>
+        <ul className="space-y-3 text-gray-600">
+          <li className="flex items-start gap-3">
+            <Check size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+            <span>Decode a VIN in 800ms</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <Check size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+            <span>Build a compliant addendum</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <Check size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+            <span>Publish the shopper portal</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+  );
+
+  // ─ How It Works ─
+  const HowItWorks = () => (
+    <section id="how" className="py-16 bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="font-display text-4xl font-bold mb-12 text-center">How it works</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[
+            { icon: Scan, title: "Decode", desc: "VIN lookup + NHTSA recalls in 800ms" },
+            { icon: Printer, title: "Stick", desc: "Generate Zebra-ready window label" },
+            { icon: Signature, title: "Sign", desc: "Tamper-evident e-signature gate" },
+            { icon: Check, title: "Close", desc: "Shopper portal QR + shopper portal" },
+          ].map((item, idx) => (
+            <div key={idx} className="bg-white p-6 rounded-lg border border-gray-200 text-center">
+              <div className="text-4xl font-bold text-blue-600 mb-3">{idx + 1}</div>
+              <item.icon size={32} className="mx-auto text-blue-600 mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
+              <p className="text-sm text-gray-600">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  // ─ Sticker to Shopper ─
+  const StickerToShopper = () => (
+    <section className="py-16 bg-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 className="font-display text-4xl font-bold mb-6">The only window sticker your buyer reads on their phone.</h2>
+            <p className="text-gray-600 mb-6">
+              The QR on the printed sticker resolves to <code className="bg-gray-100 px-2 py-1 rounded text-sm">/v/&lt;slug&gt;</code>, matching your dealership branding and WCAG 2.1 AA compliant for accessibility.
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <div className="w-64 h-96 bg-gradient-to-b from-gray-100 to-gray-200 rounded-3xl border-8 border-gray-800 flex flex-col items-center justify-center p-4">
+              <Logo variant="full" size={24} />
+              <p className="text-sm font-semibold text-gray-900 mt-4 text-center">2024 Lexus RX 350</p>
+              <div className="mt-4 space-y-2 w-full text-xs">
+                <div className="bg-white rounded p-2 text-center">
+                  <span className="font-medium text-gray-700">Premium Package</span>
+                  <div className="text-gray-500 text-xs mt-1">Pre-Installed</div>
+                </div>
+                <div className="bg-white rounded p-2 text-center">
+                  <span className="font-medium text-gray-700">All-Weather Mats</span>
+                  <div className="text-gray-500 text-xs mt-1">Pre-Installed</div>
+                </div>
+                <div className="bg-white rounded p-2 text-center">
+                  <span className="font-medium text-gray-700">VIN Shield</span>
+                  <div className="text-gray-500 text-xs mt-1">Pre-Installed</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
+  // ─ Prep & Install Gate ─
+  const PrepGate = () => (
+    <section className="py-16 bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="font-display text-4xl font-bold mb-4 text-center">Verified before the car hits the lot.</h2>
+        <p className="text-center text-gray-600 mb-8">
+          Shop-foreman sign-off unlocks the public listing and shopper portal.
+        </p>
+        <div className="flex flex-wrap justify-center gap-3">
+          {["Acquired", "Inspected", "Installed", "Foreman Signed", "Ready", "Listed"].map((stage) => (
+            <div key={stage} className="flex items-center gap-2">
+              <div className="px-4 py-2 bg-white border-2 border-green-600 rounded-full text-sm font-medium text-gray-900 flex items-center gap-2">
+                <Check size={16} className="text-green-600" />
+                {stage}
+              </div>
+              {stage !== "Listed" && <ArrowRight size={20} className="text-gray-400" />}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  // ─ Features ─
+  const Features = () => (
+    <section id="features" className="py-16 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="font-display text-4xl font-bold mb-12 text-center">Features</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[
+            { icon: Globe, title: "State-by-state disclosure engine", desc: "All 50 states" },
+            { icon: Scan, title: "VIN decode + Black Book pricing", desc: "Real-time lookup" },
+            { icon: ShieldCheck, title: "NHTSA recall + Takata stop-sale", desc: "Safety compliance" },
+            { icon: FileText, title: "Monroney-grade typography", desc: "FTC standards" },
+            { icon: Sparkles, title: "AI disclosure copilot", desc: "Smart suggestions" },
+            { icon: Lock, title: "UETA/E-SIGN tamper-evident sign-off", desc: "Legal binding" },
+            { icon: Printer, title: "Zebra/Brother/DYMO universal print", desc: "All printers" },
+            { icon: Camera, title: "Prep + install photo workflow", desc: "Documentation" },
+            { icon: QrCode, title: "Public shopper portal + QR", desc: "Mobile-first" },
+            { icon: Wrench, title: "Product rules engine", desc: "Custom logic" },
+            { icon: Languages, title: "Multi-language", desc: "ES/ZH/TL/VI/KO" },
+            { icon: Database, title: "Immutable audit vault", desc: "Compliance trail" },
+          ].map((feature, idx) => (
+            <div key={idx} className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+              <feature.icon size={28} className="text-blue-600 mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-2">{feature.title}</h3>
+              <p className="text-sm text-gray-600">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  // ─ ROI Calculator ─
+  const ROICalculator = () => {
+    const [deals, setDeals] = useState(50);
+    const [accessoryRev, setAccessoryRev] = useState(650);
+    const [disputes, setDisputes] = useState(3);
+
+    const incrementalAnnualRevenue = deals * 12 * accessoryRev * 0.15;
+    const complianceHoursSaved = deals * 12 * 0.4;
+    const riskAvoided = disputes * 4500;
+    const yearCost = 199 * 12;
+    const roi = ((incrementalAnnualRevenue + riskAvoided - yearCost) / yearCost) * 100;
+
+    const fmt = (n: number) =>
+      new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+
+    return (
+      <section id="roi" className="py-16 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-display text-4xl font-bold mb-12 text-center">ROI Calculator</h2>
+          <div className="bg-white p-8 rounded-lg border border-gray-200 mb-8">
+            <div className="space-y-6 mb-8">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Deals per month: {deals}
+                </label>
+                <input
+                  type="range"
+                  min="10"
+                  max="500"
+                  value={deals}
+                  onChange={(e) => setDeals(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Avg accessory revenue per deal: {fmt(accessoryRev)}
+                </label>
+                <input
+                  type="range"
+                  min="200"
+                  max="2000"
+                  step="50"
+                  value={accessoryRev}
+                  onChange={(e) => setAccessoryRev(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Doc-fee-related disputes per year: {disputes}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="20"
+                  value={disputes}
+                  onChange={(e) => setDisputes(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-blue-50 p-4 rounded-lg text-center">
+                <p className="text-sm text-gray-600 mb-2">Annual Revenue Lift</p>
+                <p className="text-2xl font-bold text-blue-600">{fmt(incrementalAnnualRevenue)}</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg text-center">
+                <p className="text-sm text-gray-600 mb-2">Hours Saved Annually</p>
+                <p className="text-2xl font-bold text-green-600">{complianceHoursSaved.toFixed(0)}</p>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg text-center">
+                <p className="text-sm text-gray-600 mb-2">Risk Avoided</p>
+                <p className="text-2xl font-bold text-purple-600">{fmt(riskAvoided)}</p>
+              </div>
+              <div className="bg-amber-50 p-4 rounded-lg text-center">
+                <p className="text-sm text-gray-600 mb-2">ROI</p>
+                <p className="text-2xl font-bold text-amber-600">{roi.toFixed(0)}%</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
+    );
+  };
 
-      {/* ─────────── Footer ─────────── */}
-      <footer className="border-t border-border py-10 px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
-          <Logo variant="full" size={22} tagline />
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} {AUTOCURB_BRAND.name} · {AUTOCURB_BRAND.tagline}
-          </p>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <button onClick={() => navigate("/about")} className="hover:text-foreground">About</button>
-            <button onClick={() => navigate("/brand")} className="hover:text-foreground">Brand</button>
-            <button onClick={() => navigate("/login")} className="hover:text-foreground">Sign in</button>
+  // ─ Comparison ─
+  const Comparison = () => (
+    <section id="compare" className="py-16 bg-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="font-display text-4xl font-bold mb-12 text-center">How we compare</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b-2 border-gray-300">
+                <th className="text-left py-4 px-4 font-semibold text-gray-900">Feature</th>
+                <th className="text-center py-4 px-4 font-semibold text-gray-900">AutoLabels.io</th>
+                <th className="text-center py-4 px-4 font-semibold text-gray-900">Old DMS plugin</th>
+                <th className="text-center py-4 px-4 font-semibold text-gray-900">Word doc + PDF</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { feature: "VIN decode + NHTSA recall", al: true, dms: false, doc: false },
+                { feature: "State disclosure engine (50)", al: true, dms: false, doc: false },
+                { feature: "Digital UETA sign-off", al: true, dms: false, doc: false },
+                { feature: "Shopper-facing QR portal", al: true, dms: false, doc: false },
+                { feature: "Prep + install gate", al: true, dms: false, doc: false },
+                { feature: "Immutable audit trail", al: true, dms: false, doc: false },
+                { feature: "Zebra + universal print", al: true, dms: false, doc: false },
+                { feature: "California SB 766 ready", al: true, dms: false, doc: false },
+                { feature: "Transparent flat pricing", al: true, dms: "partial", doc: false },
+              ].map((row, idx) => (
+                <tr key={idx} className="border-b border-gray-200">
+                  <td className="py-4 px-4 text-gray-900 font-medium">{row.feature}</td>
+                  <td className="py-4 px-4 text-center">
+                    {row.al === true ? <Check size={20} className="text-green-600 mx-auto" /> : row.al === false ? <X size={20} className="text-red-600 mx-auto" /> : <Minus size={20} className="text-amber-600 mx-auto" />}
+                  </td>
+                  <td className="py-4 px-4 text-center">
+                    {row.dms === true ? <Check size={20} className="text-green-600 mx-auto" /> : row.dms === false ? <X size={20} className="text-red-600 mx-auto" /> : <Minus size={20} className="text-amber-600 mx-auto" />}
+                  </td>
+                  <td className="py-4 px-4 text-center">
+                    {row.doc === true ? <Check size={20} className="text-green-600 mx-auto" /> : row.doc === false ? <X size={20} className="text-red-600 mx-auto" /> : <Minus size={20} className="text-amber-600 mx-auto" />}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+
+  // ─ Testimonials ─
+  const Testimonials = () => (
+    <section className="py-16 bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="font-display text-4xl font-bold mb-12 text-center">What dealers say</h2>
+        {/* TODO: replace with real customer stories */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            {
+              quote: "We went from 6 addendums a week to 27. The prep-gate alone saved our GM from a state AG letter.",
+              author: "Jim Holloway",
+              title: "General Manager",
+              company: "Freeman Ford",
+              city: "Jackson MS",
+            },
+            {
+              quote: "Our customers scan the QR and read the sticker on their phone. VDP bounce-rate dropped 18%.",
+              author: "Maria Chen",
+              title: "Digital Marketing Director",
+              company: "Koons Lexus",
+              city: "Tysons Corner VA",
+            },
+            {
+              quote: "Set up was 11 minutes. My 58-year-old finance director did it alone.",
+              author: "Tony Ruiz",
+              title: "Dealer Principal",
+              company: "Desert Mitsubishi",
+              city: "Mesa AZ",
+            },
+          ].map((test, idx) => (
+            <div key={idx} className="bg-white p-8 rounded-lg border border-gray-200">
+              <Quote size={24} className="text-blue-600 mb-4" />
+              <p className="text-gray-600 mb-6 italic">{test.quote}</p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full"></div>
+                <div className="text-sm">
+                  <p className="font-semibold text-gray-900">{test.author}</p>
+                  <p className="text-gray-600">{test.title}</p>
+                  <p className="text-gray-600">{test.company}, {test.city}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  // ─ Press ─
+  const Press = () => (
+    <section className="py-12 bg-white border-y border-gray-200">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p className="text-center text-gray-700 font-medium mb-8">As seen at / In</p>
+        {/* TODO: replace with real press logos */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {["Automotive News", "Car Dealership Guy", "NADA Show", "Shark Tank"].map((press) => (
+            <div
+              key={press}
+              className="bg-gray-100 border border-gray-200 rounded-lg p-4 flex items-center justify-center text-center text-xs font-medium text-gray-500 h-20"
+            >
+              {press}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  // ─ Pricing ─
+  const Pricing = () => (
+    <section id="pricing" className="py-16 bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="font-display text-4xl font-bold mb-12 text-center">Pricing</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          {[
+            {
+              name: "Starter",
+              price: "$0",
+              period: "forever",
+              desc: "For solo dealers exploring",
+              featured: false,
+              cta: "Start free",
+              items: ["1 rooftop", "VIN decode", "Basic sticker", "Email support"],
+            },
+            {
+              name: "Dealer",
+              price: "$199",
+              period: "per rooftop/month",
+              desc: "Most popular for volume dealers",
+              featured: true,
+              cta: "Start trial",
+              items: [
+                "Unlimited VINs",
+                "Full disclosure engine",
+                "Prep + install gate",
+                "E-SIGN + audit vault",
+                "Shopper portal",
+                "Priority support",
+              ],
+            },
+            {
+              name: "Group",
+              price: "Custom",
+              period: "multi-rooftop pricing",
+              desc: "For dealer groups & networks",
+              featured: false,
+              cta: "Talk to sales",
+              items: [
+                "Unlimited rooftops",
+                "Centralized billing",
+                "SSO + SAML",
+                "Webhook integrations",
+                "DMS connectors",
+                "Dedicated success manager",
+              ],
+            },
+          ].map((tier, idx) => (
+            <div
+              key={idx}
+              className={`rounded-lg p-8 border-2 ${
+                tier.featured ? "border-blue-600 bg-white shadow-premium" : "border-gray-200 bg-white"
+              }`}
+            >
+              {tier.featured && <div className="text-center mb-4 text-sm font-semibold text-blue-600">FEATURED</div>}
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">{tier.name}</h3>
+              <p className="text-gray-600 text-sm mb-4">{tier.desc}</p>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-gray-900">{tier.price}</span>
+                <span className="text-gray-600 text-sm ml-2">/ {tier.period}</span>
+              </div>
+              <button
+                onClick={() =>
+                  tier.cta === "Talk to sales"
+                    ? window.open("mailto:hello@autolabels.io")
+                    : navigate("/onboarding")
+                }
+                className={`w-full py-3 rounded-lg font-medium mb-6 ${
+                  tier.featured
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "border-2 border-gray-300 text-gray-900 hover:border-gray-400"
+                }`}
+              >
+                {tier.cta}
+              </button>
+              <ul className="space-y-3 text-sm">
+                {tier.items.map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-gray-600">
+                    <Check size={16} className="text-green-600" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <p className="font-semibold text-gray-900 mb-4">All plans include:</p>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
+            {[
+              "VIN decode",
+              "State engine",
+              "E-SIGN",
+              "Audit vault",
+              "Shopper portal",
+              "Zebra print",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2 text-gray-600">
+                <Check size={16} className="text-green-600 flex-shrink-0" />
+                {item}
+              </div>
+            ))}
           </div>
         </div>
-      </footer>
+      </div>
+    </section>
+  );
+
+  // ─ FAQ ─
+  const FAQ = () => (
+    <section id="faq" className="py-16 bg-white">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="font-display text-4xl font-bold mb-12 text-center">Frequently asked questions</h2>
+        <div className="space-y-4">
+          {[
+            {
+              q: "Do you handle the FTC Buyers Guide for used cars?",
+              a: "Yes — bilingual (English + Spanish), As-Is / Implied / Warranty, 16 CFR 455 compliant.",
+            },
+            {
+              q: "What happened to the CARS Rule?",
+              a: "The 5th Circuit vacated it on January 27, 2025. We stay FTC-aligned via Section 5 and implement individual state laws like California SB 766 (effective October 1, 2026).",
+            },
+            {
+              q: "Is digital signing legally binding?",
+              a: "Yes. We follow UETA and the federal E-SIGN Act — tamper-evident content hash, IP, user-agent, timestamp, and consent are captured and stored server-side.",
+            },
+            {
+              q: "Can the accessory addendum be viewed from our website?",
+              a: "Yes. Every VIN has a public /v/<slug> URL with WCAG 2.1 AA accessibility, and an iframe embed snippet your web team can drop on the VDP.",
+            },
+            {
+              q: "What if the internet drops?",
+              a: "Draft stickers save to an offline queue and sync when the connection returns.",
+            },
+            {
+              q: "Does it print to Zebra?",
+              a: "Yes — ZPL direct via WebUSB, plus Brother QL, DYMO, and any CUPS/PDF printer.",
+            },
+            {
+              q: "What DMS integrations?",
+              a: "vAuto, VinSolutions, CDK, and Reynolds via webhooks, plus Zapier/Make for the rest.",
+            },
+            {
+              q: "Is there a contract?",
+              a: "Month-to-month. Cancel anytime. No setup fees.",
+            },
+          ].map((faq, idx) => (
+            <details
+              key={idx}
+              className="group border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-gray-300"
+            >
+              <summary className="flex items-center justify-between font-semibold text-gray-900 select-none">
+                {faq.q}
+                <ChevronDown size={20} className="text-gray-400 group-open:rotate-180 transition-transform" />
+              </summary>
+              <p className="text-gray-600 mt-4">{faq.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  // ─ Final CTA ─
+  const FinalCTA = () => (
+    <section className="py-16 bg-white">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl p-12 text-center shimmer-hero">
+          <h2 className="font-display text-4xl font-bold text-white mb-6">Stop printing stickers the 2010 way.</h2>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => navigate("/onboarding")}
+              className="px-8 py-3 bg-white text-blue-600 rounded-lg hover:bg-gray-100 font-medium flex items-center justify-center gap-2"
+            >
+              Start free trial
+              <ArrowRight size={18} />
+            </button>
+            <button
+              onClick={() => document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" })}
+              className="px-8 py-3 border-2 border-white text-white rounded-lg hover:bg-white/10 font-medium"
+            >
+              Watch demo
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
+  // ─ Footer ─
+  const Footer = () => (
+    <footer className="bg-gray-900 text-gray-400 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div>
+            <h3 className="font-semibold text-white mb-4">Product</h3>
+            <ul className="space-y-2 text-sm">
+              <li><a className="hover:text-gray-200 cursor-pointer">Window Stickers</a></li>
+              <li><a className="hover:text-gray-200 cursor-pointer">Addendums</a></li>
+              <li><a className="hover:text-gray-200 cursor-pointer">Compliance</a></li>
+              <li><a className="hover:text-gray-200 cursor-pointer">Shopper Portal</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold text-white mb-4">Resources</h3>
+            <ul className="space-y-2 text-sm">
+              <li><a onClick={() => document.getElementById("faq")?.scrollIntoView({ behavior: "smooth" })} className="hover:text-gray-200 cursor-pointer">FAQ</a></li>
+              <li><a className="hover:text-gray-200 cursor-pointer">Brand</a></li>
+              <li><a onClick={() => navigate("/about")} className="hover:text-gray-200 cursor-pointer">About</a></li>
+              <li><a className="hover:text-gray-200 cursor-pointer">Changelog</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold text-white mb-4">Legal</h3>
+            <ul className="space-y-2 text-sm">
+              <li><a className="hover:text-gray-200 cursor-pointer">Privacy</a></li>
+              <li><a className="hover:text-gray-200 cursor-pointer">Terms</a></li>
+              <li><a className="hover:text-gray-200 cursor-pointer">E-SIGN Disclosure</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold text-white mb-4">Contact</h3>
+            <ul className="space-y-2 text-sm">
+              <li><a href="mailto:hello@autolabels.io" className="hover:text-gray-200 flex items-center gap-2"><Mail size={16} /> hello@autolabels.io</a></li>
+              <li><a className="hover:text-gray-200 cursor-pointer">Request demo</a></li>
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Logo variant="full" size={24} />
+            <p className="text-sm text-gray-500">© 2026 AutoLabels.io — Built for the American dealer.</p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+
+  return (
+    <div className="bg-white">
+      <Navigation />
+      <Hero />
+      <LogoWall />
+      <Demo />
+      <HowItWorks />
+      <StickerToShopper />
+      <PrepGate />
+      <Features />
+      <ROICalculator />
+      <Comparison />
+      <Testimonials />
+      <Press />
+      <Pricing />
+      <FAQ />
+      <FinalCTA />
+      <Footer />
     </div>
   );
 };
-
-const NavLink = ({ children, onClick }: { children: React.ReactNode; onClick: () => void }) => (
-  <button
-    onClick={onClick}
-    className="px-3 h-9 rounded-md text-sm font-medium hover:text-foreground hover:bg-muted transition-colors"
-  >
-    {children}
-  </button>
-);
-
-/**
- * Light-themed AppSwitcher for the public landing nav. Uses the same
- * entitlement model as the in-app version — only shows enabled apps.
- */
-const PublicAppSwitcher = () => <AppSwitcher currentApp="autolabels" theme="light" />;
-
-const VerbCard = ({
-  num,
-  icon: Icon,
-  verb,
-  body,
-}: {
-  num: string;
-  icon: typeof Scan;
-  verb: string;
-  body: string;
-}) => (
-  <div className="bg-card rounded-2xl border border-border shadow-premium p-6 hover:shadow-premium-md transition-shadow">
-    <div className="flex items-center justify-between mb-4">
-      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#3BB4FF] via-[#1E90FF] to-[#0066CC] flex items-center justify-center">
-        <Icon className="w-5 h-5 text-white" />
-      </div>
-      <p className="text-xs font-bold text-[#1E90FF] tabular-nums">{num}</p>
-    </div>
-    <h3 className="text-2xl font-bold tracking-tight font-display text-foreground">{verb}</h3>
-    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{body}</p>
-  </div>
-);
-
-const Feature = ({
-  icon: Icon,
-  title,
-  body,
-}: {
-  icon: typeof Scan;
-  title: string;
-  body: string;
-}) => (
-  <div className="p-6">
-    <div className="w-9 h-9 rounded-lg bg-[#1E90FF]/10 flex items-center justify-center mb-4">
-      <Icon className="w-4 h-4 text-[#1E90FF]" />
-    </div>
-    <h3 className="text-base font-semibold text-foreground">{title}</h3>
-    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{body}</p>
-  </div>
-);
-
-const PriceCard = ({
-  tier,
-  price,
-  cadence,
-  description,
-  highlights,
-  cta,
-  onCta,
-  featured = false,
-}: {
-  tier: string;
-  price: string;
-  cadence: string;
-  description: string;
-  highlights: string[];
-  cta: string;
-  onCta: () => void;
-  featured?: boolean;
-}) => (
-  <div
-    className={`rounded-2xl border p-7 flex flex-col ${
-      featured
-        ? "border-[#1E90FF] shadow-premium-lg bg-card relative"
-        : "border-border shadow-premium bg-card"
-    }`}
-  >
-    {featured && (
-      <span className="absolute -top-3 left-7 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest shimmer-cta px-2.5 py-1 rounded-full">
-        Most popular
-      </span>
-    )}
-    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{tier}</p>
-    <div className="mt-4 flex items-baseline gap-1.5">
-      <span className="text-4xl font-black tracking-tight font-display text-foreground">{price}</span>
-      <span className="text-xs text-muted-foreground">{cadence}</span>
-    </div>
-    <p className="text-sm text-muted-foreground mt-2">{description}</p>
-
-    <ul className="mt-6 space-y-2 flex-1">
-      {highlights.map((h) => (
-        <li key={h} className="flex items-start gap-2 text-sm text-foreground">
-          <Check className="w-3.5 h-3.5 text-emerald-500 mt-1 flex-shrink-0" />
-          <span>{h}</span>
-        </li>
-      ))}
-    </ul>
-
-    <button
-      onClick={onCta}
-      className={`mt-6 h-10 rounded-md text-sm font-semibold transition-all ${
-        featured
-          ? "shimmer-cta hover:brightness-110"
-          : "bg-foreground text-background hover:opacity-90"
-      }`}
-    >
-      {cta}
-    </button>
-  </div>
-);
 
 export default Landing;
