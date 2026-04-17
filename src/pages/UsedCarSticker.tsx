@@ -9,6 +9,7 @@ import { useAiDescription } from "@/hooks/useAiDescription";
 import { useGpsTracking } from "@/hooks/useGpsTracking";
 import { useZebraPrint } from "@/hooks/useZebraPrint";
 import { useVehicleListing } from "@/hooks/useVehicleListing";
+import { useRecallLookup } from "@/hooks/useRecallLookup";
 import RecallBanner from "@/components/addendum/RecallBanner";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
@@ -32,6 +33,7 @@ const UsedCarSticker = () => {
   const { pinLocation, tracking: gpsTracking } = useGpsTracking();
   const { printLabel, printing: zebraPrinting } = useZebraPrint();
   const { createListing, publishListing, publicUrl, embedSnippet } = useVehicleListing(currentStore?.id || "");
+  const { lookup: recallLookup } = useRecallLookup();
   const cardRef = useRef<HTMLDivElement>(null);
   const [generating, setGenerating] = useState(false);
   const [publishedSlug, setPublishedSlug] = useState<string | null>(null);
@@ -157,7 +159,29 @@ const UsedCarSticker = () => {
         createdBy: user?.id ?? null,
       });
       if (!listing) { toast.error("Failed to create listing"); return; }
-      const result = await publishListing(listing.id);
+      let recallCheck: {
+        checked_at: string;
+        has_open: boolean;
+        do_not_drive: boolean;
+        campaigns?: unknown[];
+      } | null = null;
+      if (vehicle.make && vehicle.model && vehicle.year) {
+        const r = await recallLookup({
+          vin: vehicle.vin,
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+        });
+        if (r) {
+          recallCheck = {
+            checked_at: new Date().toISOString(),
+            has_open: r.hasOpenRecall,
+            do_not_drive: r.hasStopSale,
+            campaigns: r.recalls,
+          };
+        }
+      }
+      const result = await publishListing(listing.id, { recallCheck });
       if (!result.ok) { toast.error(result.reason || "Created but could not publish"); return; }
       setPublishedSlug(listing.slug);
       const url = publicUrl(listing.slug);

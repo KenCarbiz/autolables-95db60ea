@@ -149,10 +149,25 @@ export const useVehicleListing = (storeId: string) => {
   );
 
   const publishListing = useCallback(
-    async (id: string): Promise<{ ok: boolean; reason?: string }> => {
+    async (
+      id: string,
+      opts?: {
+        recallCheck?: {
+          checked_at: string;
+          has_open: boolean;
+          do_not_drive: boolean;
+          campaigns?: unknown[];
+        } | null;
+      }
+    ): Promise<{ ok: boolean; reason?: string }> => {
+      const patch: Record<string, unknown> = {
+        status: "published",
+        published_at: new Date().toISOString(),
+      };
+      if (opts?.recallCheck) patch.recall_check = opts.recallCheck;
       const { error } = await (supabase as any)
         .from("vehicle_listings")
-        .update({ status: "published", published_at: new Date().toISOString() })
+        .update(patch)
         .eq("id", id);
       if (!error) {
         await load();
@@ -164,6 +179,13 @@ export const useVehicleListing = (storeId: string) => {
           ok: false,
           reason:
             "This vehicle has no signed prep sign-off with listing unlocked. Complete /prep first.",
+        };
+      }
+      if (msg.includes("recall_gate_blocked")) {
+        return {
+          ok: false,
+          reason:
+            "Blocked: NHTSA recall check is missing, stale, or flags this vehicle as do-not-drive. Refresh and resolve before publishing.",
         };
       }
       return { ok: false, reason: msg || "Publish failed" };

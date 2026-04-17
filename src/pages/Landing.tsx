@@ -50,7 +50,7 @@ const Landing = () => {
           aria-label="AutoLabels home"
           className="flex items-center"
         >
-          <Logo variant="mark" size={40} />
+          <Logo variant="full" size={36} tagline />
         </button>
         <div className="hidden md:flex gap-8 items-center justify-center flex-1">
           <a

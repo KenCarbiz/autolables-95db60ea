@@ -11,7 +11,9 @@ import {
   CheckCircle2,
   AlertTriangle,
 } from "lucide-react";
-import type { VehicleFile, AttachedDocument } from "@/types/vehicleFile";
+import type { VehicleFile } from "@/types/vehicleFile";
+import { useDealToken } from "@/hooks/useDealToken";
+import { buildConsentRecord, fetchClientIp, hashPayload } from "@/lib/esign";
 
 const VEHICLE_FILES_KEY = "vehicle_files";
 
@@ -19,9 +21,11 @@ const DealSigning = () => {
   const { token } = useParams<{ token: string }>();
   const [loading, setLoading] = useState(true);
   const [vehicleFile, setVehicleFile] = useState<VehicleFile | null>(null);
+  const [serverTokenId, setServerTokenId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { getToken, signToken } = useDealToken();
 
   // Customer fields
   const [customerName, setCustomerName] = useState("");
@@ -48,12 +52,43 @@ const DealSigning = () => {
   useEffect(() => {
     if (!token) { setError("No deal token provided."); setLoading(false); return; }
     loadDeal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  const loadDeal = () => {
+  const prefill = (payload: Partial<VehicleFile>) => {
+    setVehicleFile(payload as VehicleFile);
+    if (payload.customer_name) setCustomerName(payload.customer_name);
+    if (payload.customer_phone) setCustomerPhone(payload.customer_phone);
+    if (payload.customer_email) setCustomerEmail(payload.customer_email);
+    if (payload.cobuyer_name) {
+      setCobuyerName(payload.cobuyer_name);
+      setShowCobuyer(true);
+    }
+  };
+
+  const loadDeal = async () => {
+    // Prefer the server-persisted deal_signing_tokens row; fall back to
+    // the legacy localStorage path so existing tokens keep working.
     try {
+      if (token) {
+        const row = await getToken(token);
+        if (row) {
+          setServerTokenId(row.id);
+          prefill({
+            ...(row.vehicle_payload as Partial<VehicleFile>),
+            vin: row.vehicle_payload.vin,
+            stock_number: row.vehicle_payload.stock_number,
+            attached_documents: row.vehicle_payload.attached_documents as
+              | VehicleFile["attached_documents"]
+              | undefined,
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
       const all: VehicleFile[] = JSON.parse(localStorage.getItem(VEHICLE_FILES_KEY) || "[]");
-      const file = all.find(f => f.deal_qr_token === token);
+      const file = all.find((f) => f.deal_qr_token === token);
       if (!file) {
         setError("Deal not found. This link may be invalid or expired.");
         setLoading(false);
@@ -64,15 +99,7 @@ const DealSigning = () => {
         setLoading(false);
         return;
       }
-      setVehicleFile(file);
-      // Pre-fill customer info if already on file
-      if (file.customer_name) setCustomerName(file.customer_name);
-      if (file.customer_phone) setCustomerPhone(file.customer_phone);
-      if (file.customer_email) setCustomerEmail(file.customer_email);
-      if (file.cobuyer_name) {
-        setCobuyerName(file.cobuyer_name);
-        setShowCobuyer(true);
-      }
+      prefill(file);
     } catch {
       setError("Failed to load deal data.");
     }
@@ -84,7 +111,7 @@ const DealSigning = () => {
   const buyersGuideDoc = vehicleFile?.attached_documents?.find(d => d.type === "ftc_buyers_guide");
   const k208Doc = vehicleFile?.attached_documents?.find(d => d.type === "k208");
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!customerName.trim()) { toast.error("Customer name is required."); return; }
     if (!customerSig.data) { toast.error("Customer signature is required."); return; }
     if (showCobuyer && cobuyerName.trim() && !cobuyerSig.data) {
@@ -100,47 +127,99 @@ const DealSigning = () => {
 
     setSubmitting(true);
 
+    const now = new Date().toISOString();
+    const consent = buildConsentRecord();
+    const canonicalPayload = {
+      vehicle_file_id: vehicleFile?.id,
+      vin: vehicleFile?.vin,
+      customer_name: customerName.trim(),
+      customer_phone: customerPhone.trim(),
+      customer_email: customerEmail.trim(),
+      cobuyer_name: showCobuyer ? cobuyerName.trim() : null,
+      cobuyer_phone: showCobuyer ? cobuyerPhone.trim() : null,
+      dealer_name: dealerName.trim(),
+      delivery_mileage: deliveryMileage,
+      ack_buyers_guide: ackBuyersGuide,
+      ack_k208: ackK208,
+      ack_sticker: ackSticker,
+      esign_consent_version: consent.version,
+      signed_at: now,
+    };
+    const contentHash = await hashPayload(canonicalPayload);
+    const customerIp = await fetchClientIp();
+
+    const signedPayload = {
+      ...canonicalPayload,
+      customer_signature_data: customerSig.data,
+      customer_signature_type: customerSig.type,
+      cobuyer_signature_data: showCobuyer ? cobuyerSig.data : null,
+      cobuyer_signature_type: showCobuyer ? cobuyerSig.type : null,
+      dealer_signature_data: dealerSig.data,
+      dealer_signature_type: dealerSig.type,
+      customer_ip: customerIp,
+      user_agent: consent.user_agent,
+    };
+
     try {
-      const all: VehicleFile[] = JSON.parse(localStorage.getItem(VEHICLE_FILES_KEY) || "[]");
-      const idx = all.findIndex(f => f.deal_qr_token === token);
-      if (idx === -1) { toast.error("Deal not found."); setSubmitting(false); return; }
+      // Preferred path: server-persisted token flow.
+      if (serverTokenId && token) {
+        const ok = await signToken({
+          token,
+          signedPayload,
+          contentHash,
+          customerIp,
+          userAgent: consent.user_agent,
+          esignConsent: consent as unknown as Record<string, unknown>,
+        });
+        if (!ok) {
+          toast.error("This deal link is no longer valid.");
+          setSubmitting(false);
+          return;
+        }
+      } else {
+        // Legacy fallback: mirror into localStorage until all tokens
+        // have been migrated to deal_signing_tokens.
+        const all: VehicleFile[] = JSON.parse(localStorage.getItem(VEHICLE_FILES_KEY) || "[]");
+        const idx = all.findIndex((f) => f.deal_qr_token === token);
+        if (idx === -1) { toast.error("Deal not found."); setSubmitting(false); return; }
 
-      const now = new Date().toISOString();
-      const signingRecord = {
-        id: crypto.randomUUID(),
-        sticker_id: "deal_signing",
-        customer_name: customerName.trim(),
-        customer_initials: {},
-        customer_selections: {},
-        customer_signature_data: customerSig.data,
-        customer_signature_type: customerSig.type,
-        cobuyer_name: showCobuyer ? cobuyerName.trim() : undefined,
-        cobuyer_signature_data: showCobuyer ? cobuyerSig.data : undefined,
-        employee_name: dealerName.trim(),
-        employee_signature_data: dealerSig.data,
-        signed_at: now,
-        customer_ip: "",
-        device_info: navigator.userAgent,
-        delivery_mileage: deliveryMileage,
-        ack_buyers_guide: ackBuyersGuide,
-        ack_k208: ackK208,
-        ack_sticker: ackSticker,
-      };
+        const signingRecord = {
+          id: crypto.randomUUID(),
+          sticker_id: "deal_signing",
+          customer_name: customerName.trim(),
+          customer_initials: {},
+          customer_selections: {},
+          customer_signature_data: customerSig.data,
+          customer_signature_type: customerSig.type,
+          cobuyer_name: showCobuyer ? cobuyerName.trim() : undefined,
+          cobuyer_signature_data: showCobuyer ? cobuyerSig.data : undefined,
+          employee_name: dealerName.trim(),
+          employee_signature_data: dealerSig.data,
+          signed_at: now,
+          customer_ip: customerIp,
+          device_info: consent.user_agent,
+          delivery_mileage: deliveryMileage,
+          ack_buyers_guide: ackBuyersGuide,
+          ack_k208: ackK208,
+          ack_sticker: ackSticker,
+          content_hash: contentHash,
+        };
 
-      all[idx] = {
-        ...all[idx],
-        deal_status: "signed",
-        customer_name: customerName.trim(),
-        customer_phone: customerPhone.trim(),
-        customer_email: customerEmail.trim(),
-        cobuyer_name: showCobuyer ? cobuyerName.trim() : "",
-        cobuyer_phone: showCobuyer ? cobuyerPhone.trim() : "",
-        cobuyer_email: "",
-        signings: [...(all[idx].signings || []), signingRecord],
-        updated_at: now,
-      };
+        all[idx] = {
+          ...all[idx],
+          deal_status: "signed",
+          customer_name: customerName.trim(),
+          customer_phone: customerPhone.trim(),
+          customer_email: customerEmail.trim(),
+          cobuyer_name: showCobuyer ? cobuyerName.trim() : "",
+          cobuyer_phone: showCobuyer ? cobuyerPhone.trim() : "",
+          cobuyer_email: "",
+          signings: [...(all[idx].signings || []), signingRecord],
+          updated_at: now,
+        };
 
-      localStorage.setItem(VEHICLE_FILES_KEY, JSON.stringify(all));
+        localStorage.setItem(VEHICLE_FILES_KEY, JSON.stringify(all));
+      }
       setSubmitted(true);
       toast.success("Deal signed successfully!");
     } catch (err) {

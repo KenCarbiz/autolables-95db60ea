@@ -226,22 +226,22 @@ const AppShell = ({ children }: AppShellProps) => {
         }`}
       >
         {/* Sidebar header */}
-        <div className="flex items-center justify-between h-14 px-4 border-b border-sidebar-border/50 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            {tenant?.logo_url && tenant.logo_url !== "/logo-mark.svg" ? (
+        <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border/50 flex-shrink-0">
+          {tenant?.logo_url && tenant.logo_url !== "/logo-mark.svg" ? (
+            <div className="flex items-center gap-2">
               <img src={tenant.logo_url} alt={tenant.name} className="w-8 h-8 rounded-md object-contain bg-white p-1" />
-            ) : (
-              <Logo variant="mark" size={32} />
-            )}
-            <div>
-              <p className="text-sm font-semibold text-sidebar-foreground leading-none tracking-tight">
-                {tenant?.name || "AutoLabels.io"}
-              </p>
-              <p className="text-[9px] text-sidebar-foreground/55 mt-1 uppercase tracking-[0.18em] font-semibold">
-                Clear · Compliant · Consistent
-              </p>
+              <div>
+                <p className="text-sm font-semibold text-sidebar-foreground leading-none tracking-tight">
+                  {tenant?.name}
+                </p>
+                <p className="text-[9px] text-sidebar-foreground/55 mt-1 uppercase tracking-[0.18em] font-semibold">
+                  Clear · Compliant · Consistent
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <Logo variant="full" size={28} tagline inverted />
+          )}
           <button
             onClick={() => setMobileOpen(false)}
             className="lg:hidden p-1 rounded hover:bg-sidebar-accent text-sidebar-foreground"
