@@ -44,7 +44,13 @@ const Landing = () => {
   const Navigation = () => (
     <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-        <Logo variant="full" size={32} />
+        <button
+          onClick={() => navigate("/")}
+          aria-label="AutoLabels home"
+          className="flex items-center"
+        >
+          <Logo variant="mark" size={40} />
+        </button>
         <div className="hidden md:flex gap-8 items-center justify-center flex-1">
           <a
             onClick={() => navigate("/about")}
@@ -337,7 +343,8 @@ const Landing = () => {
     const incrementalAnnualRevenue = deals * 12 * accessoryRev * 0.15;
     const complianceHoursSaved = deals * 12 * 0.4;
     const riskAvoided = disputes * 4500;
-    const yearCost = 199 * 12;
+    // Compliance Suite annual cost — the tier that unlocks the prep gate, audit vault, and state engine.
+    const yearCost = 999 * 12;
     const roi = ((incrementalAnnualRevenue + riskAvoided - yearCost) / yearCost) * 100;
 
     const fmt = (n: number) =>
@@ -533,7 +540,11 @@ const Landing = () => {
   const Pricing = () => (
     <section id="pricing" className="py-16 bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-display text-4xl font-bold mb-12 text-center">Pricing</h2>
+        <h2 className="font-display text-4xl font-bold mb-3 text-center">Pricing</h2>
+        <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+          One FTC Section 5 enforcement action is up to <strong className="text-gray-900">$53,088</strong> per violation. Compliance Pro is $999/mo.
+          <span className="block mt-1">Small price to pay.</span>
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {[
             {

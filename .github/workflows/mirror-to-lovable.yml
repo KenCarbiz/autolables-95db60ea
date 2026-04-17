@@ -1,5 +1,5 @@
 # ──────────────────────────────────────────────────────────────
-# Mirror main to the Lovable-managed repo (autolables-89568b9f)
+# Mirror main to the Lovable-managed repo (autolables-95db60ea)
 #
 # Purpose: Lovable watches a separate GitHub repo (auto-created
 # when Ken first wired Lovable up). Our canonical code lives at
@@ -8,7 +8,7 @@
 #
 # SETUP (one-time):
 #   1. Create a Personal Access Token with "repo" scope that has
-#      write access to BOTH autolables and autolables-89568b9f
+#      write access to BOTH autolables and autolables-95db60ea
 #      (fine-grained token: select both repos, Contents: Read/Write).
 #      https://github.com/settings/tokens
 #   2. In the KenCarbiz/autolables repo, add it as a Secret:
