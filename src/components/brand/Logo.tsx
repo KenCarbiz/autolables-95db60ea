@@ -22,8 +22,11 @@ interface LogoProps {
  * The raster aspect ratio of the lockup is ~3.8:1. `size` controls the
  * rendered height in pixels; width scales proportionally.
  */
-const FULL_SRC = "/autolabels-logo.png";
-const MARK_SRC = "/autolabels-mark.png";
+// Use the SVG lockup so the logo always renders. Dealers can override
+// by dropping /autolabels-logo.png (full) or /autolabels-mark.png
+// (square) into public/ — the SVG stays as a reliable fallback.
+const FULL_SRC = "/autolabels-logo.svg";
+const MARK_SRC = "/autolabels-mark.svg";
 
 const Logo = ({
   variant = "mark",

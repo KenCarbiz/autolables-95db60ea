@@ -287,14 +287,34 @@ const Admin = () => {
   ];
 
   return (
-    <div className="p-4 lg:p-6 max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight font-display text-foreground">Administration</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Manage products, settings, compliance, and analytics for {currentStore?.name || "your store"}</p>
+    <div className="max-w-6xl mx-auto">
+        {/* Shimmer hero header — matches Landing aesthetic */}
+        <div className="shimmer-hero relative overflow-hidden rounded-b-3xl px-6 lg:px-10 pt-8 pb-10 text-white">
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Control Center
+              </div>
+              <h1 className="mt-2 text-2xl lg:text-3xl font-black tracking-tight font-display leading-tight">
+                Administration
+              </h1>
+              <p className="text-xs lg:text-sm text-white/70 mt-1 max-w-xl">
+                Manage products, compliance, analytics, and integrations for{" "}
+                <span className="font-semibold text-white">
+                  {currentStore?.name || "your store"}
+                </span>.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 text-[10px] font-semibold uppercase tracking-widest">
+                FTC-aligned · 50-state engine
+              </div>
+            </div>
           </div>
         </div>
+
+        <div className="p-4 lg:p-6">
 
         {/* Tabs */}
         <div className="flex gap-1 bg-muted rounded-lg p-1 mb-6">
@@ -1918,6 +1938,7 @@ const Admin = () => {
             </div>
           </div>
         )}
+        </div>
     </div>
   );
 };
