@@ -10,7 +10,6 @@ import { TenantProvider } from "@/contexts/TenantContext";
 import { AuditProvider } from "@/contexts/AuditContext";
 import AppShell from "@/components/layout/AppShell";
 import ThemeInjector from "@/components/layout/ThemeInjector";
-import OnboardingGate from "@/components/layout/OnboardingGate";
 import ErrorBoundary from "@/components/layout/ErrorBoundary";
 import EntitlementGate from "@/components/layout/EntitlementGate";
 
@@ -73,9 +72,8 @@ const App = () => (
             <AuditProvider>
               <BrowserRouter>
                 <ThemeInjector />
-                <OnboardingGate>
-                  <Suspense fallback={<PageLoader />}>
-                    <Routes>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
                       {/* Public routes — no shell */}
                       <Route path="/" element={<Landing />} />
                       <Route path="/login" element={<Login />} />
@@ -103,10 +101,9 @@ const App = () => (
                       <Route path="/add-inventory" element={<Gated><SaveCarInventory /></Gated>} />
                       <Route path="/prep" element={<Gated><PrepSignOff /></Gated>} />
 
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Suspense>
-                </OnboardingGate>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
               </BrowserRouter>
             </AuditProvider>
           </DealerSettingsProvider>

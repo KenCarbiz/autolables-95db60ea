@@ -76,7 +76,7 @@ const Onboarding = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { updateTenant, addStore, stores, updateStore, completeOnboarding, isEmbedded } = useTenant();
   const { scrapeDealer, scraping, error: scrapeError } = useDealerScraper();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { tenant, profile, bootstrapTenant, reload: reloadEntitlements } = useEntitlements();
 
   const [step, setStep] = useState(1);
@@ -146,10 +146,10 @@ const Onboarding = () => {
   // Gate: you must be signed in to run the wizard (it writes to
   // Supabase tables scoped to auth.uid()). If not, bounce to /login
   // in signup mode and come back here after email confirmation.
-  // Hoisted above the embedded early-return so hook order is stable.
+  // Wait for the auth session to finish loading before deciding.
   useEffect(() => {
-    if (isEmbedded) return;
-    if (user === null) {
+    if (authLoading || isEmbedded) return;
+    if (!user) {
       const handoff = searchParams.get("handoff");
       const next = handoff
         ? `/onboarding?handoff=${encodeURIComponent(handoff)}`
@@ -157,7 +157,7 @@ const Onboarding = () => {
       navigate(`/login?signup=1&next=${encodeURIComponent(next)}`, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isEmbedded]);
+  }, [user, authLoading, isEmbedded]);
 
   // If running embedded, onboarding doesn't apply
   if (isEmbedded) {
@@ -165,8 +165,12 @@ const Onboarding = () => {
     return null;
   }
 
-  if (!user) {
-    return null;
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   const TOTAL_STEPS = 5;
