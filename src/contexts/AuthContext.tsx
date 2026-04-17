@@ -19,35 +19,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const checkAdmin = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    setIsAdmin(!!data);
+    try {
+      // Hard cap so a hanging network or missing user_roles table can
+      // never hold the app's loading state.
+      const query = supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+      const timeout = new Promise<{ data: null }>((resolve) =>
+        setTimeout(() => resolve({ data: null }), 3000)
+      );
+      const { data } = await Promise.race([query, timeout]);
+      setIsAdmin(!!data);
+    } catch {
+      setIsAdmin(false);
+    }
   };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setUser(session?.user ?? null);
-        if (session?.user) {
-          await checkAdmin(session.user.id);
-        } else {
-          setIsAdmin(false);
+        try {
+          if (session?.user) {
+            await checkAdmin(session.user.id);
+          } else {
+            setIsAdmin(false);
+          }
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        await checkAdmin(session.user.id);
+      try {
+        if (session?.user) {
+          await checkAdmin(session.user.id);
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    }).catch(() => setLoading(false));
 
     return () => subscription.unsubscribe();
   }, []);
