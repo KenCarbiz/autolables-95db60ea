@@ -543,6 +543,7 @@ const Landing = () => {
               desc: "Window stickers + addendums, up to 75 VINs/month",
               featured: false,
               cta: "Start trial",
+              bundledNote: "Free with any Autocurb.io subscription",
               items: [
                 "Up to 75 VINs / month",
                 "New + used car window stickers",
@@ -598,10 +599,17 @@ const Landing = () => {
               {tier.featured && <div className="text-center mb-4 text-sm font-semibold text-blue-600">FEATURED</div>}
               <h3 className="text-2xl font-bold text-gray-900 mb-2">{tier.name}</h3>
               <p className="text-gray-600 text-sm mb-4">{tier.desc}</p>
-              <div className="mb-6">
+              <div className="mb-3">
                 <span className="text-4xl font-bold text-gray-900">{tier.price}</span>
                 <span className="text-gray-600 text-sm ml-2">/ {tier.period}</span>
               </div>
+              {tier.bundledNote && (
+                <div className="mb-6 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
+                  <Check size={12} className="text-emerald-600" />
+                  {tier.bundledNote}
+                </div>
+              )}
+              {!tier.bundledNote && <div className="mb-6" />}
               <button
                 onClick={() =>
                   tier.cta === "Talk to sales"

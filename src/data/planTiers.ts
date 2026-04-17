@@ -30,15 +30,19 @@ export interface PlanDefinition {
   priceNote: string;
   features: string[];
   notIncluded?: string[];
+  // Bundled free with any Autocurb.io subscription — surface this
+  // on marketing + in the ActivatePaywall flow for autocurb-sourced tenants.
+  includedWithAutocurb?: boolean;
 }
 
 export const PLAN_DEFINITIONS: PlanDefinition[] = [
   {
     tier: "essential",
     name: "Essential",
-    tagline: "Window stickers + addendums, up to 75 VINs/month.",
+    tagline: "Window stickers + addendums, up to 75 VINs/month. Free with any Autocurb.io subscription.",
     price: "$299",
-    priceNote: "per rooftop / month",
+    priceNote: "per rooftop / month — or free with Autocurb.io",
+    includedWithAutocurb: true,
     features: [
       "Up to 75 VINs / month",
       "New + used car window stickers",
