@@ -13,11 +13,16 @@ const safeNext = (raw: string | null): string => {
 };
 
 const Login = () => {
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, isAdmin } = useAuth();
   const { tenant } = useTenant();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const nextPath = safeNext(searchParams.get("next"));
+  const explicitNext = searchParams.get("next");
+  // Admins don't operate a dealership — send them to /admin by default.
+  // If the URL specified ?next= we honor it (same-origin only).
+  const resolveNext = () =>
+    explicitNext ? safeNext(explicitNext) : isAdmin ? "/admin" : "/dashboard";
+  const nextPath = resolveNext();
   const wantsSignUp = searchParams.get("signup") === "1";
 
   const [email, setEmail] = useState("");
@@ -42,15 +47,15 @@ const Login = () => {
     setLoading(false);
     if (err) {
       setError(err.message);
-    } else if (!isSignUp) {
-      navigate(nextPath, { replace: true });
-    } else {
+    } else if (isSignUp) {
       setInfo(
-        `Check ${email} to confirm your account. After confirming, return to this page to sign in — we'll send you to ${
-          nextPath === "/dashboard" ? "your dashboard" : "finish setup"
-        }.`
+        `Check ${email} to confirm your account. After confirming, return to this page to sign in.`
       );
     }
+    // On successful sign-in we deliberately do NOT navigate here.
+    // The useEffect below waits for both user + isAdmin to resolve,
+    // then routes admins to /admin and dealers to /dashboard (or the
+    // ?next= target).
   };
 
   return (

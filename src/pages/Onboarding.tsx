@@ -5,6 +5,7 @@ import { useDealerScraper } from "@/hooks/useDealerScraper";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import Logo from "@/components/brand/Logo";
 import { toast } from "sonner";
 import {
   Sparkles,
@@ -329,12 +330,7 @@ const Onboarding = () => {
       {/* Top header */}
       <header className="bg-white border-b border-border">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-sm tracking-tight">AutoLabels.io</span>
-          </div>
+          <Logo variant="full" size={32} />
           <div className="text-xs text-muted-foreground flex items-center gap-3">
             <span>Step {step} of {TOTAL_STEPS}</span>
             <span className="hidden sm:inline text-muted-foreground/60">·</span>

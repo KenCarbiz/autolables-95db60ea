@@ -39,7 +39,7 @@ interface Props {
 
 const EntitlementGate = ({ app, children }: Props) => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const { loading, tenant, hasApp, needsOnboarding, entitlementFor, activateApp, reload } =
     useEntitlements();
 
@@ -49,8 +49,10 @@ const EntitlementGate = ({ app, children }: Props) => {
   const activatedRef = useRef(false);
 
   // Cold pull from Autocurb when the user has no local tenant.
+  // Admins skip this entirely — they are platform operators, not
+  // dealership members.
   useEffect(() => {
-    if (authLoading || loading || !user) return;
+    if (authLoading || loading || !user || isAdmin) return;
     if (tenant) return;
     if (pulledRef.current) return;
     pulledRef.current = true;
@@ -67,7 +69,7 @@ const EntitlementGate = ({ app, children }: Props) => {
         setPulling(false);
       }
     })();
-  }, [authLoading, loading, user, tenant, app, reload]);
+  }, [authLoading, loading, user, tenant, app, reload, isAdmin]);
 
   // Auto-provision the bundled AutoLabels essential tier when the
   // tenant is Autocurb-sourced and no entitlement exists yet.
@@ -95,6 +97,12 @@ const EntitlementGate = ({ app, children }: Props) => {
   if (!user) {
     setTimeout(() => navigate("/login"), 0);
     return null;
+  }
+
+  // Platform admins see everything without needing a tenant or
+  // entitlement. They're managing the whole fleet, not a dealership.
+  if (isAdmin) {
+    return <>{children}</>;
   }
 
   if (needsOnboarding || !tenant) {
