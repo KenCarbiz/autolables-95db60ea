@@ -9,6 +9,7 @@ import SignaturePad from "@/components/addendum/SignaturePad";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ShieldCheck, Camera, Check, X, AlertTriangle, ClipboardCheck, Image as ImageIcon, Upload, FileSignature, ArrowRight, Car, Wrench, ChevronLeft } from "lucide-react";
+import { uploadPhoto } from "@/lib/storage";
 
 const PrepSignOff = () => {
   const { user } = useAuth();
@@ -372,24 +373,44 @@ const PrepSignOff = () => {
                   type="file"
                   multiple
                   accept="image/*"
-                  onChange={e => {
+                  onChange={async e => {
                     const files = Array.from(e.currentTarget.files || []);
-                    files.forEach(file => {
-                      const url = URL.createObjectURL(file);
-                      setNewForm(prev => ({
-                        ...prev,
-                        install_photos: [...prev.install_photos, {
-                          url,
+                    // Optimistically insert local blob previews so the UI updates
+                    // immediately, then swap for the real Supabase Storage URL.
+                    const stamps = files.map(() => crypto.randomUUID());
+                    setNewForm(prev => ({
+                      ...prev,
+                      install_photos: [
+                        ...prev.install_photos,
+                        ...files.map((file, i) => ({
+                          url: URL.createObjectURL(file),
                           category: "after" as const,
-                          caption: "",
+                          caption: stamps[i],
                           uploaded_at: new Date().toISOString(),
-                        }],
-                      }));
-                    });
+                        })),
+                      ],
+                    }));
+                    for (let i = 0; i < files.length; i++) {
+                      const uploaded = await uploadPhoto("prep-photos", files[i], {
+                        storeId,
+                        vin: newForm.vin,
+                      });
+                      if (uploaded) {
+                        setNewForm(prev => ({
+                          ...prev,
+                          install_photos: prev.install_photos.map(ph =>
+                            ph.caption === stamps[i]
+                              ? { ...ph, url: uploaded.url, caption: "" }
+                              : ph
+                          ),
+                        }));
+                      } else {
+                        toast.error(`Upload failed for ${files[i].name}`);
+                      }
+                    }
                   }}
                   className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700"
                 />
-                {/* TODO(storage): upload to Supabase Storage bucket 'prep-photos' in prod */}
               </div>
 
               <div>

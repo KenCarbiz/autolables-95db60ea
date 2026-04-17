@@ -1,0 +1,66 @@
+import { supabase } from "@/integrations/supabase/client";
+
+// ──────────────────────────────────────────────────────────────
+// Supabase Storage helpers. Upload photos to public buckets
+// defined in migration 20260417020000_storage_buckets.sql
+// (prep-photos, listing-photos) and return the public URL so
+// the caller can store it in a JSONB column.
+// ──────────────────────────────────────────────────────────────
+
+export type PhotoBucket = "prep-photos" | "listing-photos";
+
+export interface UploadedPhoto {
+  url: string;       // public URL
+  path: string;      // path within bucket (for delete)
+  bucket: PhotoBucket;
+  size: number;
+  mimeType: string;
+}
+
+const safeName = (name: string) =>
+  name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80);
+
+export const uploadPhoto = async (
+  bucket: PhotoBucket,
+  file: File,
+  opts: { storeId?: string; vin?: string } = {}
+): Promise<UploadedPhoto | null> => {
+  const scope = [opts.storeId || "any", opts.vin || "misc"].join("/");
+  const stamp = Date.now();
+  const random = Math.random().toString(36).slice(2, 8);
+  const path = `${scope}/${stamp}-${random}-${safeName(file.name)}`;
+
+  const { error } = await supabase.storage.from(bucket).upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type || undefined,
+  });
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("uploadPhoto error", error);
+    return null;
+  }
+
+  const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
+  return {
+    url: pub?.publicUrl || "",
+    path,
+    bucket,
+    size: file.size,
+    mimeType: file.type,
+  };
+};
+
+export const uploadPhotos = async (
+  bucket: PhotoBucket,
+  files: File[],
+  opts: { storeId?: string; vin?: string } = {}
+): Promise<UploadedPhoto[]> => {
+  const results = await Promise.all(files.map((f) => uploadPhoto(bucket, f, opts)));
+  return results.filter((r): r is UploadedPhoto => r !== null);
+};
+
+export const deletePhoto = async (bucket: PhotoBucket, path: string): Promise<boolean> => {
+  const { error } = await supabase.storage.from(bucket).remove([path]);
+  return !error;
+};

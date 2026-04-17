@@ -181,8 +181,10 @@ const Onboarding = () => {
             </div>
             <span className="font-semibold text-sm tracking-tight">AutoLabels.io</span>
           </div>
-          <div className="text-xs text-muted-foreground">
-            Step {step} of {TOTAL_STEPS}
+          <div className="text-xs text-muted-foreground flex items-center gap-3">
+            <span>Step {step} of {TOTAL_STEPS}</span>
+            <span className="hidden sm:inline text-muted-foreground/60">·</span>
+            <span className="hidden sm:inline">~{stepMinutes(step)} min</span>
           </div>
         </div>
         <div className="h-1 bg-muted">
@@ -206,10 +208,10 @@ const Onboarding = () => {
         {/* Page header */}
         <div className="mb-8">
           <h1 className="text-3xl font-semibold tracking-tight font-display text-foreground">
-            Dealer Onboarding
+            Set up your dealership
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure the account architecture, BDC model, and billing for this dealership.
+            5 steps. ~5 minutes. You can save and return at any time.
           </p>
         </div>
 
@@ -587,6 +589,10 @@ const Onboarding = () => {
 
 function stepTitle(step: number): string {
   return ["AI Auto-Fill", "Details", "Structure", "Lead Handling", "Billing"][step - 1] || "";
+}
+
+function stepMinutes(step: number): number {
+  return [1, 2, 1, 1, 1][step - 1] || 1;
 }
 
 const Section = ({

@@ -6,9 +6,11 @@ import { useFactoryData } from "@/hooks/useFactoryData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAudit } from "@/contexts/AuditContext";
 import { useProducts } from "@/hooks/useProducts";
+import { useVehicleListing } from "@/hooks/useVehicleListing";
+import RecallBanner from "@/components/addendum/RecallBanner";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
-import { Printer, Download, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Printer, Download, Sparkles, ChevronDown, ChevronUp, Globe, Copy, Code2 } from "lucide-react";
 
 const NewCarSticker = () => {
   const { settings } = useDealerSettings();
@@ -18,8 +20,12 @@ const NewCarSticker = () => {
   const { user } = useAuth();
   const { log } = useAudit();
   const { data: products } = useProducts();
+  const { createListing, publishListing, publicUrl, embedSnippet } = useVehicleListing(currentStore?.id || "");
   const cardRef = useRef<HTMLDivElement>(null);
   const [generating, setGenerating] = useState(false);
+  const [publishedSlug, setPublishedSlug] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [stopSale, setStopSale] = useState(false);
 
   const [vehicle, setVehicle] = useState({
     vin: "", year: "", make: "", model: "", trim: "",
@@ -46,7 +52,11 @@ const NewCarSticker = () => {
   const docFee = settings.doc_fee_enabled ? (settings.doc_fee_amount || 0) : 0;
   const totalSuggestedRetail = baseMsrp + destCharge + installedTotal + docFee;
 
-  const signingUrl = vehicle.vin ? `${window.location.origin}/vehicle/${vehicle.vin}` : "";
+  const signingUrl = publishedSlug
+    ? publicUrl(publishedSlug)
+    : vehicle.vin
+      ? `${window.location.origin}/vehicle/${vehicle.vin}`
+      : "";
 
   // Proper tracking code: AC-{STORE}-{VIN6}-NA-{TIMESTAMP}
   const trackingCode = (() => {
@@ -83,6 +93,79 @@ const NewCarSticker = () => {
     if (user) log({ store_id: currentStore?.id || "", user_id: user.id, action: "addendum_printed", entity_type: "new_car_sticker", entity_id: vehicle.vin, details: { ymm: `${vehicle.year} ${vehicle.make} ${vehicle.model}` } });
   };
 
+  const handlePublish = async () => {
+    if (!vehicle.vin) { toast.error("Enter a VIN first"); return; }
+    if (!currentStore?.id) { toast.error("Select a store first"); return; }
+    if (stopSale) { toast.error("Do-not-drive recall open. Cannot publish until remedied."); return; }
+    setPublishing(true);
+    try {
+      const ymm = `${vehicle.year} ${vehicle.make} ${vehicle.model}`.trim();
+      const listing = await createListing({
+        vin: vehicle.vin,
+        ymm: ymm || undefined,
+        trim: vehicle.trim || undefined,
+        condition: "new",
+        price: totalSuggestedRetail,
+        sticker_snapshot: {
+          products_snapshot: [...installed, ...optional].map(p => ({
+            id: p.id,
+            name: p.name,
+            subtitle: p.subtitle,
+            warranty: p.warranty,
+            badge_type: p.badge_type,
+            price: p.price,
+            price_label: p.price_label,
+            disclosure: p.disclosure,
+          })),
+          totals: {
+            base_price: baseMsrp + destCharge,
+            accessories_total: installedTotal,
+            doc_fee: docFee,
+            final_price: totalSuggestedRetail,
+          },
+          tracking_code: trackingCode,
+          created_at: new Date().toISOString(),
+        },
+        dealer_snapshot: {
+          name: dealerName,
+          phone: dealerPhone,
+          tagline: dealerTagline,
+          logo_url: dealerLogo,
+          city: currentStore?.city || "",
+          state: currentStore?.state || "",
+        },
+        slugSeed: `${(ymm || "car").toLowerCase()}-${vehicle.vin.slice(-6)}`,
+        createdBy: user?.id ?? null,
+      });
+      if (!listing) { toast.error("Failed to create listing"); return; }
+      const ok = await publishListing(listing.id);
+      if (!ok) { toast.error("Created but could not publish"); return; }
+      setPublishedSlug(listing.slug);
+      try { await navigator.clipboard.writeText(publicUrl(listing.slug)); } catch { /* */ }
+      toast.success("Published — link copied");
+      if (user) log({
+        store_id: currentStore?.id || "",
+        user_id: user.id,
+        action: "listing_published",
+        entity_type: "vehicle_listing",
+        entity_id: listing.id,
+        details: { vin: vehicle.vin, ymm, slug: listing.slug },
+      });
+    } finally { setPublishing(false); }
+  };
+
+  const handleCopyLink = async () => {
+    if (!publishedSlug) return;
+    await navigator.clipboard.writeText(publicUrl(publishedSlug));
+    toast.success("Shopper link copied");
+  };
+
+  const handleCopyEmbed = async () => {
+    if (!publishedSlug) return;
+    await navigator.clipboard.writeText(embedSnippet(publishedSlug));
+    toast.success("Embed code copied");
+  };
+
   const handlePdf = async () => {
     if (!cardRef.current) return;
     setGenerating(true);
@@ -105,11 +188,41 @@ const NewCarSticker = () => {
           <h1 className="text-xl font-semibold tracking-tight font-display text-foreground">New Car Window Sticker</h1>
           <p className="text-xs text-muted-foreground mt-1">Dealer addendum sticker for new vehicles. Sits alongside the factory Monroney label.</p>
         </div>
-        <div className="flex gap-2 no-print">
+        <div className="flex gap-2 no-print flex-wrap">
           <button onClick={handlePrint} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-sm font-medium hover:bg-muted"><Printer className="w-3.5 h-3.5" /> Print</button>
-          <button onClick={handlePdf} disabled={generating} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50"><Download className="w-3.5 h-3.5" /> PDF</button>
+          <button onClick={handlePdf} disabled={generating} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-sm font-medium hover:bg-muted disabled:opacity-50"><Download className="w-3.5 h-3.5" /> PDF</button>
+          {publishedSlug ? (
+            <>
+              <button onClick={handleCopyLink} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-700 text-sm font-medium hover:bg-emerald-100"><Copy className="w-3.5 h-3.5" /> Copy shopper link</button>
+              <button onClick={handleCopyEmbed} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-700 text-sm font-medium hover:bg-emerald-100"><Code2 className="w-3.5 h-3.5" /> Copy embed</button>
+            </>
+          ) : (
+            <button onClick={handlePublish} disabled={publishing || !vehicle.vin || stopSale} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50"><Globe className="w-3.5 h-3.5" /> {publishing ? "Publishing…" : stopSale ? "Locked — recall" : "Publish to Shopper Portal"}</button>
+          )}
         </div>
       </div>
+
+      {publishedSlug && (
+        <div className="no-print rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3">
+          <Globe className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-emerald-900">Live at the shopper portal</p>
+            <p className="text-[11px] text-emerald-800/80 font-mono truncate">{publicUrl(publishedSlug)}</p>
+          </div>
+          <a href={publicUrl(publishedSlug)} target="_blank" rel="noreferrer" className="text-xs font-semibold text-emerald-700 hover:underline">Open →</a>
+        </div>
+      )}
+      {vehicle.make && vehicle.model && vehicle.year && (
+        <div className="no-print">
+          <RecallBanner
+            vin={vehicle.vin}
+            make={vehicle.make}
+            model={vehicle.model}
+            year={vehicle.year}
+            onStopSale={() => setStopSale(true)}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
         {/* Config */}
