@@ -251,18 +251,30 @@ const AppShell = ({ children }: AppShellProps) => {
           </button>
         </div>
 
-        {/* Primary action — every workflow starts with adding a vehicle.
-            Takes the user to /inventory with the Add modal auto-open. */}
-        <div className="px-3 pt-3 flex-shrink-0">
+        {/* Primary actions — every workflow starts with adding or
+            scanning a vehicle. Add opens the modal on /inventory.
+            Scan opens the barcode / VIN-plate scanner. */}
+        <div className="px-3 pt-3 flex-shrink-0 grid grid-cols-2 gap-2">
           <button
             onClick={() => {
               setMobileOpen(false);
               navigate("/inventory?add=1");
             }}
-            className="w-full h-11 rounded-xl bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white font-bold text-sm inline-flex items-center justify-center gap-2 shadow-premium hover:brightness-110 transition-all"
+            className="h-11 rounded-xl bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white font-bold text-sm inline-flex items-center justify-center gap-1.5 shadow-premium hover:brightness-110 transition-all"
           >
             <Car className="w-4 h-4" />
             Add Vehicle
+          </button>
+          <button
+            onClick={() => {
+              setMobileOpen(false);
+              navigate("/scan");
+            }}
+            className="h-11 rounded-xl bg-sidebar-accent/60 hover:bg-sidebar-accent text-sidebar-foreground font-semibold text-sm inline-flex items-center justify-center gap-1.5 border border-sidebar-border/60 transition-colors"
+            title="Scan a VIN barcode or windshield sticker"
+          >
+            <ScanLine className="w-4 h-4" />
+            Scan Vehicle
           </button>
         </div>
 
