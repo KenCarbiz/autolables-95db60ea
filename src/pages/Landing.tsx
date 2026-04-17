@@ -1,3 +1,4 @@
+// TEST3 — mirror/Lovable sync check 2026-04-17
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
