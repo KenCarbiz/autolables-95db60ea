@@ -143,9 +143,29 @@ const Onboarding = () => {
     setPrefilledFrom(profile.source === "autocurb" ? "autocurb" : "profile");
   }, [profile, prefilledFrom]);
 
+  // Gate: you must be signed in to run the wizard (it writes to
+  // Supabase tables scoped to auth.uid()). If not, bounce to /login
+  // in signup mode and come back here after email confirmation.
+  // Hoisted above the embedded early-return so hook order is stable.
+  useEffect(() => {
+    if (isEmbedded) return;
+    if (user === null) {
+      const handoff = searchParams.get("handoff");
+      const next = handoff
+        ? `/onboarding?handoff=${encodeURIComponent(handoff)}`
+        : "/onboarding";
+      navigate(`/login?signup=1&next=${encodeURIComponent(next)}`, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isEmbedded]);
+
   // If running embedded, onboarding doesn't apply
   if (isEmbedded) {
     navigate("/dashboard");
+    return null;
+  }
+
+  if (!user) {
     return null;
   }
 

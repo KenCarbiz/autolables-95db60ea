@@ -109,7 +109,7 @@ const Landing = () => {
                 Dealer Login
               </button>
               <button
-                onClick={() => navigate("/onboarding")}
+                onClick={() => navigate(user ? "/dashboard" : "/login?signup=1&next=/onboarding")}
                 className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
               >
                 Start Free
@@ -143,7 +143,7 @@ const Landing = () => {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <button
-            onClick={() => navigate("/onboarding")}
+            onClick={() => navigate(user ? "/dashboard" : "/login?signup=1&next=/onboarding")}
             className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2 shimmer-cta"
           >
             Start free trial
@@ -626,7 +626,7 @@ const Landing = () => {
                 onClick={() =>
                   tier.cta === "Talk to sales"
                     ? window.open("mailto:hello@autolabels.io")
-                    : navigate("/onboarding")
+                    : navigate(user ? "/dashboard" : "/login?signup=1&next=/onboarding")
                 }
                 className={`w-full py-3 rounded-lg font-medium mb-6 ${
                   tier.featured
@@ -733,7 +733,7 @@ const Landing = () => {
           <h2 className="font-display text-4xl font-bold text-white mb-6">Stop printing stickers the 2010 way.</h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => navigate("/onboarding")}
+              onClick={() => navigate(user ? "/dashboard" : "/login?signup=1&next=/onboarding")}
               className="px-8 py-3 bg-white text-blue-600 rounded-lg hover:bg-gray-100 font-medium flex items-center justify-center gap-2"
             >
               Start free trial

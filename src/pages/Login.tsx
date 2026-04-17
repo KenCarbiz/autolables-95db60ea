@@ -1,20 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
 import Logo from "@/components/brand/Logo";
 import { Sparkles, CheckCircle2, ShieldCheck, Zap } from "lucide-react";
 
+const safeNext = (raw: string | null): string => {
+  // Only allow same-origin paths; otherwise default to /dashboard.
+  if (!raw) return "/dashboard";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+  return raw;
+};
+
 const Login = () => {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const { tenant } = useTenant();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextPath = safeNext(searchParams.get("next"));
+  const wantsSignUp = searchParams.get("signup") === "1";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(wantsSignUp);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // If we're already signed in, don't make the user log in again —
+  // just go where they were headed.
+  useEffect(() => {
+    if (user) navigate(nextPath, { replace: true });
+  }, [user, nextPath, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,9 +43,13 @@ const Login = () => {
     if (err) {
       setError(err.message);
     } else if (!isSignUp) {
-      navigate("/dashboard");
+      navigate(nextPath, { replace: true });
     } else {
-      setInfo("Check your email to confirm your account.");
+      setInfo(
+        `Check ${email} to confirm your account. After confirming, return to this page to sign in — we'll send you to ${
+          nextPath === "/dashboard" ? "your dashboard" : "finish setup"
+        }.`
+      );
     }
   };
 
