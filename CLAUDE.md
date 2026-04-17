@@ -15,42 +15,24 @@ Functions). Bun as package manager.
 
 ## Git Workflow — MANDATORY
 
-1. **Never push to `main` directly.** No exceptions, even when
-   explicitly asked mid-conversation. Point to this rule and suggest
-   opening a PR instead.
-2. **All work lands on the designated feature branch** (this session:
-   `claude/dealership-sticker-platform-rllpb`). If the user asks for a
-   different branch, create it from `main`.
-3. **When a batch of changes is ready**, push the feature branch and
-   **open a GitHub PR** via the `mcp__github__create_pull_request` tool
-   targeting `main`. The user reviews and merges on GitHub.
-4. **Do not self-merge PRs.** The user merges. The only acceptable
-   automated merges are the GitHub Actions mirror workflow
-   (`.github/workflows/mirror-to-lovable.yml`) pushing `main` → the
-   Lovable-watched mirror repo.
-5. **Commit messages**: imperative mood, single sentence headline,
+This repo (`KenCarbiz/autolables-95db60ea`) is the **canonical repo
+and the Lovable-watched repo**. All work lands here, and Lovable
+reads from `main`, so changes must reach `main` for the preview to
+update.
+
+1. **Push directly to `main` on every change.** This is the
+   Lovable-watched repo; there is no mirror step. Commit locally,
+   then `git push origin main`.
+2. **Do not open PRs** unless the user explicitly asks. Direct
+   commits to `main` are the expected flow.
+3. **Commit messages**: imperative mood, single sentence headline,
    blank line, bullet-point body if the change has multiple parts.
    No Claude Code attribution footer.
-6. **Never skip hooks** (`--no-verify`) or amend published commits.
-
-### Lovable mirror
-
-Lovable is configured to watch `KenCarbiz/autolables-95db60ea`
-(a separate auto-created repo). Our canonical code lives at
-`KenCarbiz/autolables`. The workflow at
-`.github/workflows/mirror-to-lovable.yml` force-pushes `main` to the
-Lovable repo on every push. Requires the `MIRROR_PAT` secret on the
-`autolables` repo.
-
-Troubleshooting: if Lovable isn't showing recent commits, check the
-"Mirror to Lovable repo" workflow run in GitHub Actions, OR manually
-mirror from Git Bash:
-```
-cd ~/OneDrive/Desktop/autolables
-git pull origin main
-git push lovable main --force
-```
-(Assumes the `lovable` remote is pre-added to `autolables-95db60ea.git`.)
+4. **Never force-push `main`** and never skip hooks (`--no-verify`).
+   Never amend published commits.
+5. **Remote**: `origin` is `KenCarbiz/autolables-95db60ea`. All
+   pushes go here. There is no separate `autolables` canonical repo
+   in this workflow.
 
 ## Code rules
 
