@@ -57,11 +57,11 @@ jobs:
           fi
           git config user.name "autolabels-mirror"
           git config user.email "mirror@autolabels.io"
-          git remote add mirror "https://x-access-token:${MIRROR_PAT}@github.com/KenCarbiz/autolables-89568b9f.git"
+          git remote add mirror "https://x-access-token:${MIRROR_PAT}@github.com/KenCarbiz/autolables-95db60ea.git"
           # Force-push main so the two stay aligned even if the mirror
           # has diverged (Lovable sometimes commits bot changes).
           git push mirror main:main --force
 
       - name: Summary
         run: |
-          echo "✓ Mirrored $(git rev-parse --short HEAD) to autolables-89568b9f/main"
+          echo "✓ Mirrored $(git rev-parse --short HEAD) to autolables-95db60ea/main"

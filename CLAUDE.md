@@ -35,7 +35,7 @@ Functions). Bun as package manager.
 
 ### Lovable mirror
 
-Lovable is configured to watch `KenCarbiz/autolables-89568b9f`
+Lovable is configured to watch `KenCarbiz/autolables-95db60ea`
 (a separate auto-created repo). Our canonical code lives at
 `KenCarbiz/autolables`. The workflow at
 `.github/workflows/mirror-to-lovable.yml` force-pushes `main` to the
@@ -43,7 +43,14 @@ Lovable repo on every push. Requires the `MIRROR_PAT` secret on the
 `autolables` repo.
 
 Troubleshooting: if Lovable isn't showing recent commits, check the
-"Mirror to Lovable repo" workflow run in GitHub Actions.
+"Mirror to Lovable repo" workflow run in GitHub Actions, OR manually
+mirror from Git Bash:
+```
+cd ~/OneDrive/Desktop/autolables
+git pull origin main
+git push lovable main --force
+```
+(Assumes the `lovable` remote is pre-added to `autolables-95db60ea.git`.)
 
 ## Code rules
 
