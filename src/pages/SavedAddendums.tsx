@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { Search, FileText, ArrowLeft, Eye } from "lucide-react";
+import { Search, FileText, ArrowLeft, Eye, Plus } from "lucide-react";
+import EmptyState from "@/components/ui/empty-state";
 
 const SavedAddendums = () => {
   const { user } = useAuth();
@@ -81,10 +82,20 @@ const SavedAddendums = () => {
             <p className="text-muted-foreground">Loading addendums…</p>
           </div>
         ) : !filtered?.length ? (
-          <div className="text-center py-12">
-            <FileText className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-            <p className="text-muted-foreground">{search ? "No addendums match your search." : "No saved addendums yet."}</p>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title={search ? "No addendums match your search" : "No saved addendums yet"}
+            description={
+              search
+                ? "Try a different stock number, VIN, or customer name."
+                : "Every addendum you sign is archived here with its hash, consent record, and customer signature. Start one to fill this list."
+            }
+            actions={
+              search
+                ? undefined
+                : [{ label: "New Addendum", icon: Plus, onClick: () => navigate("/addendum") }]
+            }
+          />
         ) : (
           <div className="bg-card rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">

@@ -9,6 +9,7 @@ import SignaturePad from "@/components/addendum/SignaturePad";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ShieldCheck, Camera, Check, X, AlertTriangle, ClipboardCheck, Image as ImageIcon, Upload, FileSignature, ArrowRight, Car, Wrench, ChevronLeft } from "lucide-react";
+import EmptyState from "@/components/ui/empty-state";
 import { uploadPhoto } from "@/lib/storage";
 
 const PrepSignOff = () => {
@@ -130,11 +131,11 @@ const PrepSignOff = () => {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="rounded-2xl bg-card border border-border p-12 shadow-premium text-center">
-              <ClipboardCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-foreground font-medium">No prep sign-offs yet.</p>
-              <p className="text-muted-foreground">Request one when a vehicle is ready for final inspection.</p>
-            </div>
+            <EmptyState
+              icon={ClipboardCheck}
+              title="No prep sign-offs yet"
+              description="Request one when a vehicle is ready for final inspection. Sign-offs unlock publishing and attach an install audit to every addendum."
+            />
           ) : (
             <div className="rounded-2xl bg-card border border-border shadow-premium overflow-hidden">
               <table className="w-full">

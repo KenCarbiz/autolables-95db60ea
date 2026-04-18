@@ -9,6 +9,7 @@ import {
   Plus, Search, Upload, Car, FileText, Printer, Signature, ScanLine,
   X, CheckCircle2, AlertTriangle,
 } from "lucide-react";
+import SharedEmptyState from "@/components/ui/empty-state";
 
 // ──────────────────────────────────────────────────────────────
 // Inventory — dealer's primary workspace.
@@ -402,24 +403,12 @@ const StatusPill = ({ status }: { status: VehicleRow["status"] }) => {
 };
 
 const EmptyState = ({ onAdd, total }: { onAdd: () => void; total: number }) => (
-  <div className="rounded-xl border-2 border-dashed border-border bg-card py-16 text-center space-y-3">
-    <Car className="w-10 h-10 text-muted-foreground/40 mx-auto" />
-    <h3 className="text-base font-bold text-foreground">
-      {total === 0 ? "Let's add your first vehicle" : "No vehicles match your filters"}
-    </h3>
-    <p className="text-sm text-muted-foreground max-w-md mx-auto">
-      Enter a VIN, mileage, and stock number. We'll decode the year, make, model,
-      and equipment, then open the vehicle's file so you can generate stickers,
-      addenda, and signing links.
-    </p>
-    <button
-      onClick={onAdd}
-      className="inline-flex items-center gap-1.5 h-10 px-5 rounded-md bg-primary text-primary-foreground text-sm font-semibold"
-    >
-      <Plus className="w-4 h-4" />
-      Add Vehicle
-    </button>
-  </div>
+  <SharedEmptyState
+    icon={Car}
+    title={total === 0 ? "Let's add your first vehicle" : "No vehicles match your filters"}
+    description="Enter a VIN, mileage, and stock number. We'll decode the year, make, model, and equipment, then open the vehicle's file so you can generate stickers, addenda, and signing links."
+    actions={[{ label: "Add Vehicle", icon: Plus, onClick: onAdd }]}
+  />
 );
 
 interface AddProps {
