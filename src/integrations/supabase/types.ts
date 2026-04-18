@@ -21,6 +21,7 @@ export type Database = {
           cobuyer_signature_data: string | null
           cobuyer_signature_type: string | null
           cobuyer_signed_at: string | null
+          content_hash: string | null
           created_at: string
           created_by: string | null
           customer_ip: string | null
@@ -28,22 +29,37 @@ export type Database = {
           customer_signature_data: string | null
           customer_signature_type: string | null
           customer_signed_at: string | null
+          delivery_mileage: number | null
           employee_name: string | null
           employee_signature_data: string | null
           employee_signature_type: string | null
           employee_signed_at: string | null
+          esign_consent: Json | null
+          financing_input: Json | null
           id: string
           initials: Json | null
+          listing_slug: string | null
           optional_selections: Json | null
+          price_overrides: Json | null
           products_snapshot: Json
+          sb766_add_on_precontract: Json | null
+          sb766_financing_disclosure: Json | null
+          sb766_three_day_return_ack: boolean | null
+          signing_location: Json | null
           signing_token: string | null
           status: string
+          sticker_match_ack: boolean | null
+          tenant_id: string | null
           total_installed: number | null
           total_with_optional: number | null
           updated_at: string
+          user_agent: string | null
+          vehicle_price: number | null
+          vehicle_state: string | null
           vehicle_stock: string | null
           vehicle_vin: string | null
           vehicle_ymm: string | null
+          warranty_ack: boolean | null
         }
         Insert: {
           addendum_date?: string | null
@@ -51,6 +67,7 @@ export type Database = {
           cobuyer_signature_data?: string | null
           cobuyer_signature_type?: string | null
           cobuyer_signed_at?: string | null
+          content_hash?: string | null
           created_at?: string
           created_by?: string | null
           customer_ip?: string | null
@@ -58,22 +75,37 @@ export type Database = {
           customer_signature_data?: string | null
           customer_signature_type?: string | null
           customer_signed_at?: string | null
+          delivery_mileage?: number | null
           employee_name?: string | null
           employee_signature_data?: string | null
           employee_signature_type?: string | null
           employee_signed_at?: string | null
+          esign_consent?: Json | null
+          financing_input?: Json | null
           id?: string
           initials?: Json | null
+          listing_slug?: string | null
           optional_selections?: Json | null
+          price_overrides?: Json | null
           products_snapshot?: Json
+          sb766_add_on_precontract?: Json | null
+          sb766_financing_disclosure?: Json | null
+          sb766_three_day_return_ack?: boolean | null
+          signing_location?: Json | null
           signing_token?: string | null
           status?: string
+          sticker_match_ack?: boolean | null
+          tenant_id?: string | null
           total_installed?: number | null
           total_with_optional?: number | null
           updated_at?: string
+          user_agent?: string | null
+          vehicle_price?: number | null
+          vehicle_state?: string | null
           vehicle_stock?: string | null
           vehicle_vin?: string | null
           vehicle_ymm?: string | null
+          warranty_ack?: boolean | null
         }
         Update: {
           addendum_date?: string | null
@@ -81,6 +113,7 @@ export type Database = {
           cobuyer_signature_data?: string | null
           cobuyer_signature_type?: string | null
           cobuyer_signed_at?: string | null
+          content_hash?: string | null
           created_at?: string
           created_by?: string | null
           customer_ip?: string | null
@@ -88,24 +121,288 @@ export type Database = {
           customer_signature_data?: string | null
           customer_signature_type?: string | null
           customer_signed_at?: string | null
+          delivery_mileage?: number | null
           employee_name?: string | null
           employee_signature_data?: string | null
           employee_signature_type?: string | null
           employee_signed_at?: string | null
+          esign_consent?: Json | null
+          financing_input?: Json | null
           id?: string
           initials?: Json | null
+          listing_slug?: string | null
           optional_selections?: Json | null
+          price_overrides?: Json | null
           products_snapshot?: Json
+          sb766_add_on_precontract?: Json | null
+          sb766_financing_disclosure?: Json | null
+          sb766_three_day_return_ack?: boolean | null
+          signing_location?: Json | null
           signing_token?: string | null
           status?: string
+          sticker_match_ack?: boolean | null
+          tenant_id?: string | null
           total_installed?: number | null
           total_with_optional?: number | null
           updated_at?: string
+          user_agent?: string | null
+          vehicle_price?: number | null
+          vehicle_state?: string | null
           vehicle_stock?: string | null
           vehicle_vin?: string | null
           vehicle_ymm?: string | null
+          warranty_ack?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addendums_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "addendums_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_entitlements: {
+        Row: {
+          activated_at: string
+          app_slug: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          metadata: Json
+          plan_tier: string
+          renewed_at: string | null
+          seat_limit: number | null
+          status: string
+          stripe_subscription_id: string | null
+          tenant_id: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string
+          app_slug: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          plan_tier?: string
+          renewed_at?: string | null
+          seat_limit?: number | null
+          status?: string
+          stripe_subscription_id?: string | null
+          tenant_id: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string
+          app_slug?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          plan_tier?: string
+          renewed_at?: string | null
+          seat_limit?: number | null
+          status?: string
+          stripe_subscription_id?: string | null
+          tenant_id?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_entitlements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_entitlements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_log: {
+        Row: {
+          action: string
+          content_hash: string | null
+          created_at: string
+          details: Json
+          entity_id: string
+          entity_type: string
+          id: string
+          ip_address: string | null
+          store_id: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          content_hash?: string | null
+          created_at?: string
+          details?: Json
+          entity_id: string
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          store_id?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          content_hash?: string | null
+          created_at?: string
+          details?: Json
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          store_id?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
         }
         Relationships: []
+      }
+      billing_events: {
+        Row: {
+          created_at: string
+          error: string | null
+          event_type: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          stripe_event_id: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          processed_at?: string | null
+          stripe_event_id?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          stripe_event_id?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_signing_tokens: {
+        Row: {
+          content_hash: string | null
+          created_at: string
+          created_by: string | null
+          customer_ip: string | null
+          esign_consent: Json | null
+          expires_at: string
+          id: string
+          revoked_at: string | null
+          signed_at: string | null
+          signed_payload: Json | null
+          status: string
+          tenant_id: string | null
+          token: string
+          updated_at: string
+          user_agent: string | null
+          vehicle_file_id: string
+          vehicle_payload: Json
+        }
+        Insert: {
+          content_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_ip?: string | null
+          esign_consent?: Json | null
+          expires_at?: string
+          id?: string
+          revoked_at?: string | null
+          signed_at?: string | null
+          signed_payload?: Json | null
+          status?: string
+          tenant_id?: string | null
+          token: string
+          updated_at?: string
+          user_agent?: string | null
+          vehicle_file_id: string
+          vehicle_payload?: Json
+        }
+        Update: {
+          content_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_ip?: string | null
+          esign_consent?: Json | null
+          expires_at?: string
+          id?: string
+          revoked_at?: string | null
+          signed_at?: string | null
+          signed_payload?: Json | null
+          status?: string
+          tenant_id?: string | null
+          token?: string
+          updated_at?: string
+          user_agent?: string | null
+          vehicle_file_id?: string
+          vehicle_payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_signing_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_signing_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dealer_subscriptions: {
         Row: {
@@ -175,6 +472,132 @@ export type Database = {
           phone?: string | null
         }
         Relationships: []
+      }
+      handoff_tokens: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          intent: string
+          payload: Json
+          source_app: string
+          target_app: string
+          tenant_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          intent?: string
+          payload?: Json
+          source_app: string
+          target_app: string
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          intent?: string
+          payload?: Json
+          source_app?: string
+          target_app?: string
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handoff_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handoff_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_profiles: {
+        Row: {
+          billing: Json
+          completed_at: string | null
+          created_at: string
+          display_name: string | null
+          last_synced_at: string | null
+          lead_preferences: Json
+          logo_url: string | null
+          phone: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          source: string
+          stores: Json
+          tagline: string | null
+          tenant_id: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          billing?: Json
+          completed_at?: string | null
+          created_at?: string
+          display_name?: string | null
+          last_synced_at?: string | null
+          lead_preferences?: Json
+          logo_url?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          source?: string
+          stores?: Json
+          tagline?: string | null
+          tenant_id: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          billing?: Json
+          completed_at?: string | null
+          created_at?: string
+          display_name?: string | null
+          last_synced_at?: string | null
+          lead_preferences?: Json
+          logo_url?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          source?: string
+          stores?: Json
+          tagline?: string | null
+          tenant_id?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       platform_bundles: {
         Row: {
@@ -254,6 +677,96 @@ export type Database = {
         }
         Relationships: []
       }
+      prep_sign_offs: {
+        Row: {
+          accessories_installed: Json
+          created_at: string
+          created_by: string | null
+          foreman_ip: string | null
+          foreman_name: string
+          foreman_signature_data: string | null
+          get_ready_record_id: string | null
+          id: string
+          inspection_form_type: string | null
+          inspection_passed: boolean
+          install_photos: Json
+          listing_unlocked: boolean
+          notes: string | null
+          rejection_reason: string | null
+          signed_at: string | null
+          status: string
+          stock_number: string | null
+          store_id: string
+          tenant_id: string | null
+          updated_at: string
+          vin: string
+          ymm: string | null
+        }
+        Insert: {
+          accessories_installed?: Json
+          created_at?: string
+          created_by?: string | null
+          foreman_ip?: string | null
+          foreman_name: string
+          foreman_signature_data?: string | null
+          get_ready_record_id?: string | null
+          id?: string
+          inspection_form_type?: string | null
+          inspection_passed?: boolean
+          install_photos?: Json
+          listing_unlocked?: boolean
+          notes?: string | null
+          rejection_reason?: string | null
+          signed_at?: string | null
+          status?: string
+          stock_number?: string | null
+          store_id: string
+          tenant_id?: string | null
+          updated_at?: string
+          vin: string
+          ymm?: string | null
+        }
+        Update: {
+          accessories_installed?: Json
+          created_at?: string
+          created_by?: string | null
+          foreman_ip?: string | null
+          foreman_name?: string
+          foreman_signature_data?: string | null
+          get_ready_record_id?: string | null
+          id?: string
+          inspection_form_type?: string | null
+          inspection_passed?: boolean
+          install_photos?: Json
+          listing_unlocked?: boolean
+          notes?: string | null
+          rejection_reason?: string | null
+          signed_at?: string | null
+          status?: string
+          stock_number?: string | null
+          store_id?: string
+          tenant_id?: string | null
+          updated_at?: string
+          vin?: string
+          ymm?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prep_sign_offs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prep_sign_offs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           badge_type: string
@@ -323,6 +836,168 @@ export type Database = {
         }
         Relationships: []
       }
+      signed_document_archive: {
+        Row: {
+          byte_size: number | null
+          content_hash: string
+          created_at: string
+          created_by: string | null
+          doc_type: string
+          entity_id: string
+          id: string
+          mime_type: string
+          retained_until: string | null
+          storage_bucket: string
+          storage_path: string
+          tenant_id: string | null
+          vin: string | null
+        }
+        Insert: {
+          byte_size?: number | null
+          content_hash: string
+          created_at?: string
+          created_by?: string | null
+          doc_type: string
+          entity_id: string
+          id?: string
+          mime_type?: string
+          retained_until?: string | null
+          storage_bucket?: string
+          storage_path: string
+          tenant_id?: string | null
+          vin?: string | null
+        }
+        Update: {
+          byte_size?: number | null
+          content_hash?: string
+          created_at?: string
+          created_by?: string | null
+          doc_type?: string
+          entity_id?: string
+          id?: string
+          mime_type?: string
+          retained_until?: string | null
+          storage_bucket?: string
+          storage_path?: string
+          tenant_id?: string | null
+          vin?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signed_document_archive_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signed_document_archive_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_members: {
+        Row: {
+          accepted_at: string | null
+          id: string
+          invited_at: string
+          invited_by: string | null
+          invited_email: string | null
+          role: string
+          tenant_id: string
+          user_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          invited_email?: string | null
+          role?: string
+          tenant_id: string
+          user_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          invited_email?: string | null
+          role?: string
+          tenant_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          autocheck_dealer_id: string | null
+          autocurb_tenant_id: string | null
+          billing_email: string | null
+          carfax_dealer_id: string | null
+          created_at: string
+          domain: string | null
+          id: string
+          is_active: boolean
+          name: string
+          primary_email: string | null
+          slug: string
+          source: string
+          stripe_customer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          autocheck_dealer_id?: string | null
+          autocurb_tenant_id?: string | null
+          billing_email?: string | null
+          carfax_dealer_id?: string | null
+          created_at?: string
+          domain?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          primary_email?: string | null
+          slug: string
+          source?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          autocheck_dealer_id?: string | null
+          autocurb_tenant_id?: string | null
+          billing_email?: string | null
+          carfax_dealer_id?: string | null
+          created_at?: string
+          domain?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          primary_email?: string | null
+          slug?: string
+          source?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -344,11 +1019,231 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_listings: {
+        Row: {
+          certification: Json | null
+          condition: string | null
+          created_at: string
+          created_by: string | null
+          dealer_snapshot: Json
+          description: string | null
+          documents: Json
+          factory_sticker_url: string | null
+          features: Json
+          id: string
+          key_specs: Json
+          mileage: number | null
+          payment_estimate: Json | null
+          photos: Json
+          prep_status: Json | null
+          price: number | null
+          published_at: string | null
+          recall_check: Json | null
+          recall_override_at: string | null
+          recall_override_by: string | null
+          recall_override_notes: string | null
+          scrape_last_synced_at: string | null
+          scrape_source_url: string | null
+          slug: string
+          status: string
+          sticker_snapshot: Json
+          store_id: string
+          tenant_id: string | null
+          trim: string | null
+          updated_at: string
+          value_props: Json
+          videos: Json
+          view_count: number
+          vin: string
+          ymm: string | null
+        }
+        Insert: {
+          certification?: Json | null
+          condition?: string | null
+          created_at?: string
+          created_by?: string | null
+          dealer_snapshot?: Json
+          description?: string | null
+          documents?: Json
+          factory_sticker_url?: string | null
+          features?: Json
+          id?: string
+          key_specs?: Json
+          mileage?: number | null
+          payment_estimate?: Json | null
+          photos?: Json
+          prep_status?: Json | null
+          price?: number | null
+          published_at?: string | null
+          recall_check?: Json | null
+          recall_override_at?: string | null
+          recall_override_by?: string | null
+          recall_override_notes?: string | null
+          scrape_last_synced_at?: string | null
+          scrape_source_url?: string | null
+          slug: string
+          status?: string
+          sticker_snapshot?: Json
+          store_id: string
+          tenant_id?: string | null
+          trim?: string | null
+          updated_at?: string
+          value_props?: Json
+          videos?: Json
+          view_count?: number
+          vin: string
+          ymm?: string | null
+        }
+        Update: {
+          certification?: Json | null
+          condition?: string | null
+          created_at?: string
+          created_by?: string | null
+          dealer_snapshot?: Json
+          description?: string | null
+          documents?: Json
+          factory_sticker_url?: string | null
+          features?: Json
+          id?: string
+          key_specs?: Json
+          mileage?: number | null
+          payment_estimate?: Json | null
+          photos?: Json
+          prep_status?: Json | null
+          price?: number | null
+          published_at?: string | null
+          recall_check?: Json | null
+          recall_override_at?: string | null
+          recall_override_by?: string | null
+          recall_override_notes?: string | null
+          scrape_last_synced_at?: string | null
+          scrape_source_url?: string | null
+          slug?: string
+          status?: string
+          sticker_snapshot?: Json
+          store_id?: string
+          tenant_id?: string | null
+          trim?: string | null
+          updated_at?: string
+          value_props?: Json
+          videos?: Json
+          view_count?: number
+          vin?: string
+          ymm?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_listings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_listings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      tenant_summary: {
+        Row: {
+          active_apps: number | null
+          app_slugs: string[] | null
+          created_at: string | null
+          domain: string | null
+          id: string | null
+          is_active: boolean | null
+          last_activity: string | null
+          member_count: number | null
+          name: string | null
+          slug: string | null
+          source: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_apps?: never
+          app_slugs?: never
+          created_at?: string | null
+          domain?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_activity?: never
+          member_count?: never
+          name?: string | null
+          slug?: string | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_apps?: never
+          app_slugs?: never
+          created_at?: string | null
+          domain?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_activity?: never
+          member_count?: never
+          name?: string | null
+          slug?: string | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      admin_create_tenant: {
+        Args: {
+          _app_slug?: string
+          _domain: string
+          _name: string
+          _owner_email: string
+          _plan_tier?: string
+          _slug: string
+          _trial_days?: number
+        }
+        Returns: string
+      }
+      admin_invite_member: {
+        Args: { _email: string; _role?: string; _tenant_id: string }
+        Returns: string
+      }
+      admin_override_entitlement: {
+        Args: {
+          _app_slug: string
+          _expires_at?: string
+          _plan_tier: string
+          _seat_limit?: number
+          _status: string
+          _tenant_id: string
+        }
+        Returns: string
+      }
+      admin_set_member_role: {
+        Args: { _member_id: string; _role: string }
+        Returns: boolean
+      }
+      admin_set_tenant_active: {
+        Args: { _active: boolean; _tenant_id: string }
+        Returns: boolean
+      }
+      bootstrap_tenant: {
+        Args: {
+          _app_slug?: string
+          _name: string
+          _plan_tier?: string
+          _slug: string
+          _source?: string
+        }
+        Returns: string
+      }
+      claim_platform: { Args: never; Returns: Json }
+      current_tenant_id: { Args: never; Returns: string }
       get_addendum_by_token: {
         Args: { _token: string }
         Returns: {
@@ -357,6 +1252,7 @@ export type Database = {
           cobuyer_signature_data: string | null
           cobuyer_signature_type: string | null
           cobuyer_signed_at: string | null
+          content_hash: string | null
           created_at: string
           created_by: string | null
           customer_ip: string | null
@@ -364,22 +1260,37 @@ export type Database = {
           customer_signature_data: string | null
           customer_signature_type: string | null
           customer_signed_at: string | null
+          delivery_mileage: number | null
           employee_name: string | null
           employee_signature_data: string | null
           employee_signature_type: string | null
           employee_signed_at: string | null
+          esign_consent: Json | null
+          financing_input: Json | null
           id: string
           initials: Json | null
+          listing_slug: string | null
           optional_selections: Json | null
+          price_overrides: Json | null
           products_snapshot: Json
+          sb766_add_on_precontract: Json | null
+          sb766_financing_disclosure: Json | null
+          sb766_three_day_return_ack: boolean | null
+          signing_location: Json | null
           signing_token: string | null
           status: string
+          sticker_match_ack: boolean | null
+          tenant_id: string | null
           total_installed: number | null
           total_with_optional: number | null
           updated_at: string
+          user_agent: string | null
+          vehicle_price: number | null
+          vehicle_state: string | null
           vehicle_stock: string | null
           vehicle_vin: string | null
           vehicle_ymm: string | null
+          warranty_ack: boolean | null
         }[]
         SetofOptions: {
           from: "*"
@@ -388,10 +1299,111 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_deal_token: {
+        Args: { _token: string }
+        Returns: {
+          content_hash: string | null
+          created_at: string
+          created_by: string | null
+          customer_ip: string | null
+          esign_consent: Json | null
+          expires_at: string
+          id: string
+          revoked_at: string | null
+          signed_at: string | null
+          signed_payload: Json | null
+          status: string
+          tenant_id: string | null
+          token: string
+          updated_at: string
+          user_agent: string | null
+          vehicle_file_id: string
+          vehicle_payload: Json
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "deal_signing_tokens"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_vehicle_listing_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          certification: Json | null
+          condition: string | null
+          created_at: string
+          created_by: string | null
+          dealer_snapshot: Json
+          description: string | null
+          documents: Json
+          factory_sticker_url: string | null
+          features: Json
+          id: string
+          key_specs: Json
+          mileage: number | null
+          payment_estimate: Json | null
+          photos: Json
+          prep_status: Json | null
+          price: number | null
+          published_at: string | null
+          recall_check: Json | null
+          recall_override_at: string | null
+          recall_override_by: string | null
+          recall_override_notes: string | null
+          scrape_last_synced_at: string | null
+          scrape_source_url: string | null
+          slug: string
+          status: string
+          sticker_snapshot: Json
+          store_id: string
+          tenant_id: string | null
+          trim: string | null
+          updated_at: string
+          value_props: Json
+          videos: Json
+          view_count: number
+          vin: string
+          ymm: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "vehicle_listings"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      has_app_access: { Args: { _app_slug: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+        }
+        Returns: boolean
+      }
+      increment_listing_view: { Args: { _slug: string }; Returns: undefined }
+      merge_scraped_vdp: {
+        Args: {
+          _description: string
+          _features: Json
+          _key_specs: Json
+          _mileage?: number
+          _options?: Json
+          _photos: Json
+          _price?: number
+          _source_url: string
+          _vehicle_id: string
+        }
+        Returns: string
+      }
+      sign_deal_token: {
+        Args: {
+          _content_hash: string
+          _customer_ip: string
+          _esign_consent: Json
+          _signed_payload: Json
+          _token: string
+          _user_agent: string
         }
         Returns: boolean
       }
