@@ -50,9 +50,65 @@ export interface ValueProp {
   price: string;
 }
 
+export interface ListingPhoto {
+  url: string;
+  alt?: string | null;
+  width?: number;
+  height?: number;
+  kind?: "hero" | "exterior" | "interior" | "detail" | string;
+}
+
+export interface ListingFeature {
+  icon?: string;            // lucide icon name or token ("shield", "sparkles", "gauge", ...)
+  title: string;
+  subtitle?: string | null;
+}
+
+export interface ListingKeySpecs {
+  drivetrain?: string | null;
+  transmission?: string | null;
+  mpg_city?: number | null;
+  mpg_hwy?: number | null;
+  mpg_combined?: number | null;
+  engine?: string | null;
+  fuel?: string | null;
+  exterior_color?: string | null;
+  interior_color?: string | null;
+  body_style?: string | null;
+  doors?: number | string | null;
+}
+
+export interface ListingCertification {
+  program_name?: string;
+  coverage_miles?: number;
+  coverage_months?: number;
+  inspection_points?: number;
+  url?: string;
+}
+
+export interface ListingPaymentEstimate {
+  default_apr?: number;
+  default_down?: number;
+  default_term_months?: number;
+}
+
+export interface ListingRecallCheck {
+  checked_at?: string;
+  has_open?: boolean;
+  do_not_drive?: boolean;
+  campaigns?: Array<{
+    campaignNumber?: string;
+    summary?: string;
+    consequence?: string;
+    remedy?: string;
+    component?: string;
+  }>;
+}
+
 export interface VehicleListing {
   id: string;
   store_id: string;
+  tenant_id: string | null;
   vin: string;
   slug: string;
   ymm: string | null;
@@ -60,11 +116,27 @@ export interface VehicleListing {
   mileage: number | null;
   condition: "new" | "used" | "cpo" | null;
   price: number | null;
+  vehicle_state?: string | null;
+
+  // Legacy (migration 20260417_platform_expansion)
   sticker_snapshot: StickerSnapshot;
   dealer_snapshot: DealerSnapshot;
   value_props: ValueProp[];
   documents: { name: string; url: string; type: string }[];
   videos: { id: string; url: string; caption?: string }[];
+
+  // Premium shopper-page fields (migration 20260418070000_vdp_scrape...)
+  photos: ListingPhoto[];
+  description: string | null;
+  features: ListingFeature[];
+  key_specs: ListingKeySpecs;
+  certification: ListingCertification | null;
+  factory_sticker_url: string | null;
+  scrape_source_url: string | null;
+  scrape_last_synced_at: string | null;
+  payment_estimate: ListingPaymentEstimate | null;
+  recall_check: ListingRecallCheck | null;
+
   prep_status: { all_accessories_installed?: boolean; foreman_signed_at?: string } | null;
   status: "draft" | "published" | "archived";
   published_at: string | null;
