@@ -136,6 +136,65 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Focus-visible: app-wide accessible focus ring on every actionable
+     element. Mouse clicks don't trigger it (focus-visible is keyboard
+     / screen-reader only). Components that need a custom ring opt out
+     by using `outline-none focus-visible:outline-none` on themselves. */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  [role="link"]:focus-visible,
+  [role="menuitem"]:focus-visible,
+  [role="option"]:focus-visible,
+  [role="tab"]:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  summary:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px hsl(var(--background)),
+      0 0 0 4px rgb(37 99 235 / 0.55);
+    border-radius: inherit;
+  }
+
+  /* Press feedback: every native interactive element gets a 1-frame
+     compress on :active so taps feel haptic. 80ms keeps it crisp. */
+  button,
+  a[href],
+  [role="button"],
+  [role="link"],
+  [role="menuitem"],
+  [role="option"],
+  [role="tab"],
+  summary {
+    transition: transform 80ms cubic-bezier(0.4, 0, 1, 1);
+  }
+  button:active,
+  a[href]:active,
+  [role="button"]:active,
+  [role="link"]:active,
+  [role="menuitem"]:active,
+  [role="option"]:active,
+  [role="tab"]:active,
+  summary:active {
+    transform: scale(0.985);
+  }
+
+  /* Reduced-motion: instantly cancel press transform + transition
+     for users who opt out of motion at the OS level. */
+  @media (prefers-reduced-motion: reduce) {
+    button, a[href], [role="button"], [role="link"],
+    [role="menuitem"], [role="option"], [role="tab"], summary {
+      transition: none;
+    }
+    button:active, a[href]:active, [role="button"]:active,
+    [role="link"]:active, [role="menuitem"]:active,
+    [role="option"]:active, [role="tab"]:active, summary:active {
+      transform: none;
+    }
+  }
 }
 
 @layer utilities {
