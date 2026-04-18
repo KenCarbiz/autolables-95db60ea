@@ -261,12 +261,51 @@ const Inventory = () => {
                     <StatusPill status={r.status} />
                   </td>
                   <td className="px-3 py-2.5 text-right">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); navigate(`/vehicle-file/${r.id}`); }}
-                      className="text-[11px] font-semibold px-2.5 h-7 rounded-md text-primary hover:bg-primary/10"
-                    >
-                      Open file →
-                    </button>
+                    <div className="inline-flex items-center gap-1">
+                      <RowAction
+                        label="Sticker"
+                        title={r.condition === "new" ? "Generate new-car sticker" : "Generate used-car sticker"}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(r.condition === "new" ? "/new-car-sticker" : "/used-car-sticker");
+                        }}
+                      />
+                      <RowAction
+                        label="Prep"
+                        title="Prep + install sign-off"
+                        onClick={(e) => { e.stopPropagation(); navigate("/prep"); }}
+                      />
+                      <RowAction
+                        label="Addendum"
+                        title="Build the customer addendum"
+                        onClick={(e) => { e.stopPropagation(); navigate("/addendum"); }}
+                      />
+                      {r.status === "published" ? (
+                        <RowAction
+                          label="View"
+                          tone="emerald"
+                          title="Open the public shopper page"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(`/v/${r.slug}`, "_blank", "noopener");
+                          }}
+                        />
+                      ) : (
+                        <RowAction
+                          label="Publish"
+                          tone="blue"
+                          title="Publish to the shopper portal"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/vehicle-file/${r.id}`); }}
+                        />
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/vehicle-file/${r.id}`); }}
+                        className="text-[11px] font-semibold px-2.5 h-7 rounded-md text-primary hover:bg-primary/10 ml-1"
+                        title="Open the full vehicle file"
+                      >
+                        Open →
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -275,6 +314,31 @@ const Inventory = () => {
         </div>
       )}
     </div>
+  );
+};
+
+interface RowActionProps {
+  label: string;
+  title: string;
+  tone?: "default" | "blue" | "emerald";
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+}
+
+const RowAction = ({ label, title, tone = "default", onClick }: RowActionProps) => {
+  const cls =
+    tone === "blue"
+      ? "bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white hover:brightness-110 shadow-sm"
+      : tone === "emerald"
+        ? "bg-emerald-500 text-white hover:brightness-110 shadow-sm"
+        : "bg-muted text-foreground hover:bg-muted/80";
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`h-7 px-2 rounded-md text-[10px] font-bold tracking-wide uppercase transition-all whitespace-nowrap hidden md:inline-flex items-center ${cls}`}
+    >
+      {label}
+    </button>
   );
 };
 
