@@ -68,7 +68,7 @@ const parseNumber = (s: string | null | undefined): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-const extractSchemaOrgVehicle = (doc: Document): ScrapeResult | null => {
+const extractSchemaOrgVehicle = (doc: Doc): ScrapeResult | null => {
   const scripts = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'));
   for (const script of scripts) {
     try {
@@ -119,7 +119,7 @@ const extractSchemaOrgVehicle = (doc: Document): ScrapeResult | null => {
   return null;
 };
 
-const extractOpenGraph = (doc: Document): ScrapeResult => {
+const extractOpenGraph = (doc: Doc): ScrapeResult => {
   const og = (prop: string) =>
     doc.querySelector(`meta[property="${prop}"]`)?.getAttribute("content") || null;
   const metaName = (name: string) =>
@@ -191,13 +191,13 @@ const scrape = async (url: string): Promise<ScrapeResult> => {
   const doc = new DOMParser().parseFromString(html, "text/html");
 
   // 1. JSON-LD preferred
-  const ld = extractSchemaOrgVehicle(doc as unknown as Document);
+  const ld = extractSchemaOrgVehicle(doc as Doc);
   if (ld && ld.photos.length > 0) return ld;
   // 2. OpenGraph fallback
-  const og = extractOpenGraph(doc as unknown as Document);
+  const og = extractOpenGraph(doc as Doc);
   if (og.photos.length > 0) return og;
   // 3. Heuristic last
-  return extractHeuristic(doc as unknown as Document, new URL(url));
+  return extractHeuristic(doc as Doc, new URL(url));
 };
 
 serve(async (req) => {
