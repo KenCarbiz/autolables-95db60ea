@@ -221,60 +221,74 @@ const MobileSigning = () => {
     };
     const contentHash = await hashPayload(canonicalPayload);
 
-    const signedAt = new Date().toISOString();
-    const { error } = await supabase
-      .from("addendums")
-      .update({
-        initials: initials as any,
-        optional_selections: optionalSelections as any,
-        customer_name: customerName || null,
-        customer_signature_data: customerSig.data,
-        customer_signature_type: customerSig.type,
-        customer_signed_at: signedAt,
-        status: "signed",
-        // Hardening columns (see migration 20260417_platform_expansion.sql)
-        content_hash: contentHash,
-        esign_consent: consent as any,
-        user_agent: consent.user_agent,
-        delivery_mileage: deliveryMileage ? parseInt(deliveryMileage, 10) : null,
-        sticker_match_ack: stickerMatchAck,
-        warranty_ack: warrantyAck,
-        customer_ip: customerIp,
-        signing_location: geoloc as any,
-        sb766_three_day_return_ack: sb766ThreeDayAck || null,
-        sb766_financing_disclosure: sb766Disclosure as any,
-        price_overrides: priceOverrides as any,
-      } as any)
-      .eq("signing_token", token!);
+    // Unified signing path: record_customer_signing RPC validates the
+    // token server-side, writes one addendum_signings row, mirrors
+    // legacy addendums columns for backward compat, and emits the
+    // audit_log event in one transaction. See migration 20260418110000.
+    const acknowledgments = {
+      warranty_ack: warrantyAck,
+      sticker_match_ack: stickerMatchAck,
+      sb766_three_day_return_ack: sb766ThreeDayAck || false,
+      sb766_financing_disclosure: sb766Disclosure || null,
+      initials,
+      optional_selections: optionalSelections,
+    };
 
-    // Append to the server audit log (anon RLS permits this exact action).
-    (supabase as any)
-      .from("audit_log")
-      .insert({
-        action: "addendum_signed",
-        entity_type: "addendum",
-        entity_id: addendum.id,
-        details: {
-          vin: addendum.vehicle_vin,
-          ymm: addendum.vehicle_ymm,
-          token: token,
-          customer_name: customerName,
-          hash: contentHash,
-          consent_version: consent.version,
-        },
-        ip_address: customerIp,
-        user_agent: consent.user_agent,
-        content_hash: contentHash,
-      })
-      .then(() => undefined, () => undefined);
+    const { error } = await (supabase as any).rpc("record_customer_signing", {
+      _signing_token: token!,
+      _signer_type: "customer",
+      _signer_name: customerName || null,
+      _signer_email: null,
+      _signer_phone: null,
+      _signature_data: customerSig.data,
+      _signature_type: customerSig.type,
+      _ip_address: customerIp,
+      _user_agent: consent.user_agent,
+      _signing_location: geoloc as any,
+      _content_hash: contentHash,
+      _esign_consent: consent as any,
+      _canonical_payload: canonicalPayload,
+      _acknowledgments: acknowledgments,
+      _delivery_mileage: deliveryMileage ? parseInt(deliveryMileage, 10) : null,
+      _price_overrides: priceOverrides as any,
+    });
 
     setSubmitting(false);
     if (error) {
-      toast.error("Failed to submit. Please try again.");
-      console.error(error);
-    } else {
-      setSubmitted(true);
+      // Fall back to the legacy direct-update path if the RPC isn't
+      // deployed yet (e.g. migration still propagating in Lovable).
+      // eslint-disable-next-line no-console
+      console.warn("record_customer_signing RPC failed, falling back", error);
+      const { error: legacyErr } = await supabase
+        .from("addendums")
+        .update({
+          initials: initials as any,
+          optional_selections: optionalSelections as any,
+          customer_name: customerName || null,
+          customer_signature_data: customerSig.data,
+          customer_signature_type: customerSig.type,
+          customer_signed_at: new Date().toISOString(),
+          status: "signed",
+          content_hash: contentHash,
+          esign_consent: consent as any,
+          user_agent: consent.user_agent,
+          delivery_mileage: deliveryMileage ? parseInt(deliveryMileage, 10) : null,
+          sticker_match_ack: stickerMatchAck,
+          warranty_ack: warrantyAck,
+          customer_ip: customerIp,
+          signing_location: geoloc as any,
+          sb766_three_day_return_ack: sb766ThreeDayAck || null,
+          sb766_financing_disclosure: sb766Disclosure as any,
+          price_overrides: priceOverrides as any,
+        } as any)
+        .eq("signing_token", token!);
+      if (legacyErr) {
+        toast.error("Failed to submit. Please try again.");
+        console.error(legacyErr);
+        return;
+      }
     }
+    setSubmitted(true);
   };
 
   if (loading) {

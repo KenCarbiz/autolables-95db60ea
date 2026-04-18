@@ -340,13 +340,54 @@ const Index = () => {
       status: customerSig.data && employeeSig.data ? "signed" : "draft",
       signing_token: token,
     };
-    const { error } = await supabase.from("addendums").insert([payload]);
+    const { data: inserted, error } = await supabase.from("addendums").insert([payload]).select("id").single();
     setSaving(false);
     if (error) {
       toast.error(error.message);
     } else {
       toast.success("Addendum saved!");
       log({ store_id: currentStore?.id || "", user_id: user.id, action: "addendum_created", entity_type: "addendum", entity_id: vehicle.vin, details: { ymm: vehicle.ymm, vin: vehicle.vin, status: payload.status, products_count: displayProducts.length, installed_total: installedTotal, optional_total: optionalTotal, type_overrides: typeOverrides } });
+
+      // Mirror every signer into addendum_signings so the unified
+      // compliance packet + VehicleFile activity timeline show every
+      // signature regardless of which path created it. Fire-and-
+      // forget — the legacy addendums columns stay authoritative for
+      // the Index.tsx view; these rows are for audit consolidation.
+      const addendumId = (inserted as { id?: string } | null)?.id || null;
+      const commonAck = { initials, optional_selections: optionalSelections };
+      const signers: Array<{
+        type: "customer" | "cobuyer" | "employee";
+        name: string | null;
+        sig: { data: string; type: "draw" | "type" };
+      }> = [];
+      if (customerSig.data) signers.push({
+        type: "customer",
+        name: [customerInfo.buyer_first_name, customerInfo.buyer_last_name].filter(Boolean).join(" ") || null,
+        sig: customerSig,
+      });
+      if (cobuyerSig.data) signers.push({
+        type: "cobuyer",
+        name: [customerInfo.cobuyer_first_name, customerInfo.cobuyer_last_name].filter(Boolean).join(" ") || null,
+        sig: cobuyerSig,
+      });
+      if (employeeSig.data) signers.push({
+        type: "employee",
+        name: user?.email || null,
+        sig: employeeSig,
+      });
+      for (const s of signers) {
+        (supabase as any).from("addendum_signings").insert({
+          addendum_id: addendumId,
+          vin: vehicle.vin || null,
+          signer_type: s.type,
+          signer_name: s.name,
+          signature_data: s.sig.data,
+          signature_type: s.sig.type,
+          user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+          acknowledgments: commonAck,
+          canonical_payload: { vin: vehicle.vin, ymm: vehicle.ymm },
+        }).then(() => undefined, () => undefined);
+      }
 
       // Register in vehicle file system — creates per-VIN compliance record + sticker tracking code
       if (vehicle.vin.trim().length === 17) {

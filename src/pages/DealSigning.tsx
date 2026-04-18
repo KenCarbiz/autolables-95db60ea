@@ -14,6 +14,7 @@ import {
 import type { VehicleFile } from "@/types/vehicleFile";
 import { useDealToken } from "@/hooks/useDealToken";
 import { buildConsentRecord, fetchClientIp, hashPayload } from "@/lib/esign";
+import { supabase } from "@/integrations/supabase/client";
 
 const VEHICLE_FILES_KEY = "vehicle_files";
 
@@ -161,20 +162,72 @@ const DealSigning = () => {
     };
 
     try {
-      // Preferred path: server-persisted token flow.
+      // Preferred path: server-persisted token flow via unified signing RPC.
       if (serverTokenId && token) {
-        const ok = await signToken({
-          token,
-          signedPayload,
-          contentHash,
-          customerIp,
-          userAgent: consent.user_agent,
-          esignConsent: consent as unknown as Record<string, unknown>,
+        const acknowledgments = {
+          buyers_guide_ack: ackBuyersGuide,
+          k208_ack: ackK208,
+          sticker_match_ack: ackSticker,
+        };
+        const { error: rpcErr } = await (supabase as any).rpc("record_customer_signing", {
+          _signing_token: token,
+          _signer_type: "customer",
+          _signer_name: customerName.trim(),
+          _signer_email: customerEmail.trim() || null,
+          _signer_phone: customerPhone.trim() || null,
+          _signature_data: customerSig.data,
+          _signature_type: customerSig.type,
+          _ip_address: customerIp,
+          _user_agent: consent.user_agent,
+          _signing_location: null,
+          _content_hash: contentHash,
+          _esign_consent: consent as unknown as Record<string, unknown>,
+          _canonical_payload: signedPayload,
+          _acknowledgments: acknowledgments,
+          _delivery_mileage: deliveryMileage ? parseInt(deliveryMileage, 10) : null,
+          _price_overrides: null,
         });
-        if (!ok) {
-          toast.error("This deal link is no longer valid.");
-          setSubmitting(false);
-          return;
+        if (rpcErr) {
+          // Fall back to legacy sign_deal_token RPC while the new one
+          // propagates through deploys.
+          // eslint-disable-next-line no-console
+          console.warn("record_customer_signing RPC failed on deal token, falling back", rpcErr);
+          const ok = await signToken({
+            token,
+            signedPayload,
+            contentHash,
+            customerIp,
+            userAgent: consent.user_agent,
+            esignConsent: consent as unknown as Record<string, unknown>,
+          });
+          if (!ok) {
+            toast.error("This deal link is no longer valid.");
+            setSubmitting(false);
+            return;
+          }
+        }
+
+        // Co-buyer writes a second addendum_signings row referencing the
+        // same deal token. Only needed if the buyer added one and signed.
+        if (showCobuyer && cobuyerName.trim() && cobuyerSig.data) {
+          await (supabase as any).rpc("record_customer_signing", {
+            _signing_token: token,
+            _signer_type: "cobuyer",
+            _signer_name: cobuyerName.trim(),
+            _signer_email: null,
+            _signer_phone: cobuyerPhone.trim() || null,
+            _signature_data: cobuyerSig.data,
+            _signature_type: cobuyerSig.type,
+            _ip_address: customerIp,
+            _user_agent: consent.user_agent,
+            _signing_location: null,
+            _content_hash: contentHash,
+            _esign_consent: consent as unknown as Record<string, unknown>,
+            _canonical_payload: signedPayload,
+            _acknowledgments: { buyers_guide_ack: ackBuyersGuide, k208_ack: ackK208, sticker_match_ack: ackSticker },
+            _delivery_mileage: deliveryMileage ? parseInt(deliveryMileage, 10) : null,
+            _price_overrides: null,
+          });
         }
       } else {
         // Legacy fallback: mirror into localStorage until all tokens
