@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { useViewTransitionNavigate } from "@/lib/navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
@@ -44,7 +45,7 @@ type ConditionFilter = "all" | "new" | "used" | "cpo";
 const Inventory = () => {
   const { user } = useAuth();
   const { tenant } = useTenant();
-  const navigate = useNavigate();
+  const navigate = useViewTransitionNavigate();
   const [rows, setRows] = useState<VehicleRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -274,12 +275,12 @@ const Inventory = () => {
                       <RowAction
                         label="Prep"
                         title="Prep + install sign-off"
-                        onClick={(e) => { e.stopPropagation(); navigate("/prep"); }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/vehicle-file/${r.id}?tab=prep`); }}
                       />
                       <RowAction
                         label="Addendum"
                         title="Build the customer addendum"
-                        onClick={(e) => { e.stopPropagation(); navigate("/addendum"); }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/vehicle-file/${r.id}?tab=addendum`); }}
                       />
                       {r.status === "published" ? (
                         <RowAction
@@ -296,7 +297,7 @@ const Inventory = () => {
                           label="Publish"
                           tone="blue"
                           title="Publish to the shopper portal"
-                          onClick={(e) => { e.stopPropagation(); navigate(`/vehicle-file/${r.id}`); }}
+                          onClick={(e) => { e.stopPropagation(); navigate(`/vehicle-file/${r.id}?tab=labels`); }}
                         />
                       )}
                       <button

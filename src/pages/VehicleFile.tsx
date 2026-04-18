@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
@@ -47,15 +47,36 @@ interface VehicleRow {
   updated_at: string;
 }
 
+const VALID_TABS: TabId[] = ["overview", "documents", "addendum", "prep", "labels", "sign"];
+
 const VehicleFile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { tenant } = useTenant();
   const [vehicle, setVehicle] = useState<VehicleRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [tab, setTab] = useState<TabId>("overview");
+  const initialTab = (() => {
+    const q = searchParams.get("tab");
+    return q && (VALID_TABS as string[]).includes(q) ? (q as TabId) : "overview";
+  })();
+  const [tab, setTab] = useState<TabId>(initialTab);
+
+  // Keep ?tab= in sync so deep-links + refreshes land on the same tab.
+  useEffect(() => {
+    const current = searchParams.get("tab");
+    if (tab === "overview" && current) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("tab");
+      setSearchParams(next, { replace: true });
+    } else if (tab !== "overview" && current !== tab) {
+      const next = new URLSearchParams(searchParams);
+      next.set("tab", tab);
+      setSearchParams(next, { replace: true });
+    }
+  }, [tab, searchParams, setSearchParams]);
 
   const load = async () => {
     if (!id) return;
