@@ -1744,7 +1744,7 @@ const Admin = () => {
         {/* ─── Audit Log Tab ─── */}
         {tab === "audit" && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-blue-600" />
@@ -1752,23 +1752,26 @@ const Admin = () => {
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">Immutable record of every action for FTC, CARS Act, and state AG audit compliance.</p>
               </div>
-              <button
-                onClick={() => {
-                  const csv = exportAuditCsv(currentStore?.id);
-                  const blob = new Blob([csv], { type: "text/csv" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `audit-log-${currentStore?.name || "all"}-${new Date().toISOString().slice(0, 10)}.csv`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                  toast.success("Audit log exported as CSV");
-                }}
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-sm font-medium hover:bg-muted transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Export CSV
-              </button>
+              <div className="flex items-center gap-2">
+                <AuditChainVerifier storeId={currentStore?.id || ""} />
+                <button
+                  onClick={() => {
+                    const csv = exportAuditCsv(currentStore?.id);
+                    const blob = new Blob([csv], { type: "text/csv" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `audit-log-${currentStore?.name || "all"}-${new Date().toISOString().slice(0, 10)}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    toast.success("Audit log exported as CSV");
+                  }}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export CSV
+                </button>
+              </div>
             </div>
 
             <div className="bg-card rounded-xl border border-border shadow-premium overflow-hidden">
@@ -2002,6 +2005,94 @@ const StatMini = ({ icon: Icon, label, value, color }: { icon: typeof FileText; 
     <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
   </div>
 );
+
+// Audit chain verifier. Calls verify_audit_chain(_store_id) which
+// walks the hash chain on audit_log server-side and returns
+// {total, verified, first_break_id, first_break_at}. All-verified
+// chains read as "Chain verified"; any break points at the first
+// tampered row so a regulator can see exactly where the record was
+// altered.
+const AuditChainVerifier = ({ storeId }: { storeId: string }) => {
+  const [state, setState] = useState<
+    | { kind: "idle" }
+    | { kind: "loading" }
+    | { kind: "ok"; total: number; verified: number }
+    | { kind: "break"; total: number; verified: number; breakId: string; breakAt: string }
+    | { kind: "error"; message: string }
+  >({ kind: "idle" });
+
+  const verify = async () => {
+    setState({ kind: "loading" });
+    try {
+      const { data, error } = await (supabase as any).rpc("verify_audit_chain", {
+        _store_id: storeId,
+      });
+      if (error) {
+        setState({ kind: "error", message: error.message });
+        toast.error("Chain check failed");
+        return;
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row) {
+        setState({ kind: "ok", total: 0, verified: 0 });
+        return;
+      }
+      if (row.first_break_id) {
+        setState({
+          kind: "break",
+          total: row.total,
+          verified: row.verified,
+          breakId: row.first_break_id,
+          breakAt: row.first_break_at,
+        });
+        toast.error("Audit chain break detected");
+      } else {
+        setState({ kind: "ok", total: row.total, verified: row.verified });
+        toast.success("Audit chain verified");
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Verification failed";
+      setState({ kind: "error", message: msg });
+    }
+  };
+
+  const label = (() => {
+    switch (state.kind) {
+      case "loading": return "Verifying…";
+      case "ok":      return `Chain verified · ${state.verified}/${state.total}`;
+      case "break":   return `Break at ${new Date(state.breakAt).toLocaleDateString()}`;
+      case "error":   return "Check failed";
+      default:        return "Verify chain";
+    }
+  })();
+
+  const cls = (() => {
+    switch (state.kind) {
+      case "ok":    return "border-emerald-300 bg-emerald-50 text-emerald-700";
+      case "break": return "border-red-300 bg-red-50 text-red-700";
+      case "error": return "border-amber-300 bg-amber-50 text-amber-700";
+      default:      return "border-border bg-card text-foreground hover:bg-muted";
+    }
+  })();
+
+  const Icon =
+    state.kind === "ok" ? CheckCircle2 :
+    state.kind === "break" ? AlertTriangle :
+    state.kind === "error" ? AlertTriangle :
+    ShieldCheck;
+
+  return (
+    <button
+      onClick={verify}
+      disabled={state.kind === "loading"}
+      className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-md border text-sm font-medium transition-colors disabled:opacity-60 ${cls}`}
+      title="Run SHA-256 chain verification across every audit_log row for this store"
+    >
+      <Icon className="w-3.5 h-3.5" />
+      {label}
+    </button>
+  );
+};
 
 const IntegrationRow = ({ label, secretKey, feature }: { label: string; secretKey: string; feature: boolean }) => (
   <div className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
