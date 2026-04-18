@@ -42,6 +42,10 @@ const PrepSignOff = () => {
   const [overrideForm, setOverrideForm] = useState({ overriderName: "", reason: "" });
   const [dialogRef, setDialogRef] = useState<HTMLDialogElement | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<InstallPhoto | null>(null);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectCategory, setRejectCategory] = useState<string>("paint");
+  const [rejectNotes, setRejectNotes] = useState("");
+  const [rejecting, setRejecting] = useState(false);
 
   useEffect(() => {
     if (!user) navigate("/login");
@@ -222,7 +226,10 @@ const PrepSignOff = () => {
         accessories_installed: newForm.accessories,
         inspection_passed: newForm.inspection_passed,
         inspection_form_type: newForm.inspection_form_type,
-        install_photos: newForm.install_photos,
+        // Strip transient upload-status markers from captions before saving
+        install_photos: newForm.install_photos
+          .filter((ph) => !ph.caption?.startsWith("__uploading:") && !ph.caption?.startsWith("__failed:"))
+          .map((ph) => ({ ...ph, caption: ph.caption?.startsWith("__") ? "" : ph.caption })),
         foreman_name: newForm.foreman_name,
         notes: newForm.notes,
         createdBy: user?.id ?? null,
@@ -375,8 +382,10 @@ const PrepSignOff = () => {
                   accept="image/*"
                   onChange={async e => {
                     const files = Array.from(e.currentTarget.files || []);
-                    // Optimistically insert local blob previews so the UI updates
-                    // immediately, then swap for the real Supabase Storage URL.
+                    // Per-photo status is encoded in the caption:
+                    //   __uploading:<id>            — upload in progress
+                    //   __failed:<id>:<filename>    — upload failed (show retry)
+                    //   anything else (or "")       — upload complete
                     const stamps = files.map(() => crypto.randomUUID());
                     setNewForm(prev => ({
                       ...prev,
@@ -385,32 +394,93 @@ const PrepSignOff = () => {
                         ...files.map((file, i) => ({
                           url: URL.createObjectURL(file),
                           category: "after" as const,
-                          caption: stamps[i],
+                          caption: `__uploading:${stamps[i]}`,
                           uploaded_at: new Date().toISOString(),
                         })),
                       ],
                     }));
+                    e.currentTarget.value = "";
                     for (let i = 0; i < files.length; i++) {
                       const uploaded = await uploadPhoto("prep-photos", files[i], {
                         storeId,
                         vin: newForm.vin,
                       });
-                      if (uploaded) {
-                        setNewForm(prev => ({
-                          ...prev,
-                          install_photos: prev.install_photos.map(ph =>
-                            ph.caption === stamps[i]
+                      setNewForm(prev => ({
+                        ...prev,
+                        install_photos: prev.install_photos.map(ph =>
+                          ph.caption === `__uploading:${stamps[i]}`
+                            ? uploaded
                               ? { ...ph, url: uploaded.url, caption: "" }
-                              : ph
-                          ),
-                        }));
-                      } else {
-                        toast.error(`Upload failed for ${files[i].name}`);
-                      }
+                              : { ...ph, caption: `__failed:${stamps[i]}:${files[i].name}` }
+                            : ph
+                        ),
+                      }));
+                      if (!uploaded) toast.error(`Upload failed for ${files[i].name}`);
                     }
                   }}
                   className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700"
                 />
+
+                {/* Upload status grid — thumbnails with spinner, failed badge,
+                    or solid-checkmark once each file reaches Storage. */}
+                {newForm.install_photos.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 md:grid-cols-6 gap-2">
+                    {newForm.install_photos.map((ph, i) => {
+                      const isUploading = ph.caption?.startsWith("__uploading:");
+                      const isFailed = ph.caption?.startsWith("__failed:");
+                      return (
+                        <div
+                          key={i}
+                          className={`relative aspect-square rounded-md overflow-hidden border ${
+                            isFailed ? "border-red-400" : isUploading ? "border-amber-300" : "border-emerald-300"
+                          } bg-muted`}
+                        >
+                          <img src={ph.url} alt="" className="w-full h-full object-cover" />
+                          <div className="absolute inset-x-0 bottom-0 px-1.5 py-1 text-[10px] font-bold uppercase tracking-widest bg-black/50 text-white flex items-center justify-between">
+                            {isUploading ? (
+                              <span className="inline-flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
+                                Uploading
+                              </span>
+                            ) : isFailed ? (
+                              <span className="inline-flex items-center gap-1 text-red-300">
+                                <span className="w-2 h-2 rounded-full bg-red-400" />
+                                Failed
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-emerald-300">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                                Saved
+                              </span>
+                            )}
+                            <button
+                              onClick={() =>
+                                setNewForm(prev => ({
+                                  ...prev,
+                                  install_photos: prev.install_photos.filter((_, idx) => idx !== i),
+                                }))
+                              }
+                              className="text-white/70 hover:text-white"
+                              title="Remove"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {newForm.install_photos.some((ph) => ph.caption?.startsWith("__uploading:")) && (
+                  <p className="mt-2 text-[11px] text-amber-700 font-semibold">
+                    Waiting on photo upload to finish before sign-off is allowed.
+                  </p>
+                )}
+                {newForm.install_photos.some((ph) => ph.caption?.startsWith("__failed:")) && (
+                  <p className="mt-2 text-[11px] text-red-600 font-semibold">
+                    Some photos failed to upload. Remove and try again to unblock sign-off.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -425,7 +495,10 @@ const PrepSignOff = () => {
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={handleCreateSignOff}
-                  className="flex-1 h-10 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+                  disabled={newForm.install_photos.some(
+                    (ph) => ph.caption?.startsWith("__uploading:") || ph.caption?.startsWith("__failed:")
+                  )}
+                  className="flex-1 h-10 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Create Sign-Off Request
                 </button>
@@ -632,14 +705,10 @@ const PrepSignOff = () => {
                   Sign & Unlock Listing
                 </button>
                 <button
-                  onClick={async () => {
-                    const reason = window.prompt("Reason for rejection?");
-                    if (reason) {
-                      await reject(record.id, reason);
-                      await log({ action: "prep_sign_off_rejected", entity_type: "prep_sign_off", entity_id: record.id, store_id: storeId, user_id: user?.id || "", details: { vin: record.vin } });
-                      toast.success("Sign-off rejected");
-                      setSearchParams({ view: "list" });
-                    }
+                  onClick={() => {
+                    setRejectCategory("paint");
+                    setRejectNotes("");
+                    setRejectOpen(true);
                   }}
                   className="h-10 px-4 border-2 border-red-600 text-red-600 rounded-md hover:bg-red-50 font-medium"
                 >
@@ -710,11 +779,137 @@ const PrepSignOff = () => {
             </div>
           )}
         </div>
+
+        {rejectOpen && record && (
+          <RejectModal
+            vin={record.vin}
+            category={rejectCategory}
+            notes={rejectNotes}
+            submitting={rejecting}
+            onCategory={setRejectCategory}
+            onNotes={setRejectNotes}
+            onClose={() => setRejectOpen(false)}
+            onSubmit={async () => {
+              setRejecting(true);
+              const full = `[${rejectCategory}] ${rejectNotes.trim() || "(no additional notes)"}`;
+              await reject(record.id, full);
+              await log({
+                action: "prep_sign_off_rejected",
+                entity_type: "prep_sign_off",
+                entity_id: record.id,
+                store_id: storeId,
+                user_id: user?.id || "",
+                details: { vin: record.vin, category: rejectCategory, notes: rejectNotes.trim() || null },
+              });
+              setRejecting(false);
+              setRejectOpen(false);
+              toast.success("Sign-off rejected");
+              setSearchParams({ view: "list" });
+            }}
+          />
+        )}
       </div>
     );
   }
 
   return null;
+};
+
+interface RejectModalProps {
+  vin: string;
+  category: string;
+  notes: string;
+  submitting: boolean;
+  onCategory: (c: string) => void;
+  onNotes: (n: string) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}
+
+const REJECT_CATEGORIES: Array<{ id: string; label: string }> = [
+  { id: "paint",            label: "Paint / finish defect" },
+  { id: "mechanical",       label: "Mechanical issue" },
+  { id: "electrical",       label: "Electrical issue" },
+  { id: "interior",         label: "Interior damage / stain" },
+  { id: "missing_parts",    label: "Missing parts or accessories" },
+  { id: "install_quality",  label: "Installation quality" },
+  { id: "documentation",    label: "Documentation missing" },
+  { id: "recall",           label: "Open / unresolved recall" },
+  { id: "other",             label: "Other (explain in notes)" },
+];
+
+const RejectModal = ({
+  vin, category, notes, submitting,
+  onCategory, onNotes, onClose, onSubmit,
+}: RejectModalProps) => {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full md:max-w-lg md:rounded-2xl rounded-t-[28px] overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="pt-2 md:hidden flex justify-center">
+          <div className="w-10 h-1 rounded-full bg-slate-300" />
+        </div>
+        <div className="px-5 py-4 border-b border-slate-200">
+          <h3 className="text-base font-black font-display tracking-tight text-slate-900">
+            Reject prep sign-off
+          </h3>
+          <p className="text-[11px] text-slate-500 mt-0.5 font-mono">VIN {vin}</p>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              Reason *
+            </label>
+            <select
+              value={category}
+              onChange={(e) => onCategory(e.target.value)}
+              className="mt-1 w-full h-11 rounded-lg border border-slate-200 px-3 text-sm bg-white"
+            >
+              {REJECT_CATEGORIES.map((c) => (
+                <option key={c.id} value={c.id}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              Notes
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => onNotes(e.target.value)}
+              rows={3}
+              placeholder="Specifics the service/detail team needs to fix..."
+              className="mt-1 w-full rounded-lg border border-slate-200 p-3 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+            />
+          </div>
+          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-[11px] text-amber-900">
+            Rejecting keeps the listing locked. The vehicle won't be publishable
+            until prep runs again and a foreman signs off.
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              onClick={onClose}
+              className="h-10 px-4 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onSubmit}
+              disabled={submitting}
+              className="h-10 px-5 rounded-lg bg-red-600 text-white font-display font-black text-sm hover:brightness-110 disabled:opacity-50"
+            >
+              {submitting ? "Rejecting…" : "Reject sign-off"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default PrepSignOff;
