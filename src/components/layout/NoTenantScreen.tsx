@@ -27,18 +27,43 @@ const NoTenantScreen = () => {
   // where the client can't see global admin state.
   const handleClaim = async () => {
     setClaiming(true);
-    const { data, error } = await supabase.functions.invoke("claim-platform", {
-      body: {},
-    });
+    // Primary path: Postgres RPC claim_platform(). Ships with the
+    // SQL migration pipeline so it's reachable as soon as the DB
+    // is up to date. Avoids the Edge Function deploy step that
+    // Lovable doesn't always run automatically.
+    const rpc = await (supabase as any).rpc("claim_platform");
+    if (!rpc.error) {
+      const res = rpc.data as { ok?: boolean; message?: string } | null;
+      if (res?.ok) {
+        toast.success(res.message || "You're the admin. Reloading…");
+        setTimeout(() => (window.location.href = "/admin"), 800);
+        setClaiming(false);
+        return;
+      }
+    } else {
+      const msg = String(rpc.error.message || "");
+      if (msg.includes("already_claimed")) {
+        toast.error("An admin already exists. Ask them to add your email.");
+        setClaiming(false);
+        return;
+      }
+      // Fall through to the Edge Function if the RPC isn't deployed yet.
+      if (!/function.*does not exist|schema.*public/i.test(msg)) {
+        toast.error(msg || "Claim RPC failed. Trying Edge Function…");
+      }
+    }
+
+    // Fallback path: Edge Function (only runs if the RPC path errored).
+    const fn = await supabase.functions.invoke("claim-platform", { body: {} });
     setClaiming(false);
-    if (error) {
+    if (fn.error) {
       toast.error(
-        (error as { message?: string })?.message ||
-          "Claim failed — check the claim-platform function logs."
+        (fn.error as { message?: string })?.message ||
+          "Claim failed. Ensure Supabase migrations are applied."
       );
       return;
     }
-    const res = data as { ok?: boolean; error?: string; message?: string };
+    const res = fn.data as { ok?: boolean; error?: string; message?: string };
     if (res?.ok) {
       toast.success(res.message || "You're the admin. Reloading…");
       setTimeout(() => (window.location.href = "/admin"), 800);
