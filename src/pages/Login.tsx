@@ -19,13 +19,16 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const explicitNext = searchParams.get("next");
   const isAdminMode = searchParams.get("admin") === "1";
+  // Invite links from admin_invite_member / admin_create_tenant land with
+  // ?email=... pre-filled so the dealer doesn't have to re-type theirs.
+  const invitedEmail = searchParams.get("email") || "";
   // Admins default to /admin, dealers to /dashboard. Same-origin
   // ?next= overrides.
   const resolveNext = () =>
     explicitNext ? safeNext(explicitNext) : isAdmin ? "/admin" : "/dashboard";
   const nextPath = resolveNext();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(invitedEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [info] = useState("");

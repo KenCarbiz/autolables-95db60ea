@@ -4,7 +4,7 @@ import { useEntitlements, type AppSlug, type EntitlementRow, type TenantRow } fr
 import { useAuth } from "@/contexts/AuthContext";
 import { PLAN_DEFINITIONS } from "@/data/planTiers";
 import Logo from "@/components/brand/Logo";
-import { Sparkles, Check, ShieldCheck, ArrowRight, ExternalLink, LogOut } from "lucide-react";
+import { Sparkles, Check, ShieldCheck, ArrowRight, ExternalLink, LogOut, ArrowLeft, Home } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -75,14 +75,33 @@ const ActivatePaywall = ({ app, tenant, entitlement }: Props) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <header className="border-b border-border bg-white">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Logo variant="full" size={26} />
-          <button
-            onClick={() => signOut().then(() => navigate("/"))}
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="w-3.5 h-3.5" /> Sign out
-          </button>
+        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
+              title="Back to previous page"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back
+            </button>
+            <span className="h-4 w-px bg-border" aria-hidden />
+            <Logo variant="full" size={26} />
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/")}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <Home className="w-3.5 h-3.5" /> Home
+            </button>
+            <button
+              onClick={() => signOut().then(() => navigate("/"))}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Sign out
+            </button>
+          </div>
         </div>
       </header>
 
