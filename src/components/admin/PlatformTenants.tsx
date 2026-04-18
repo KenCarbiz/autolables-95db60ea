@@ -252,7 +252,7 @@ const CreateTenantForm = ({ onClose, onCreate }: CreateFormProps) => {
         <Select label="App" value={appSlug} onChange={setAppSlug} options={["autolabels", "autocurb", "autoframe", "autovideo"]} />
         <Select label="Plan tier" value={planTier} onChange={setPlanTier} options={["starter", "essential", "professional", "unlimited", "enterprise"]} />
         <div>
-          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-label">
             Trial length
           </label>
           <select
@@ -294,7 +294,7 @@ interface FieldProps {
 
 const Field = ({ label, value, onChange, placeholder, mono }: FieldProps) => (
   <div>
-    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-label">
       {label}
     </label>
     <input
@@ -317,7 +317,7 @@ interface SelectProps {
 
 const Select = ({ label, value, onChange, options }: SelectProps) => (
   <div>
-    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-label">
       {label}
     </label>
     <select

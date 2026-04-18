@@ -386,7 +386,7 @@ const TradeUpSticker = () => {
         {/* Right: live sticker preview */}
         <div className="lg:col-span-3">
           <div className="sticky top-20">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 no-print">
+            <p className="text-[11px] font-semibold uppercase tracking-label text-muted-foreground mb-2 no-print">
               Live Preview
             </p>
             <div
@@ -401,7 +401,7 @@ const TradeUpSticker = () => {
               <div className="relative h-full flex flex-col p-10">
                 {/* Top: type badge + dealer branding */}
                 <div className="flex items-start justify-between">
-                  <span className="bg-white/10 backdrop-blur-sm text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded">
+                  <span className="bg-white/10 backdrop-blur-sm text-xs font-bold uppercase tracking-label px-3 py-1.5 rounded">
                     {vehicleType === "new" ? "New Arrival" : "Pre-Owned"}
                   </span>
                   <div className="text-right flex items-center gap-3">
@@ -424,7 +424,7 @@ const TradeUpSticker = () => {
                   </p>
                   <div className="my-5 flex items-center justify-center gap-2">
                     <div className="h-[2px] w-12 bg-current opacity-40" />
-                    <span className="text-[10px] uppercase tracking-widest opacity-60">↓</span>
+                    <span className="text-[10px] uppercase tracking-label opacity-60">↓</span>
                     <div className="h-[2px] w-12 bg-current opacity-40" />
                   </div>
                   <p className={`text-5xl font-black leading-none tracking-tight font-display ${themeCfg.ctaSubhead} drop-shadow-md`}>

@@ -219,7 +219,7 @@ export const VinBarcodeScanner = ({
             <div className="absolute bottom-6 left-0 right-0 px-6">
               {detected ? (
                 <div className="mx-auto max-w-md rounded-xl bg-emerald-500 text-white px-4 py-3 text-center shadow-lg">
-                  <div className="text-[10px] font-bold uppercase tracking-widest opacity-80">
+                  <div className="text-[10px] font-bold uppercase tracking-label opacity-80">
                     VIN detected
                   </div>
                   <div className="font-mono font-bold text-lg tracking-wider">{detected}</div>
@@ -241,7 +241,7 @@ export const VinBarcodeScanner = ({
 
       {/* Manual entry fallback — always available so nobody's stuck */}
       <div className="flex-shrink-0 p-4 bg-black/60 backdrop-blur">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-white/60">
+        <label className="text-[10px] font-bold uppercase tracking-label text-white/60">
           Or type the VIN
         </label>
         <input

@@ -97,7 +97,7 @@ const VehiclePortal = () => {
             {/* Vehicle hero */}
             <div className="bg-white rounded-2xl border border-border shadow-premium overflow-hidden">
               <div className="bg-primary text-primary-foreground p-6">
-                <p className="text-xs uppercase tracking-widest text-primary-foreground/60 mb-1">
+                <p className="text-xs uppercase tracking-label text-primary-foreground/60 mb-1">
                   {vehicleFile.condition === "new" ? "New Vehicle" : "Pre-Owned Vehicle"}
                 </p>
                 <h1 className="text-2xl font-bold tracking-tight">
@@ -166,7 +166,7 @@ const VehiclePortal = () => {
 
               {installed.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-700 mb-2">Pre-Installed (Included in Price)</p>
+                  <p className="text-[10px] font-bold uppercase tracking-label text-blue-700 mb-2">Pre-Installed (Included in Price)</p>
                   <div className="space-y-2">
                     {installed.map(p => (
                       <ProductCard key={p.id} product={p} type="installed" />
@@ -177,7 +177,7 @@ const VehiclePortal = () => {
 
               {optional.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-2">Optional (You Choose)</p>
+                  <p className="text-[10px] font-bold uppercase tracking-label text-amber-700 mb-2">Optional (You Choose)</p>
                   <div className="space-y-2">
                     {optional.map(p => (
                       <ProductCard key={p.id} product={p} type="optional" />

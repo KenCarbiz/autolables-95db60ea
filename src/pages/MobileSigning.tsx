@@ -335,7 +335,7 @@ const MobileSigning = () => {
 
           <div className="rounded-2xl border border-slate-200 bg-card p-4 space-y-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Vehicle</p>
+              <p className="text-[10px] font-bold uppercase tracking-label text-slate-500">Vehicle</p>
               <p className="text-sm font-semibold text-foreground mt-0.5">
                 {addendum.vehicle_ymm || "Vehicle"}
               </p>
@@ -344,7 +344,7 @@ const MobileSigning = () => {
               )}
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Signed by</p>
+              <p className="text-[10px] font-bold uppercase tracking-label text-slate-500">Signed by</p>
               <p className="text-sm font-semibold text-foreground mt-0.5">{customerName || "—"}</p>
               <p className="text-[11px] text-muted-foreground">{signedAt}</p>
             </div>
@@ -355,7 +355,7 @@ const MobileSigning = () => {
               <svg className="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
               </svg>
-              <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">Legally binding record</p>
+              <p className="text-xs font-bold uppercase tracking-label text-emerald-400">Legally binding record</p>
             </div>
             <p className="text-[11px] text-white/70 leading-relaxed">
               Your signature is tamper-evident. Every product, price, initial,
@@ -367,7 +367,7 @@ const MobileSigning = () => {
 
           {(dealerPhone || dealerName) && (
             <div className="rounded-2xl border border-slate-200 bg-card p-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              <p className="text-[10px] font-bold uppercase tracking-label text-slate-500">
                 Questions? Contact the dealer
               </p>
               <p className="text-sm font-semibold text-foreground mt-0.5">{dealerName}</p>
@@ -413,7 +413,7 @@ const MobileSigning = () => {
       <div className="sticky top-0 z-40 surface-blur border-b border-slate-200">
         <div className="max-w-lg mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-3 text-[11px]">
-            <span className="font-bold uppercase tracking-widest text-slate-500">
+            <span className="font-bold uppercase tracking-label text-slate-500">
               Sign addendum
             </span>
             <span className="font-bold tabular-nums text-slate-900">

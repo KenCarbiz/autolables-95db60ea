@@ -436,7 +436,7 @@ const PrepSignOff = () => {
                           } bg-muted`}
                         >
                           <img src={ph.url} alt="" className="w-full h-full object-cover" />
-                          <div className="absolute inset-x-0 bottom-0 px-1.5 py-1 text-[10px] font-bold uppercase tracking-widest bg-black/50 text-white flex items-center justify-between">
+                          <div className="absolute inset-x-0 bottom-0 px-1.5 py-1 text-[10px] font-bold uppercase tracking-label bg-black/50 text-white flex items-center justify-between">
                             {isUploading ? (
                               <span className="inline-flex items-center gap-1">
                                 <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
@@ -862,7 +862,7 @@ const RejectModal = ({
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            <label className="text-[10px] font-bold uppercase tracking-label text-slate-500">
               Reason *
             </label>
             <select
@@ -876,7 +876,7 @@ const RejectModal = ({
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            <label className="text-[10px] font-bold uppercase tracking-label text-slate-500">
               Notes
             </label>
             <textarea

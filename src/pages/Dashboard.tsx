@@ -102,7 +102,7 @@ const Dashboard = () => {
 
       {/* Analytics section header */}
       <div className="flex items-center justify-between mt-2">
-        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+        <h2 className="text-[11px] font-semibold uppercase tracking-label text-muted-foreground">
           Analytics
         </h2>
         <button className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-card border border-border text-xs font-medium hover:bg-muted transition-colors">
@@ -151,7 +151,7 @@ const Dashboard = () => {
       <div className="bg-card rounded-xl border border-border shadow-premium p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Pipeline Overview</h3>
+            <h3 className="text-[11px] font-semibold uppercase tracking-label text-muted-foreground">Pipeline Overview</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Addendum workflow by status</p>
           </div>
         </div>
@@ -366,7 +366,7 @@ const GradientStatCard = ({
   <div className={`rounded-xl p-5 shadow-premium ${className} relative overflow-hidden`}>
     <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-white/10 -mr-8 -mt-8" />
     <div className="relative">
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-white/80">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-label text-white/80">{label}</p>
       <p className="text-3xl font-semibold tracking-tight mt-1 font-display tabular-nums">{value}</p>
       <p className="text-[11px] text-white/70 mt-1">{sublabel}</p>
     </div>

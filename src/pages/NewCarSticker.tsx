@@ -305,7 +305,7 @@ const NewCarSticker = () => {
 
         {/* Sticker preview */}
         <div className="lg:col-span-3">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 no-print">Live Preview</p>
+          <p className="text-[11px] font-semibold uppercase tracking-label text-muted-foreground mb-2 no-print">Live Preview</p>
           <div ref={cardRef} className="bg-white rounded-lg border-2 border-foreground overflow-hidden shadow-premium-lg mx-auto" style={{ maxWidth: "600px" }}>
 
             {/* Dealer header */}

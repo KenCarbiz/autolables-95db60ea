@@ -164,15 +164,15 @@ const ActivatePaywall = ({ app, tenant, entitlement }: Props) => {
                 }`}
               >
                 {isBundled ? (
-                  <span className="absolute -top-3 left-6 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest bg-emerald-500 text-white px-2.5 py-1 rounded-full">
+                  <span className="absolute -top-3 left-6 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-label bg-emerald-500 text-white px-2.5 py-1 rounded-full">
                     Included with Autocurb
                   </span>
                 ) : featured && (
-                  <span className="absolute -top-3 left-6 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white px-2.5 py-1 rounded-full">
+                  <span className="absolute -top-3 left-6 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-label bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white px-2.5 py-1 rounded-full">
                     Most popular
                   </span>
                 )}
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                <p className="text-xs font-bold uppercase tracking-label text-muted-foreground">
                   {plan.name}
                 </p>
                 <div className="mt-3 flex items-baseline gap-1.5">

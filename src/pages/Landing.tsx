@@ -132,7 +132,7 @@ const Landing = () => {
         <div className="inline-block px-4 py-2 bg-gray-100 rounded-full mb-6">
           <span className="text-sm font-medium text-gray-700">The dealer label & compliance platform</span>
         </div>
-        <h1 className="font-display text-6xl md:text-8xl tracking-tighter font-bold mb-6 leading-tight">
+        <h1 className="font-display text-display-lg md:text-display-xl font-semibold mb-6">
           Decode. Disclose.{" "}
           <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent italic">
             Deliver.
@@ -225,7 +225,7 @@ const Landing = () => {
   const HowItWorks = () => (
     <section id="how" className="py-16 bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-display text-4xl font-bold mb-12 text-center">How it works</h2>
+        <h2 className="font-display text-display font-semibold mb-12 text-center">How it works</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[
             { icon: Scan, title: "Decode", desc: "VIN lookup + NHTSA recalls in 800ms" },
@@ -251,7 +251,7 @@ const Landing = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="font-display text-4xl font-bold mb-6">The only window sticker your buyer reads on their phone.</h2>
+            <h2 className="font-display text-display font-semibold mb-6">The only window sticker your buyer reads on their phone.</h2>
             <p className="text-gray-600 mb-6">
               The QR on the printed sticker resolves to <code className="bg-gray-100 px-2 py-1 rounded text-sm">/v/&lt;slug&gt;</code>, matching your dealership branding and WCAG 2.1 AA compliant for accessibility.
             </p>
@@ -285,7 +285,7 @@ const Landing = () => {
   const PrepGate = () => (
     <section className="py-16 bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-display text-4xl font-bold mb-4 text-center">Verified before the car hits the lot.</h2>
+        <h2 className="font-display text-display font-semibold mb-4 text-center">Verified before the car hits the lot.</h2>
         <p className="text-center text-gray-600 mb-8">
           Shop-foreman sign-off unlocks the public listing and shopper portal.
         </p>
@@ -308,7 +308,7 @@ const Landing = () => {
   const Features = () => (
     <section id="features" className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-display text-4xl font-bold mb-12 text-center">Features</h2>
+        <h2 className="font-display text-display font-semibold mb-12 text-center">Features</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {[
             { icon: Globe, title: "State-by-state disclosure engine", desc: "All 50 states" },
@@ -354,7 +354,7 @@ const Landing = () => {
     return (
       <section id="roi" className="py-16 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-display text-4xl font-bold mb-12 text-center">ROI Calculator</h2>
+          <h2 className="font-display text-display font-semibold mb-12 text-center">ROI Calculator</h2>
           <div className="bg-white p-8 rounded-lg border border-gray-200 mb-8">
             <div className="space-y-6 mb-8">
               <div>
@@ -426,7 +426,7 @@ const Landing = () => {
   const Comparison = () => (
     <section id="compare" className="py-16 bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-display text-4xl font-bold mb-12 text-center">How we compare</h2>
+        <h2 className="font-display text-display font-semibold mb-12 text-center">How we compare</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -473,7 +473,7 @@ const Landing = () => {
   const Testimonials = () => (
     <section className="py-16 bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-display text-4xl font-bold mb-12 text-center">What dealers say</h2>
+        <h2 className="font-display text-display font-semibold mb-12 text-center">What dealers say</h2>
         {/* TODO: replace with real customer stories */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
@@ -541,7 +541,7 @@ const Landing = () => {
   const Pricing = () => (
     <section id="pricing" className="py-16 bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-display text-4xl font-bold mb-3 text-center">Pricing</h2>
+        <h2 className="font-display text-display font-semibold mb-3 text-center">Pricing</h2>
         <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
           One FTC Section 5 enforcement action is up to <strong className="text-gray-900">$53,088</strong> per violation. Compliance Pro is $999/mo.
           <span className="block mt-1">Small price to pay.</span>
@@ -673,7 +673,7 @@ const Landing = () => {
   const FAQ = () => (
     <section id="faq" className="py-16 bg-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-display text-4xl font-bold mb-12 text-center">Frequently asked questions</h2>
+        <h2 className="font-display text-display font-semibold mb-12 text-center">Frequently asked questions</h2>
         <div className="space-y-4">
           {[
             {
@@ -730,7 +730,7 @@ const Landing = () => {
     <section className="py-16 bg-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl p-12 text-center shimmer-hero">
-          <h2 className="font-display text-4xl font-bold text-white mb-6">Stop printing stickers the 2010 way.</h2>
+          <h2 className="font-display text-display font-semibold text-white mb-6">Stop printing stickers the 2010 way.</h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => user ? navigate("/dashboard") : (window.location.href = "mailto:hello@autolabels.io?subject=AutoLabels.io%20access%20request")}

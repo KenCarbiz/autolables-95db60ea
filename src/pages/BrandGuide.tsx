@@ -53,11 +53,11 @@ const BrandGuide = () => {
         >
           <div className="grid md:grid-cols-2 gap-4">
             <Card>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Mission</p>
+              <p className="text-[10px] font-bold uppercase tracking-label text-muted-foreground mb-2">Mission</p>
               <p className="text-base text-foreground leading-relaxed">{b.mission}</p>
             </Card>
             <Card>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Vision</p>
+              <p className="text-[10px] font-bold uppercase tracking-label text-muted-foreground mb-2">Vision</p>
               <p className="text-base text-foreground leading-relaxed">{b.vision}</p>
             </Card>
           </div>
@@ -103,21 +103,21 @@ const BrandGuide = () => {
 
         {/* Colors */}
         <Section eyebrow="Palette" title="Color System" subtitle="Wide palette, tight compositions. Never use more than 3 colors in one piece." icon={Palette}>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Core</p>
+          <p className="text-[10px] font-bold uppercase tracking-label text-muted-foreground mb-3">Core</p>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {b.colors.core.map((c) => (
               <ColorSwatch key={c.name} color={c} onCopy={copy} copiedId={copiedId} />
             ))}
           </div>
 
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 mt-8">Accents</p>
+          <p className="text-[10px] font-bold uppercase tracking-label text-muted-foreground mb-3 mt-8">Accents</p>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {b.colors.accents.map((c) => (
               <ColorSwatch key={c.name} color={c} onCopy={copy} copiedId={copiedId} />
             ))}
           </div>
 
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 mt-8">Gradients</p>
+          <p className="text-[10px] font-bold uppercase tracking-label text-muted-foreground mb-3 mt-8">Gradients</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {Object.entries(b.colors.gradients).map(([name, value]) => (
               <div key={name} className="rounded-xl overflow-hidden border border-border shadow-premium">
@@ -143,7 +143,7 @@ const BrandGuide = () => {
             {b.typography.scale.map((t) => (
               <div key={t.label} className="flex items-baseline gap-6 border-b border-border pb-4 last:border-0">
                 <div className="w-20 flex-shrink-0">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t.label}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-label text-muted-foreground">{t.label}</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">{t.size}</p>
                 </div>
                 <p
@@ -170,7 +170,7 @@ const BrandGuide = () => {
 
           <div className="grid md:grid-cols-2 gap-4">
             <Card>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 mb-2">Words we use</p>
+              <p className="text-[10px] font-bold uppercase tracking-label text-emerald-600 mb-2">Words we use</p>
               <div className="flex flex-wrap gap-1.5">
                 {b.voice.wordsWeUse.map((w) => (
                   <span key={w} className="text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded">
@@ -180,7 +180,7 @@ const BrandGuide = () => {
               </div>
             </Card>
             <Card>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-red-600 mb-2">Words we avoid</p>
+              <p className="text-[10px] font-bold uppercase tracking-label text-red-600 mb-2">Words we avoid</p>
               <div className="flex flex-wrap gap-1.5">
                 {b.voice.wordsWeAvoid.map((w) => (
                   <span key={w} className="text-xs font-medium bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded line-through">
@@ -193,7 +193,7 @@ const BrandGuide = () => {
 
           <div className="mt-6 grid md:grid-cols-2 gap-4">
             <Card>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 mb-2">✓ Good</p>
+              <p className="text-[10px] font-bold uppercase tracking-label text-emerald-600 mb-2">✓ Good</p>
               <ul className="space-y-2">
                 {b.sampleCopy.good.map((s, i) => (
                   <li key={i} className="text-sm text-foreground italic">"{s}"</li>
@@ -201,7 +201,7 @@ const BrandGuide = () => {
               </ul>
             </Card>
             <Card>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-red-600 mb-2">✗ Bad</p>
+              <p className="text-[10px] font-bold uppercase tracking-label text-red-600 mb-2">✗ Bad</p>
               <ul className="space-y-2">
                 {b.sampleCopy.bad.map((s, i) => (
                   <li key={i} className="text-sm text-muted-foreground line-through italic">"{s}"</li>
@@ -230,8 +230,8 @@ const BrandGuide = () => {
             <table className="w-full text-sm">
               <thead className="bg-muted/30">
                 <tr>
-                  <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Surface</th>
-                  <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">AutoLabels Name</th>
+                  <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-label text-muted-foreground">Surface</th>
+                  <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-label text-muted-foreground">AutoLabels Name</th>
                 </tr>
               </thead>
               <tbody>
@@ -287,7 +287,7 @@ const Section = ({
   <section>
     <div className="flex items-center gap-2 mb-2">
       {Icon && <Icon className="w-3.5 h-3.5 text-blue-600" />}
-      <p className="text-[10px] font-bold uppercase tracking-widest text-blue-600">{eyebrow}</p>
+      <p className="text-[10px] font-bold uppercase tracking-label text-blue-600">{eyebrow}</p>
     </div>
     <h2 className="text-3xl font-bold tracking-tight font-display text-foreground">{title}</h2>
     {subtitle && <p className="text-base text-muted-foreground mt-2 max-w-2xl">{subtitle}</p>}

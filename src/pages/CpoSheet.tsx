@@ -108,7 +108,7 @@ const CpoSheet = () => {
         </div>
 
         <div className="lg:col-span-3">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 no-print">Preview</p>
+          <p className="text-[11px] font-semibold uppercase tracking-label text-muted-foreground mb-2 no-print">Preview</p>
           <div ref={cardRef} className="bg-white rounded-lg border-2 border-foreground overflow-hidden shadow-premium-lg mx-auto" style={{ maxWidth: "600px" }}>
             {/* Header */}
             <div className="bg-gradient-to-r from-emerald-700 to-emerald-900 text-white px-5 py-4">

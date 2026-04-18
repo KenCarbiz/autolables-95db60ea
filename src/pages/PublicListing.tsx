@@ -176,7 +176,7 @@ const PublicListing = () => {
           style={{ background: "linear-gradient(135deg, #0B2041 0%, #1E90FF 100%)" }}
         >
           <div className="text-white p-6">
-            <p className="text-[10px] uppercase tracking-widest text-white/60 mb-1">
+            <p className="text-[10px] uppercase tracking-label text-white/60 mb-1">
               {listing.condition === "new"
                 ? "New Vehicle"
                 : listing.condition === "cpo"
@@ -200,7 +200,7 @@ const PublicListing = () => {
           {(typeof listing.price === "number" || typeof totals.final_price === "number") && (
             <div className="p-5 bg-white border-t border-border flex items-center justify-between">
               <div>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                <p className="text-[10px] uppercase tracking-label text-muted-foreground">
                   {listing.condition === "new" ? "Suggested Retail" : "Asking Price"}
                 </p>
                 <p className="text-3xl font-black tracking-tight font-display tabular-nums text-foreground">
@@ -274,7 +274,7 @@ const PublicListing = () => {
 
           {installed.length > 0 && (
             <div className="mb-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#1E90FF] mb-2">
+              <p className="text-[10px] font-bold uppercase tracking-label text-[#1E90FF] mb-2">
                 Pre-Installed (Included in Price)
               </p>
               <div className="space-y-2">
@@ -287,7 +287,7 @@ const PublicListing = () => {
 
           {optional.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 mb-2">
+              <p className="text-[10px] font-bold uppercase tracking-label text-amber-600 mb-2">
                 Optional (You Choose)
               </p>
               <div className="space-y-2">
@@ -618,7 +618,7 @@ const InquiryModal = ({ listing, dealer, onClose, onSent, sent }: InquiryModalPr
               <Field label="Phone" value={phone} onChange={setPhone} placeholder="(555) 123-4567" type="tel" />
             </div>
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Message</label>
+              <label className="text-[10px] font-bold uppercase tracking-label text-slate-500">Message</label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -661,7 +661,7 @@ const Field = ({
   type?: "text" | "email" | "tel";
 }) => (
   <div>
-    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</label>
+    <label className="text-[10px] font-bold uppercase tracking-label text-slate-500">{label}</label>
     <input
       value={value}
       onChange={(e) => onChange(e.target.value)}

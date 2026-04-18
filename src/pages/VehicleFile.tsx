@@ -140,18 +140,18 @@ const VehicleFile = () => {
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
+                <span className={`text-[10px] font-bold uppercase tracking-label px-2 py-0.5 rounded ${
                   vehicle.condition === "new" ? "bg-blue-100 text-blue-700" :
                   vehicle.condition === "cpo" ? "bg-violet-100 text-violet-700" :
                   "bg-slate-100 text-slate-700"
                 }`}>{vehicle.condition || "unknown"}</span>
-                <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
+                <span className={`text-[10px] font-bold uppercase tracking-label px-2 py-0.5 rounded ${
                   vehicle.status === "published" ? "bg-emerald-100 text-emerald-700" :
                   vehicle.status === "archived" ? "bg-slate-100 text-slate-500" :
                   "bg-amber-100 text-amber-700"
                 }`}>{vehicle.status}</span>
                 {vehicle.prep_status?.foreman_signed_at ? (
-                  <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 inline-flex items-center gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-label px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 inline-flex items-center gap-1">
                     <CheckCircle2 className="w-2.5 h-2.5" />
                     Prep signed
                   </span>
@@ -558,7 +558,7 @@ const JumpTo = ({ path, reason }: { path: string; reason: string }) => {
 
 const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{title}</h3>
+    <h3 className="text-xs font-bold uppercase tracking-label text-muted-foreground">{title}</h3>
     {children}
   </div>
 );

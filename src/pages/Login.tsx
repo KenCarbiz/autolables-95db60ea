@@ -100,7 +100,7 @@ const Login = () => {
 
           <div className="mb-8">
             {isAdminMode ? (
-              <span className="inline-flex items-center gap-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded mb-2">
+              <span className="inline-flex items-center gap-1.5 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-label px-2 py-0.5 rounded mb-2">
                 Admin
               </span>
             ) : null}

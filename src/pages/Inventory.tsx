@@ -110,14 +110,14 @@ const Inventory = () => {
       <div className="shimmer-hero relative overflow-hidden rounded-2xl px-6 py-5 text-white">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <div className="inline-flex items-center gap-1.5 bg-white/15 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+            <div className="inline-flex items-center gap-1.5 bg-white/15 px-2.5 py-1 rounded-full text-caption font-bold uppercase tracking-label">
               <Car className="w-3 h-3" />
               Inventory
             </div>
-            <h1 className="mt-1.5 text-xl md:text-2xl font-black tracking-tight font-display">
+            <h1 className="mt-1.5 text-title md:text-headline font-display font-semibold text-white">
               Your vehicles
             </h1>
-            <p className="text-xs text-white/70 mt-1">
+            <p className="text-body-sm text-white/70 mt-1">
               Every sticker, addendum, prep sign-off, and customer signature
               attaches to a vehicle file here.
             </p>
@@ -378,8 +378,8 @@ const InventorySkeleton = () => (
 
 const Stat = ({ label, value, accent }: { label: string; value: number; accent?: "amber" | "emerald" }) => (
   <div className="rounded-xl border border-border bg-card p-4">
-    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
-    <p className={`mt-1 text-2xl font-black tabular-nums ${
+    <p className="text-caption font-bold uppercase tracking-label text-muted-foreground">{label}</p>
+    <p className={`mt-1 font-display text-title font-semibold tabular-nums ${
       accent === "amber" ? "text-amber-600" :
       accent === "emerald" ? "text-emerald-600" :
       "text-foreground"
@@ -767,7 +767,7 @@ const CsvImportModal = ({ tenantId, userId, onClose, onImported }: ImportProps) 
 
 const Field = ({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) => (
   <div>
-    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+    <label className="text-[10px] font-bold uppercase tracking-label text-muted-foreground">
       {label}
       {required ? <span className="text-destructive ml-0.5">*</span> : null}
     </label>

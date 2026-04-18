@@ -79,7 +79,7 @@ export const AffordabilityStrip = ({
           <Calculator className="w-4 h-4" />
           <h3 className="text-sm font-semibold tracking-tight">Estimated Monthly Payment</h3>
         </div>
-        <span className="text-[10px] uppercase tracking-widest opacity-80">
+        <span className="text-[10px] uppercase tracking-label opacity-80">
           Transparent math
         </span>
       </header>
@@ -87,7 +87,7 @@ export const AffordabilityStrip = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 divide-x divide-slate-200 bg-white">
         {rows.map((r) => (
           <div key={r.term_months} className="p-4 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            <p className="text-[10px] font-bold uppercase tracking-label text-slate-500">
               {r.term_months} months
             </p>
             <p className="mt-1 text-2xl font-black tabular-nums text-slate-900">
@@ -128,7 +128,7 @@ export const AffordabilityStrip = ({
         />
         {tax > 0 ? (
           <div>
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-label">
               Sales tax (est.)
             </p>
             <p className="mt-1 h-9 flex items-center font-semibold text-slate-700 tabular-nums">
@@ -173,7 +173,7 @@ interface FieldProps {
 
 const Field = ({ label, value, onChange, step, min = 0, prefix, suffix }: FieldProps) => (
   <div>
-    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-label">
       {label}
     </label>
     <div className="mt-1 relative">

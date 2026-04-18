@@ -305,7 +305,7 @@ const Admin = () => {
         <div className="shimmer-hero relative overflow-hidden rounded-b-3xl px-6 lg:px-10 pt-8 pb-10 text-white">
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+              <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-label">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Control Center
               </div>
@@ -320,7 +320,7 @@ const Admin = () => {
               </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 text-[10px] font-semibold uppercase tracking-widest">
+              <div className="px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 text-[10px] font-semibold uppercase tracking-label">
                 FTC-aligned · 50-state engine
               </div>
             </div>
@@ -510,7 +510,7 @@ const Admin = () => {
                   onClick={() => setTab("files")}
                   className="text-left bg-card rounded-xl border border-border shadow-premium p-4 hover:shadow-md transition-shadow"
                 >
-                  <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#3BB4FF" }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-label" style={{ color: "#3BB4FF" }}>
                     This month's addendums
                   </p>
                   <div className="flex items-baseline gap-2 mt-2">
@@ -533,7 +533,7 @@ const Admin = () => {
                   onClick={() => setTab("getready")}
                   className="text-left bg-card rounded-xl border border-border shadow-premium p-4 hover:shadow-md transition-shadow"
                 >
-                  <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-label" style={{ color: "#F59E0B" }}>
                     Pending get-ready
                   </p>
                   <div className="flex items-baseline gap-2 mt-2">
@@ -547,7 +547,7 @@ const Admin = () => {
                   onClick={() => setTab("leads")}
                   className="text-left bg-card rounded-xl border border-border shadow-premium p-4 hover:shadow-md transition-shadow"
                 >
-                  <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#10B981" }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-label" style={{ color: "#10B981" }}>
                     Leads (30 days)
                   </p>
                   <div className="flex items-baseline gap-2 mt-2">
@@ -561,7 +561,7 @@ const Admin = () => {
                   onClick={() => setTab("warranty")}
                   className="text-left bg-card rounded-xl border border-border shadow-premium p-4 hover:shadow-md transition-shadow"
                 >
-                  <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#DC2626" }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-label" style={{ color: "#DC2626" }}>
                     Warranty alerts
                   </p>
                   <div className="flex items-baseline gap-2 mt-2">
@@ -1061,7 +1061,7 @@ const Admin = () => {
                   </span>
                 </div>
                 <div className="mt-2">
-                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-label">
                     Or paste a URL
                   </label>
                   <input

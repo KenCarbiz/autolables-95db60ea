@@ -112,7 +112,7 @@ const About = () => {
       <section className="py-24 px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-blue-600">How it works</p>
+            <p className="text-[11px] font-bold uppercase tracking-label text-blue-600">How it works</p>
             <h2 className="text-4xl lg:text-5xl font-black tracking-tighter font-display mt-2">
               Four verbs. One platform.
             </h2>
@@ -154,7 +154,7 @@ const About = () => {
       <section className="py-24 px-6 lg:px-8 bg-muted/30 border-y border-border">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-blue-600">What we believe</p>
+            <p className="text-[11px] font-bold uppercase tracking-label text-blue-600">What we believe</p>
             <h2 className="text-4xl lg:text-5xl font-black tracking-tighter font-display mt-2">
               Three principles
             </h2>
@@ -181,7 +181,7 @@ const About = () => {
       <section className="py-24 px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-blue-600">Under the hood</p>
+            <p className="text-[11px] font-bold uppercase tracking-label text-blue-600">Under the hood</p>
             <h2 className="text-4xl lg:text-5xl font-black tracking-tighter font-display mt-2">
               Power where you need it
             </h2>

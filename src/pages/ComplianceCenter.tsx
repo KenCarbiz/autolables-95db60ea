@@ -168,7 +168,7 @@ const CompliancePacketPanel = ({
     <div className="space-y-4">
       <div className="shimmer-hero relative overflow-hidden rounded-2xl px-6 py-6 text-white">
         <div className="relative z-10 space-y-3">
-          <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+          <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-label">
             <ShieldCheck className="w-3 h-3" />
             Compliance Packet
           </div>
@@ -220,7 +220,7 @@ const CompliancePacketPanel = ({
                 <p className="mt-1 text-2xl font-black tabular-nums text-foreground">
                   {counts?.[c.key as keyof typeof counts] ?? 0}
                 </p>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
+                <p className="text-[10px] font-bold uppercase tracking-label text-muted-foreground mt-0.5">
                   {c.label}
                 </p>
                 <p className="text-[10px] text-muted-foreground/70">{c.hint}</p>
