@@ -47,8 +47,10 @@ const hexEncode = (buf: ArrayBuffer) =>
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-const sha256Hex = async (bytes: Uint8Array) =>
-  hexEncode(await crypto.subtle.digest("SHA-256", bytes));
+const sha256Hex = async (bytes: Uint8Array) => {
+  const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  return hexEncode(await crypto.subtle.digest("SHA-256", ab));
+};
 
 const decodeBase64 = (b64: string) => {
   const clean = b64.replace(/^data:[^;]+;base64,/, "").replace(/\s+/g, "");
