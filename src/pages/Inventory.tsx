@@ -6,7 +6,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { useVinDecode } from "@/hooks/useVinDecode";
 import { toast } from "sonner";
 import {
-  Plus, Search, Upload, Car, FileText, Printer, Signature,
+  Plus, Search, Upload, Car, FileText, Printer, Signature, ScanLine,
   X, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 
@@ -136,6 +136,14 @@ const Inventory = () => {
             >
               <Plus className="w-4 h-4" />
               Add Vehicle
+            </button>
+            <button
+              onClick={() => navigate("/scan")}
+              className="h-9 px-4 rounded-md bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white text-sm font-semibold inline-flex items-center gap-1.5 shadow-premium hover:brightness-110"
+              title="Scan a VIN barcode into inventory"
+            >
+              <ScanLine className="w-4 h-4" />
+              Scan Vehicle
             </button>
           </div>
         </div>
