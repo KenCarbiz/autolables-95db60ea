@@ -69,7 +69,7 @@ interface NavSection {
 }
 
 const AppShell = ({ children }: AppShellProps) => {
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const { tenant, currentStore, stores, setCurrentStore } = useTenant();
   const { settings } = useDealerSettings();
   const { entries } = useAudit();
@@ -121,6 +121,7 @@ const AppShell = ({ children }: AppShellProps) => {
       title: "ADMINISTRATION",
       defaultOpen: false,
       items: [
+        { label: "Admin Home", path: "/admin?tab=home", icon: LayoutDashboard },
         { label: "Products", path: "/admin?tab=products", icon: Package },
         { label: "Product Rules", path: "/admin?tab=rules", icon: Wrench, featureKey: "feature_product_rules" },
         { label: "Branding", path: "/admin?tab=branding", icon: Palette },
@@ -136,6 +137,16 @@ const AppShell = ({ children }: AppShellProps) => {
         { label: "Analytics", path: "/admin?tab=analytics", icon: BarChart3, featureKey: "feature_analytics" },
         { label: "Leads", path: "/admin?tab=leads", icon: Users, featureKey: "feature_lead_capture" },
       ],
+    },
+    platform: {
+      title: "PLATFORM",
+      defaultOpen: false,
+      items: isAdmin ? [
+        { label: "Tenants",        path: "/admin?tab=platform-tenants",      icon: Store },
+        { label: "Members",        path: "/admin?tab=platform-members",      icon: Users },
+        { label: "Entitlements",   path: "/admin?tab=platform-entitlements", icon: Award },
+        { label: "Platform Audit", path: "/admin?tab=platform-audit",        icon: ShieldCheck },
+      ] : [],
     },
   };
 
