@@ -81,19 +81,16 @@ const NoTenantScreen = () => {
           <button
             onClick={handleClaim}
             disabled={claiming}
-            className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-md bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white text-sm font-bold shadow-premium disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 w-full h-14 rounded-xl bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white text-base font-bold shadow-premium disabled:opacity-60 hover:brightness-110 transition-all"
           >
-            <Rocket className="w-4 h-4" />
+            <Rocket className="w-5 h-5" />
             {claiming ? "Claiming…" : "Claim platform as admin"}
           </button>
-          <a
-            href="mailto:hello@autolabels.io?subject=AutoLabels.io%20access%20request"
-            className="inline-flex items-center justify-center gap-2 w-full h-9 rounded-md border border-border text-sm font-semibold"
-          >
-            <Mail className="w-3.5 h-3.5" />
-            Request access instead
-          </a>
-          <div className="flex items-center gap-2">
+          <p className="text-[11px] text-muted-foreground">
+            First-time setup. Takes ~2 seconds. Creates the AutoLabels.io house tenant
+            and makes you the owner with full admin access.
+          </p>
+          <div className="flex items-center gap-2 pt-2">
             <button
               onClick={() => navigate("/")}
               className="flex-1 h-9 rounded-md border border-border text-sm font-semibold"
@@ -110,12 +107,8 @@ const NoTenantScreen = () => {
           </div>
         </div>
 
-        <p className="text-[11px] text-muted-foreground">
-          Managing a dealership group? Contact us at{" "}
-          <a href="mailto:hello@autolabels.io" className="text-[#1E90FF] hover:underline">
-            hello@autolabels.io
-          </a>{" "}
-          to get added as the owner.
+        <p className="text-[11px] text-muted-foreground pt-2">
+          Not the platform operator? <a href="mailto:hello@autolabels.io?subject=AutoLabels.io%20access%20request" className="text-[#1E90FF] hover:underline">Email for access</a>.
         </p>
       </div>
     </div>
