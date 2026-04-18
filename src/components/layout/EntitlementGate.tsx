@@ -51,39 +51,51 @@ const EntitlementGate = ({ app, children }: Props) => {
 
   // Cold pull from Autocurb when the user has no local tenant.
   // Admins skip this entirely — they are platform operators, not
-  // dealership members. The pull is bounded by a hard 4s timeout so
-  // a missing edge function never blocks the gate.
+  // dealership members. The pull is bounded by a hard 2s timeout so
+  // a missing edge function never blocks the gate, and reload() is
+  // bounded by a second 3s timeout so a hung Supabase query can't
+  // freeze the gate forever. Total worst case: 5s, then we let the
+  // render fall through to NoTenantScreen.
   useEffect(() => {
     if (authLoading || loading || !user || isAdmin) return;
     if (tenant) return;
     if (pulledRef.current) return;
     pulledRef.current = true;
     let cancelled = false;
+    const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> =>
+      Promise.race([
+        p,
+        new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+      ]);
     (async () => {
       setPulling(true);
       try {
-        const pullPromise = supabase.functions.invoke("autocurb-pull", {
-          body: { app_slug: app },
-        });
-        const timeout = new Promise<{ data: null; error: Error }>((resolve) =>
-          setTimeout(
-            () => resolve({ data: null, error: new Error("autocurb-pull timeout") }),
-            4000
-          )
+        const result = await withTimeout(
+          supabase.functions.invoke("autocurb-pull", { body: { app_slug: app } }),
+          2000,
+          { data: null, error: new Error("autocurb-pull timeout") } as unknown as Awaited<
+            ReturnType<typeof supabase.functions.invoke>
+          >,
         );
-        const result = await Promise.race([pullPromise, timeout]);
         if (cancelled) return;
         if (!(result as { error?: unknown }).error) {
-          await reload();
+          await withTimeout(reload(), 3000, undefined);
         }
       } catch {
-        // best-effort — fall through to onboarding wizard
+        // best-effort — fall through to NoTenantScreen
       } finally {
         if (!cancelled) setPulling(false);
       }
     })();
+    // Safety net: no matter what, clear the pulling flag after 6s so
+    // the gate is guaranteed to move on. Protects against any hang
+    // we haven't anticipated (supabase client stalls, etc.).
+    const hardCap = setTimeout(() => {
+      if (!cancelled) setPulling(false);
+    }, 6000);
     return () => {
       cancelled = true;
+      clearTimeout(hardCap);
     };
   }, [authLoading, loading, user, tenant, app, reload, isAdmin]);
 
