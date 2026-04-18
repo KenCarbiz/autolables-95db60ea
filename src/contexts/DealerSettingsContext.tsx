@@ -1,4 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 
 export interface DealerSettings {
   // Branding
@@ -38,13 +41,13 @@ export interface DealerSettings {
   doc_fee_amount: number;
   doc_fee_state: string;  // 2-letter state code
   // Compliance
-  cars_act_mode: boolean;         // CA CARS Act strict compliance (12pt disclosures, bilingual, 2yr retention)
-  retention_years: number;        // Audit log retention policy
-  required_languages: string[];   // ISO codes: en, es, zh, tl, vi, ko
+  cars_act_mode: boolean;
+  retention_years: number;
+  required_languages: string[];
   // Privacy notice (dealer uploads their own)
   privacy_notice_enabled: boolean;
-  privacy_notice_text: string;     // Plain text version
-  privacy_notice_url: string;      // URL to uploaded PDF
+  privacy_notice_text: string;
+  privacy_notice_url: string;
 }
 
 export const DEFAULT_SETTINGS: DealerSettings = {
@@ -59,26 +62,26 @@ export const DEFAULT_SETTINGS: DealerSettings = {
   feature_vin_barcode: true,
   feature_lead_capture: true,
   feature_cobuyer_signature: true,
-  feature_custom_branding: false,
-  feature_ink_saving: true,
-  feature_spanish_buyers_guide: false,
+  feature_custom_branding: true,
+  feature_ink_saving: false,
+  feature_spanish_buyers_guide: true,
   feature_url_scrape: true,
-  feature_inventory: false,
-  feature_invoicing: false,
-  feature_warranty: false,
+  feature_inventory: true,
+  feature_invoicing: true,
+  feature_warranty: true,
   feature_payroll: false,
-  feature_analytics: false,
-  feature_sms: false,
-  feature_ai_descriptions: false,
+  feature_analytics: true,
+  feature_sms: true,
+  feature_ai_descriptions: true,
   feature_blackbook: false,
   addendum_paper_size: "letter",
   addendum_custom_width: "8.5",
   addendum_custom_height: "11",
   product_default_mode: "selective",
-  allow_type_override_at_signing: true,
-  doc_fee_enabled: false,
+  allow_type_override_at_signing: false,
+  doc_fee_enabled: true,
   doc_fee_amount: 0,
-  doc_fee_state: "CT",
+  doc_fee_state: "",
   cars_act_mode: false,
   retention_years: 7,
   required_languages: ["en"],
@@ -91,38 +94,117 @@ interface DealerSettingsContextType {
   settings: DealerSettings;
   loading: boolean;
   updateSettings: (updates: Partial<DealerSettings>) => Promise<void>;
+  reload: () => Promise<void>;
 }
 
 const DealerSettingsContext = createContext<DealerSettingsContextType | undefined>(undefined);
 
-const STORAGE_KEY = "dealer_settings";
+// ──────────────────────────────────────────────────────────────
+// Tenant-scoped dealer_profiles row is the source of truth.
+// localStorage is a write-through cache so public / unauthenticated
+// pages (/, /v/:slug, /sign/:token, /deal/:token) and the first
+// paint of signed-in routes still render with the last known
+// branding instead of flashing the generic defaults.
+// Cache key is versioned + tenant-scoped.
+// ──────────────────────────────────────────────────────────────
+
+const cacheKey = (tenantId: string | null) => `autolabels.dealer_settings.v2:${tenantId ?? "anon"}`;
+
+const readCache = (tenantId: string | null): DealerSettings | null => {
+  try {
+    const raw = localStorage.getItem(cacheKey(tenantId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_SETTINGS, ...parsed };
+  } catch {
+    return null;
+  }
+};
+
+const writeCache = (tenantId: string | null, settings: DealerSettings) => {
+  try { localStorage.setItem(cacheKey(tenantId), JSON.stringify(settings)); } catch { /* quota, ignore */ }
+};
 
 export const DealerSettingsProvider = ({ children }: { children: ReactNode }) => {
-  const [settings, setSettings] = useState<DealerSettings>(DEFAULT_SETTINGS);
+  const { user } = useAuth();
+  const { tenant } = useTenant();
+  const tenantId = tenant?.id ?? null;
+
+  const [settings, setSettings] = useState<DealerSettings>(() => readCache(tenantId) ?? DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
+  const loadedKeyRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    // Load from localStorage (Supabase table can be added later for multi-store)
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setSettings({ ...DEFAULT_SETTINGS, ...parsed });
-      } catch {
-        // ignore parse errors
-      }
+  const load = useCallback(async () => {
+    setLoading(true);
+    // Anonymous / no-tenant users: trust the cache, render defaults.
+    if (!user || !tenantId) {
+      const cached = readCache(tenantId);
+      setSettings(cached ?? DEFAULT_SETTINGS);
+      setLoading(false);
+      return;
     }
-    setLoading(false);
-  }, []);
 
-  const updateSettings = async (updates: Partial<DealerSettings>) => {
-    const next = { ...settings, ...updates };
-    setSettings(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  };
+    // Signed-in + tenant: read from Supabase.
+    try {
+      const { data, error } = await (supabase as any)
+        .from("dealer_profiles")
+        .select("settings")
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+      if (error) throw error;
+      const merged: DealerSettings = {
+        ...DEFAULT_SETTINGS,
+        ...((data?.settings as Partial<DealerSettings>) || {}),
+      };
+      setSettings(merged);
+      writeCache(tenantId, merged);
+    } catch {
+      // Table may not exist yet (migration not applied) or query failed.
+      // Fall back to cache then defaults so the app still works.
+      const cached = readCache(tenantId);
+      setSettings(cached ?? DEFAULT_SETTINGS);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, tenantId]);
+
+  // Re-load when the user or their active tenant changes.
+  useEffect(() => {
+    const k = `${user?.id ?? "anon"}:${tenantId ?? "none"}`;
+    if (loadedKeyRef.current === k) return;
+    loadedKeyRef.current = k;
+    load();
+  }, [user?.id, tenantId, load]);
+
+  const updateSettings = useCallback(
+    async (updates: Partial<DealerSettings>) => {
+      const next: DealerSettings = { ...settings, ...updates };
+      setSettings(next);
+      writeCache(tenantId, next);
+      // Only persist to Supabase when we have a real tenant.
+      if (!user || !tenantId) return;
+      try {
+        await (supabase as any)
+          .from("dealer_profiles")
+          .upsert(
+            {
+              tenant_id: tenantId,
+              settings: next,
+              updated_by: user.id,
+            },
+            { onConflict: "tenant_id" }
+          );
+      } catch {
+        // Keep the in-memory + cache update; log for observability later.
+        // eslint-disable-next-line no-console
+        console.warn("dealer_profiles upsert failed; kept local cache");
+      }
+    },
+    [settings, tenantId, user]
+  );
 
   return (
-    <DealerSettingsContext.Provider value={{ settings, loading, updateSettings }}>
+    <DealerSettingsContext.Provider value={{ settings, loading, updateSettings, reload: load }}>
       {children}
     </DealerSettingsContext.Provider>
   );
