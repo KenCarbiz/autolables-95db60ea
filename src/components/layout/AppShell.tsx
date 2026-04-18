@@ -42,6 +42,7 @@ import { useDealerSettings } from "@/contexts/DealerSettingsContext";
 import { useAudit } from "@/contexts/AuditContext";
 import Logo from "@/components/brand/Logo";
 import AppSwitcher from "@/components/layout/AppSwitcher";
+import CommandPalette, { useCommandPalette } from "@/components/layout/CommandPalette";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,6 +83,7 @@ const AppShell = ({ children }: AppShellProps) => {
   const _baseNavigate = useBaseNavigate;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showMobileQr, setShowMobileQr] = useState(false);
+  const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("dark_mode") === "true" ||
@@ -447,6 +449,20 @@ const AppShell = ({ children }: AppShellProps) => {
             </div>
 
             <div className="flex items-center gap-1">
+              {/* Command palette trigger — Cmd+K opens a fuzzy-search
+                  over every page + action. Keyboard shortcut hint is
+                  shown on md+ so it reads as a quick-jump affordance. */}
+              <button
+                onClick={() => setPaletteOpen(true)}
+                className="hidden md:inline-flex items-center gap-2 h-9 pl-3 pr-1.5 rounded-md bg-white/10 hover:bg-white/20 text-sm font-medium transition-colors"
+                title="Command palette (⌘K)"
+              >
+                <span className="text-white/70">Search…</span>
+                <kbd className="ml-2 inline-flex items-center gap-0.5 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono text-white/80">
+                  ⌘K
+                </kbd>
+              </button>
+
               {/* App Switcher — switch between AutoLabels platform products */}
               <AppSwitcher currentApp="autolabels" />
 
@@ -568,6 +584,9 @@ const AppShell = ({ children }: AppShellProps) => {
           {children}
         </main>
       </div>
+
+      {/* Command Palette — global ⌘K / Ctrl+K */}
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
 
       {/* Mobile QR Code Modal */}
       {showMobileQr && (
