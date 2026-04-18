@@ -244,15 +244,55 @@ const Index = () => {
     try {
       const { default: html2canvas } = await import("html2canvas-pro");
       const { default: jsPDF } = await import("jspdf");
+      const { archivePdf } = await import("@/lib/pdfArchive");
       const canvas = await html2canvas(card, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const pdfWidth = 8.5;
       const pdfHeight = (canvas.height / canvas.width) * pdfWidth;
       const pdf = new jsPDF({ unit: "in", format: [pdfWidth, pdfHeight], orientation: "portrait" });
       pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+
+      // Wave 4.5 — PDF/A-3 archival metadata: stamp the PDF with a
+      // canonical-JSON SHA-256, deterministic /ID, XMP metadata, and
+      // a visible footer hash so a regulator can verify the artifact
+      // long after the fact.
       const storeName = currentStore?.name || settings.dealer_name;
+      const archival = await archivePdf(
+        pdf,
+        {
+          vehicle,
+          customerInfo,
+          products: displayProducts,
+          totals: { installedTotal, optionalTotal },
+          initials,
+          optionalSelections,
+          dealer: { name: storeName, state: settings.doc_fee_state || null },
+        },
+        {
+          tenantId: currentStore?.id || null,
+          tenantName: storeName,
+          vin: vehicle.vin || null,
+          ymm: vehicle.ymm || null,
+          addendumId: viewId || null,
+          signedAt: null,
+          consentHash: null,
+          customerIp: null,
+        }
+      );
+
       pdf.save(`Dealer-Addendum-${storeName.replace(/\s+/g, "-")}.pdf`);
-      if (user) log({ store_id: currentStore?.id || "", user_id: user.id, action: "addendum_pdf", entity_type: "addendum", entity_id: vehicle.vin, details: { ymm: vehicle.ymm } });
+      if (user) log({
+        store_id: currentStore?.id || "",
+        user_id: user.id,
+        action: "addendum_pdf",
+        entity_type: "addendum",
+        entity_id: vehicle.vin,
+        details: {
+          ymm: vehicle.ymm,
+          archival_hash: archival.hash,
+          archival_timestamp: archival.timestamp,
+        },
+      });
     } catch (err) {
       console.error("PDF generation failed:", err);
       toast.error("PDF generation failed");
