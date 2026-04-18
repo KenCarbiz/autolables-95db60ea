@@ -1,8 +1,278 @@
+import { useMemo, useState } from "react";
 import { useTenant } from "@/contexts/TenantContext";
 import { useDealerSettings } from "@/contexts/DealerSettingsContext";
 import { getStateCompliance, FEDERAL_DISCLOSURES, FTC_BUYERS_GUIDE_SYSTEMS } from "@/data/stateCompliance";
+import { supabase } from "@/integrations/supabase/client";
 import Logo from "@/components/brand/Logo";
-import { ShieldCheck, FileText, Scale, Building2, AlertTriangle, CheckCircle2, BookOpen, Gavel, Users, Globe } from "lucide-react";
+import { toast } from "sonner";
+import { ShieldCheck, FileText, Scale, Building2, AlertTriangle, CheckCircle2, BookOpen, Gavel, Users, Globe, Search, Download, FileSignature, Wrench, Car, ScrollText } from "lucide-react";
+
+// ──────────────────────────────────────────────────────────────
+// Compliance packet — the regulator-defense surface. Given a VIN,
+// pulls every signed artifact (addendums, prep sign-offs, deal
+// signings, vehicle listings, audit events) and exports a single
+// JSON bundle the dealer can hand to counsel, AG, or FTC staff.
+//
+// Queries are tenant-scoped via RLS; admins with cross-tenant
+// access see everything on the same VIN.
+// ──────────────────────────────────────────────────────────────
+
+interface CompliancePacket {
+  query: { vin: string; at: string };
+  tenant: { id: string | null; name: string | null };
+  vehicle_listings: unknown[];
+  addendums: unknown[];
+  prep_sign_offs: unknown[];
+  deal_signing_tokens: unknown[];
+  audit_events: unknown[];
+  signed_document_archive: unknown[];
+  summary: {
+    listing_count: number;
+    addendum_count: number;
+    signed_addendum_count: number;
+    prep_signoff_count: number;
+    signed_prep_count: number;
+    deal_token_count: number;
+    signed_deal_count: number;
+    audit_event_count: number;
+    archived_document_count: number;
+  };
+}
+
+const useCompliancePacket = () => {
+  const [packet, setPacket] = useState<CompliancePacket | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const lookup = async (vin: string, tenantId: string | null, tenantName: string | null) => {
+    if (!vin || vin.length < 11) {
+      toast.error("Enter at least 11 characters of a VIN");
+      return;
+    }
+    setLoading(true);
+    setPacket(null);
+    const clean = vin.toUpperCase().trim();
+    try {
+      const [listings, addendums, prep, deals, audits, archive] = await Promise.all([
+        (supabase as any)
+          .from("vehicle_listings")
+          .select("*")
+          .eq("vin", clean)
+          .order("created_at", { ascending: false })
+          .limit(20),
+        (supabase as any)
+          .from("addendums")
+          .select("*")
+          .eq("vehicle_vin", clean)
+          .order("created_at", { ascending: false })
+          .limit(50),
+        (supabase as any)
+          .from("prep_sign_offs")
+          .select("*")
+          .eq("vin", clean)
+          .order("created_at", { ascending: false })
+          .limit(20),
+        (supabase as any)
+          .from("deal_signing_tokens")
+          .select("*")
+          .or(`vehicle_payload->>vin.eq.${clean}`)
+          .order("created_at", { ascending: false })
+          .limit(20),
+        (supabase as any)
+          .from("audit_log")
+          .select("*")
+          .or(`details->>vin.eq.${clean}`)
+          .order("created_at", { ascending: false })
+          .limit(200),
+        (supabase as any)
+          .from("signed_document_archive")
+          .select("*")
+          .eq("vin", clean)
+          .order("created_at", { ascending: false })
+          .limit(20),
+      ]);
+      const rows = (x: { data: unknown[] | null }) => x.data || [];
+      const lA = rows(addendums) as Array<{ status?: string }>;
+      const lP = rows(prep) as Array<{ status?: string }>;
+      const lD = rows(deals) as Array<{ status?: string }>;
+      const next: CompliancePacket = {
+        query: { vin: clean, at: new Date().toISOString() },
+        tenant: { id: tenantId, name: tenantName },
+        vehicle_listings: rows(listings),
+        addendums: lA,
+        prep_sign_offs: lP,
+        deal_signing_tokens: lD,
+        audit_events: rows(audits),
+        signed_document_archive: rows(archive),
+        summary: {
+          listing_count: rows(listings).length,
+          addendum_count: lA.length,
+          signed_addendum_count: lA.filter((x) => x.status === "signed").length,
+          prep_signoff_count: lP.length,
+          signed_prep_count: lP.filter((x) => x.status === "signed").length,
+          deal_token_count: lD.length,
+          signed_deal_count: lD.filter((x) => x.status === "signed").length,
+          audit_event_count: rows(audits).length,
+          archived_document_count: rows(archive).length,
+        },
+      };
+      setPacket(next);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Lookup failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const download = () => {
+    if (!packet) return;
+    const blob = new Blob([JSON.stringify(packet, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `compliance-packet-${packet.query.vin}-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success("Compliance packet downloaded");
+  };
+
+  return { packet, loading, lookup, download };
+};
+
+const CompliancePacketPanel = ({
+  tenantId,
+  tenantName,
+}: {
+  tenantId: string | null;
+  tenantName: string | null;
+}) => {
+  const [vin, setVin] = useState("");
+  const { packet, loading, lookup, download } = useCompliancePacket();
+
+  const counts = packet?.summary;
+
+  const cards = useMemo(
+    () => [
+      { key: "listing_count",           label: "Vehicle listings",     icon: Car,           hint: "rows in vehicle_listings" },
+      { key: "signed_addendum_count",   label: "Signed addendums",     icon: FileSignature, hint: "status = signed" },
+      { key: "signed_prep_count",       label: "Signed prep sign-offs", icon: Wrench,       hint: "foreman signed" },
+      { key: "signed_deal_count",       label: "Signed deals",         icon: FileText,      hint: "deal jackets completed" },
+      { key: "archived_document_count", label: "Archived documents",   icon: ScrollText,    hint: "PDF/JSON in cold storage" },
+      { key: "audit_event_count",       label: "Audit events",         icon: ShieldCheck,   hint: "immutable event log" },
+    ] as const,
+    []
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="shimmer-hero relative overflow-hidden rounded-2xl px-6 py-6 text-white">
+        <div className="relative z-10 space-y-3">
+          <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+            <ShieldCheck className="w-3 h-3" />
+            Compliance Packet
+          </div>
+          <h2 className="text-2xl font-black tracking-tight font-display">
+            Pull every signed artifact for a VIN.
+          </h2>
+          <p className="text-xs text-white/75 max-w-2xl">
+            Enter a VIN below. We return every vehicle listing, addendum signature,
+            prep sign-off, deal jacket, audit event, and archived document on record
+            — signed, timestamped, exportable as a single JSON bundle for counsel,
+            state AG, or FTC review.
+          </p>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              lookup(vin, tenantId, tenantName);
+            }}
+            className="flex items-stretch gap-2"
+          >
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
+              <input
+                value={vin}
+                onChange={(e) => setVin(e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/gi, ""))}
+                placeholder="17-character VIN"
+                maxLength={17}
+                autoComplete="off"
+                autoCapitalize="characters"
+                className="w-full h-11 pl-10 pr-3 rounded-lg bg-white/15 backdrop-blur border border-white/20 text-white placeholder:text-white/50 font-mono tracking-widest focus:outline-none focus:bg-white/25"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading || vin.length < 11}
+              className="h-11 px-5 rounded-lg bg-white text-[#0B2041] font-display font-black text-sm inline-flex items-center gap-1.5 disabled:opacity-50 hover:brightness-95 transition-all whitespace-nowrap"
+            >
+              {loading ? "Searching…" : "Search"}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {packet && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+            {cards.map((c) => (
+              <div key={c.key} className="rounded-xl border border-border bg-card p-3">
+                <c.icon className="w-3.5 h-3.5 text-muted-foreground" />
+                <p className="mt-1 text-2xl font-black tabular-nums text-foreground">
+                  {counts?.[c.key as keyof typeof counts] ?? 0}
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
+                  {c.label}
+                </p>
+                <p className="text-[10px] text-muted-foreground/70">{c.hint}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-foreground">
+                  Packet ready for <span className="font-mono">{packet.query.vin}</span>
+                </h3>
+                <p className="text-[11px] text-muted-foreground">
+                  Pulled {new Date(packet.query.at).toLocaleString()} · Tenant: {packet.tenant.name || "—"}
+                </p>
+              </div>
+              <button
+                onClick={download}
+                className="h-10 px-4 rounded-lg bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white font-display font-black text-sm inline-flex items-center gap-1.5 shadow-premium hover:brightness-110"
+              >
+                <Download className="w-4 h-4 stroke-[2.5]" />
+                Download JSON
+              </button>
+            </div>
+            <details className="group">
+              <summary className="text-xs font-semibold text-muted-foreground cursor-pointer hover:text-foreground">
+                Preview raw packet contents ({Math.round(JSON.stringify(packet).length / 1024)} KB)
+              </summary>
+              <pre className="mt-2 text-[10px] font-mono bg-muted/40 rounded-md p-3 max-h-80 overflow-auto whitespace-pre-wrap break-words">
+                {JSON.stringify(packet, null, 2)}
+              </pre>
+            </details>
+            {(counts?.signed_addendum_count || 0) === 0 &&
+             (counts?.signed_prep_count || 0) === 0 &&
+             (counts?.signed_deal_count || 0) === 0 && (
+              <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900 flex items-start gap-2">
+                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong>No signed artifacts on record for this VIN.</strong> If you
+                  expected signatures here, check that the VIN was entered correctly,
+                  confirm your tenant scope includes this vehicle, and that signing
+                  links were actually completed by the customer.
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 const ComplianceCenter = () => {
   const { currentStore, tenant } = useTenant();
@@ -13,6 +283,12 @@ const ComplianceCenter = () => {
 
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-8">
+      {/* Compliance packet — VIN lookup + export */}
+      <CompliancePacketPanel
+        tenantId={tenant?.id || null}
+        tenantName={tenant?.name || null}
+      />
+
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-2">
