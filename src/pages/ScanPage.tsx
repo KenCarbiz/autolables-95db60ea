@@ -24,7 +24,9 @@ import {
   Sparkles,
   X,
   MapPin,
+  Camera,
 } from "lucide-react";
+import VinBarcodeScanner from "@/components/scan/VinBarcodeScanner";
 
 const ScanPage = () => {
   const navigate = useNavigate();
@@ -45,6 +47,7 @@ const ScanPage = () => {
   const [stockNumber, setStockNumber] = useState("");
   const [condition, setCondition] = useState<"new" | "used">("used");
   const [notes, setNotes] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   // Decoded data
   const [decoded, setDecoded] = useState<{
@@ -165,6 +168,20 @@ const ScanPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Camera scanner overlay — mounts on top of the whole page when
+          the user taps Open camera. Closes itself on a valid 17-char
+          VIN detection and auto-decodes via the input's existing effect. */}
+      {scannerOpen && (
+        <VinBarcodeScanner
+          onClose={() => setScannerOpen(false)}
+          onDetected={(detected) => {
+            setScannerOpen(false);
+            setVin(detected);
+            // useEffect watching `vin` will fire handleDecode once the
+            // 17-char threshold is met.
+          }}
+        />
+      )}
       {/* Mobile header */}
       <header className="sticky top-0 z-20 topbar-navy text-white">
         <div className="flex items-center justify-between h-14 px-4">
@@ -217,15 +234,24 @@ const ScanPage = () => {
           <>
             {/* VIN Input — big, prominent */}
             <div className="bg-card rounded-xl border border-border shadow-premium p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <ScanLine className="w-4 h-4 text-blue-600" />
-                <h2 className="text-sm font-semibold text-foreground">Scan or Enter VIN</h2>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <ScanLine className="w-4 h-4 text-blue-600" />
+                  <h2 className="text-sm font-semibold text-foreground">Scan or Enter VIN</h2>
+                </div>
+                <button
+                  onClick={() => setScannerOpen(true)}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white text-xs font-bold shadow-premium hover:brightness-110 transition-all"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  Open camera
+                </button>
               </div>
               <input
                 ref={vinRef}
                 value={vin}
                 onChange={(e) => setVin(e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/gi, ""))}
-                placeholder="Scan barcode or type 17-char VIN"
+                placeholder="Tap Open camera or type 17-char VIN"
                 maxLength={17}
                 autoComplete="off"
                 autoCapitalize="characters"
