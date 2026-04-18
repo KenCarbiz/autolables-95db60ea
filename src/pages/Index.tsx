@@ -29,6 +29,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { ArrowLeft, Save, Send, Printer, Download } from "lucide-react";
 import ComplianceRedTeamPanel from "@/components/addendum/ComplianceRedTeamPanel";
 import { runComplianceRedTeam } from "@/lib/complianceRedTeam";
+import StateRewriterPanel from "@/components/addendum/StateRewriterPanel";
 
 // Paper size map (width in inches)
 // Paper size widths for the addendum card preview
@@ -516,7 +517,7 @@ const Index = () => {
       {/* Compliance red-team — Wave 4.2. Runs on every keystroke and
           lists what a regulator would flag before the customer signs. */}
       {!viewMode && (
-        <div style={{ maxWidth: paperWidth }} className="mx-auto mb-3 no-print">
+        <div style={{ maxWidth: paperWidth }} className="mx-auto mb-3 no-print space-y-3">
           <ComplianceRedTeamPanel
             findings={runComplianceRedTeam({
               state: settings.doc_fee_state || "",
@@ -538,6 +539,16 @@ const Index = () => {
               initialsByProductId: initials,
               vehicleCondition: undefined,
             })}
+          />
+          {/* Wave 4.3 — per-state disclosure pack for the dealer's state */}
+          <StateRewriterPanel
+            state={settings.doc_fee_state || null}
+            input={{
+              vehiclePrice: undefined,
+              docFeeAmount: displayProducts?.find((p) => p.name.toLowerCase().includes("doc"))?.price,
+              vehicleCondition: undefined,
+              saleConductedInSpanish: false,
+            }}
           />
         </div>
       )}
