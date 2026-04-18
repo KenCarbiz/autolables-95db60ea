@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { DOMParser } from "https://esm.sh/linkedom@0.16.11";
+import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.45/deno-dom-wasm.ts";
+
+// deno-dom returns an Element-like object; Deno's TS lib doesn't ship a global Document type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Doc = any;
 
 // ──────────────────────────────────────────────────────────────
 // vdp-ingest
@@ -64,8 +68,8 @@ const parseNumber = (s: string | null | undefined): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-const extractSchemaOrgVehicle = (doc: Document): ScrapeResult | null => {
-  const scripts = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'));
+const extractSchemaOrgVehicle = (doc: Doc): ScrapeResult | null => {
+  const scripts = Array.from(doc.querySelectorAll('script[type="application/ld+json"]')) as Doc[];
   for (const script of scripts) {
     try {
       const data = JSON.parse(script.textContent || "");
@@ -115,13 +119,13 @@ const extractSchemaOrgVehicle = (doc: Document): ScrapeResult | null => {
   return null;
 };
 
-const extractOpenGraph = (doc: Document): ScrapeResult => {
+const extractOpenGraph = (doc: Doc): ScrapeResult => {
   const og = (prop: string) =>
     doc.querySelector(`meta[property="${prop}"]`)?.getAttribute("content") || null;
   const metaName = (name: string) =>
     doc.querySelector(`meta[name="${name}"]`)?.getAttribute("content") || null;
 
-  const images = Array.from(doc.querySelectorAll('meta[property="og:image"]'))
+  const images = (Array.from(doc.querySelectorAll('meta[property="og:image"]')) as Doc[])
     .map((el) => el.getAttribute("content"))
     .filter(Boolean) as string[];
 
@@ -141,8 +145,8 @@ const extractOpenGraph = (doc: Document): ScrapeResult => {
   };
 };
 
-const extractHeuristic = (doc: Document, baseUrl: URL): ScrapeResult => {
-  const images = Array.from(doc.querySelectorAll("img"))
+const extractHeuristic = (doc: Doc, baseUrl: URL): ScrapeResult => {
+  const images = (Array.from(doc.querySelectorAll("img")) as Doc[])
     .map((el) => {
       const src = el.getAttribute("data-src") || el.getAttribute("src") || "";
       const abs = src.startsWith("//")
@@ -187,13 +191,13 @@ const scrape = async (url: string): Promise<ScrapeResult> => {
   const doc = new DOMParser().parseFromString(html, "text/html");
 
   // 1. JSON-LD preferred
-  const ld = extractSchemaOrgVehicle(doc as unknown as Document);
+  const ld = extractSchemaOrgVehicle(doc as Doc);
   if (ld && ld.photos.length > 0) return ld;
   // 2. OpenGraph fallback
-  const og = extractOpenGraph(doc as unknown as Document);
+  const og = extractOpenGraph(doc as Doc);
   if (og.photos.length > 0) return og;
   // 3. Heuristic last
-  return extractHeuristic(doc as unknown as Document, new URL(url));
+  return extractHeuristic(doc as Doc, new URL(url));
 };
 
 serve(async (req) => {
