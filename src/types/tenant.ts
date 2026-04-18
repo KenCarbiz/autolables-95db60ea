@@ -51,6 +51,10 @@ export interface AuditLogEntry {
   details: Record<string, any>;  // JSON payload of what changed
   ip_address: string;
   created_at: string;
+  // Optional server-side enrichment (present on rows read from Supabase)
+  user_email?: string | null;
+  user_agent?: string | null;
+  content_hash?: string | null;
 }
 
 export interface InventoryVehicle {
