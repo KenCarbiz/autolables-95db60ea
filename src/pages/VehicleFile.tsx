@@ -241,67 +241,152 @@ const VehicleFile = () => {
   );
 };
 
-const OverviewPanel = ({ vehicle }: { vehicle: VehicleRow; onReload: () => void }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div className="md:col-span-2 space-y-3">
-      <Card title="Decoded equipment">
-        {vehicle.sticker_snapshot && Object.keys(vehicle.sticker_snapshot).length > 0 ? (
-          <pre className="text-[11px] font-mono bg-muted/40 rounded p-3 whitespace-pre-wrap break-words max-h-64 overflow-auto">
-            {JSON.stringify(vehicle.sticker_snapshot, null, 2)}
-          </pre>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            No decoded equipment on file yet. Re-run the VIN decode from the VIN above
-            to auto-populate year / make / model / trim / engine / fuel type.
-          </p>
-        )}
-      </Card>
+interface AuditEvent {
+  id: string;
+  action: string;
+  created_at: string;
+  user_email: string | null;
+  details: Record<string, unknown> | null;
+  entity_type: string;
+}
 
-      <Card title="Recall status">
-        {vehicle.recall_check ? (
-          <pre className="text-[11px] font-mono bg-muted/40 rounded p-3 whitespace-pre-wrap break-words max-h-40 overflow-auto">
-            {JSON.stringify(vehicle.recall_check, null, 2)}
-          </pre>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            No NHTSA recall check on file. A fresh check runs automatically when you
-            publish the shopper page. Publish is blocked if the VIN has an active
-            do-not-drive campaign without an admin override.
-          </p>
-        )}
-      </Card>
+const PRETTY_ACTION: Record<string, string> = {
+  listing_viewed: "Shopper viewed the page",
+  listing_published: "Published to shopper portal",
+  addendum_signed: "Customer signed the addendum",
+  addendum_viewed: "Addendum opened by customer",
+  addendum_consent_given: "Customer accepted E-SIGN consent",
+  deal_signed: "Deal jacket signed",
+  document_archived: "Signed document archived",
+  vdp_scraped: "VDP scraped from dealer site",
+  prep_sign_off_signed: "Foreman signed off on prep",
+  recall_checked: "NHTSA recall lookup ran",
+};
+
+const prettyAction = (a: string) =>
+  PRETTY_ACTION[a] || a.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+const OverviewPanel = ({ vehicle }: { vehicle: VehicleRow; onReload: () => void }) => {
+  const [events, setEvents] = useState<AuditEvent[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoadingEvents(true);
+      try {
+        // Audit rows for this vehicle can match by entity_id (vehicle_listing)
+        // OR by details->>vin (addendum / deal / archive paths) OR by the
+        // slug (listing_viewed events). Pull them all in one OR query.
+        const { data } = await (supabase as any)
+          .from("audit_log")
+          .select("id,action,created_at,user_email,details,entity_type")
+          .or(
+            `entity_id.eq.${vehicle.id},details->>vin.eq.${vehicle.vin},details->>slug.eq.${vehicle.slug}`
+          )
+          .order("created_at", { ascending: false })
+          .limit(80);
+        if (!cancelled) setEvents((data || []) as AuditEvent[]);
+      } catch {
+        if (!cancelled) setEvents([]);
+      } finally {
+        if (!cancelled) setLoadingEvents(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [vehicle.id, vehicle.vin, vehicle.slug]);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="md:col-span-2 space-y-3">
+        <Card title="Activity timeline">
+          {loadingEvents ? (
+            <p className="text-xs text-muted-foreground">Loading events…</p>
+          ) : events.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              No recorded activity yet. Events show up here as stickers are generated,
+              prep is signed off, customers view the shopper page, and the addendum is
+              signed. Every row is served from the append-only audit_log and is
+              defensible in a compliance review.
+            </p>
+          ) : (
+            <ol className="relative border-l-2 border-border pl-4 space-y-3">
+              {events.map((ev) => (
+                <li key={ev.id} className="relative">
+                  <span className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-gradient-to-br from-[#3BB4FF] to-[#1E90FF] ring-4 ring-background" />
+                  <div className="text-sm font-semibold text-foreground">
+                    {prettyAction(ev.action)}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {new Date(ev.created_at).toLocaleString()}
+                    {ev.user_email ? ` · ${ev.user_email}` : ""}
+                    {ev.entity_type ? ` · ${ev.entity_type}` : ""}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </Card>
+
+        <Card title="Decoded equipment">
+          {vehicle.sticker_snapshot && Object.keys(vehicle.sticker_snapshot).length > 0 ? (
+            <pre className="text-[11px] font-mono bg-muted/40 rounded p-3 whitespace-pre-wrap break-words max-h-64 overflow-auto">
+              {JSON.stringify(vehicle.sticker_snapshot, null, 2)}
+            </pre>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No decoded equipment on file yet. Re-run the VIN decode from the VIN above
+              to auto-populate year / make / model / trim / engine / fuel type.
+            </p>
+          )}
+        </Card>
+
+        <Card title="Recall status">
+          {vehicle.recall_check ? (
+            <pre className="text-[11px] font-mono bg-muted/40 rounded p-3 whitespace-pre-wrap break-words max-h-40 overflow-auto">
+              {JSON.stringify(vehicle.recall_check, null, 2)}
+            </pre>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No NHTSA recall check on file. A fresh check runs automatically when you
+              publish the shopper page. Publish is blocked if the VIN has an active
+              do-not-drive campaign without an admin override.
+            </p>
+          )}
+        </Card>
+      </div>
+
+      <div className="space-y-3">
+        <Card title="Milestones">
+          <ul className="space-y-2 text-xs">
+            <Item ok label="Vehicle created" when={vehicle.created_at} />
+            <Item ok={!!vehicle.ymm} label="VIN decoded" when={vehicle.ymm ? vehicle.updated_at : null} />
+            <Item ok={!!vehicle.prep_status?.foreman_signed_at} label="Prep & install signed off" when={vehicle.prep_status?.foreman_signed_at || null} />
+            <Item ok={vehicle.status === "published"} label="Shopper page published" when={vehicle.published_at} />
+          </ul>
+        </Card>
+
+        <Card title="Public URL">
+          {vehicle.status === "published" ? (
+            <a
+              href={`${window.location.origin}/v/${vehicle.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-primary break-all font-mono hover:underline"
+            >
+              {window.location.origin}/v/{vehicle.slug}
+            </a>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Not yet published. Published vehicles get a shareable URL,
+              QR code, and embed snippet for the dealer's website.
+            </p>
+          )}
+        </Card>
+      </div>
     </div>
-
-    <div className="space-y-3">
-      <Card title="Timeline">
-        <ul className="space-y-2 text-xs">
-          <Item ok label="Vehicle created" when={vehicle.created_at} />
-          <Item ok={!!vehicle.ymm} label="VIN decoded" when={vehicle.ymm ? vehicle.updated_at : null} />
-          <Item ok={!!vehicle.prep_status?.foreman_signed_at} label="Prep & install signed off" when={vehicle.prep_status?.foreman_signed_at || null} />
-          <Item ok={vehicle.status === "published"} label="Shopper page published" when={vehicle.published_at} />
-        </ul>
-      </Card>
-
-      <Card title="Public URL">
-        {vehicle.status === "published" ? (
-          <a
-            href={`${window.location.origin}/v/${vehicle.slug}`}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs text-primary break-all font-mono hover:underline"
-          >
-            {window.location.origin}/v/{vehicle.slug}
-          </a>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            Not yet published. Published vehicles get a shareable URL,
-            QR code, and embed snippet for the dealer's website.
-          </p>
-        )}
-      </Card>
-    </div>
-  </div>
-);
+  );
+};
 
 const DocumentsPanel = ({ vehicle, onReload }: { vehicle: VehicleRow; onReload: () => void }) => {
   const [uploading, setUploading] = useState<string | null>(null);
