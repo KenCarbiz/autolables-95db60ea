@@ -7,8 +7,9 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Car, FileText, Wrench, Tag, Signature, Globe,
   CheckCircle2, Clock, Gauge, DollarSign, MapPin, Copy, ExternalLink,
-  FileUp, Upload, Printer, Sparkles,
+  FileUp, Upload, Printer, Sparkles, Plus, ArrowUpRight,
 } from "lucide-react";
+import EmptyState from "@/components/ui/empty-state";
 
 // ──────────────────────────────────────────────────────────────
 // VehicleFile — /vehicle-file/:id
@@ -232,7 +233,7 @@ const VehicleFile = () => {
       <div className="pt-2">
         {tab === "overview"  && <OverviewPanel vehicle={vehicle} onReload={load} />}
         {tab === "documents" && <DocumentsPanel vehicle={vehicle} onReload={load} />}
-        {tab === "addendum"  && <JumpTo path="/addendum" reason="Build this vehicle's addendum" />}
+        {tab === "addendum"  && <AddendumPanel vehicle={vehicle} />}
         {tab === "prep"      && <JumpTo path="/prep" reason={`Sign off on prep & install for VIN ${vehicle.vin}`} />}
         {tab === "labels"    && <LabelsPanel vehicle={vehicle} />}
         {tab === "sign"      && <JumpTo path="/saved" reason="Generate or review customer signing links" />}
@@ -532,6 +533,175 @@ const LabelsPanel = ({ vehicle }: { vehicle: VehicleRow }) => {
             <p className="text-[11px] text-muted-foreground mt-1">{l.desc}</p>
           </button>
         ))}
+      </div>
+    </div>
+  );
+};
+
+interface AddendumRow {
+  id: string;
+  created_at: string;
+  status: string | null;
+  customer_name: string | null;
+  cobuyer_name: string | null;
+  content_hash: string | null;
+  signed_at: string | null;
+  token: string | null;
+  total_price: number | null;
+}
+
+const AddendumPanel = ({ vehicle }: { vehicle: VehicleRow }) => {
+  const navigate = useNavigate();
+  const [rows, setRows] = useState<AddendumRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data } = await (supabase as any)
+        .from("addendums")
+        .select(
+          "id,created_at,status,customer_name,cobuyer_name,content_hash,signed_at,token,total_price"
+        )
+        .eq("vehicle_vin", vehicle.vin)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (!cancelled) {
+        setRows((data || []) as AddendumRow[]);
+        setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [vehicle.vin]);
+
+  const signed = rows.filter((r) => r.status === "signed" || !!r.signed_at);
+  const drafts = rows.filter((r) => !(r.status === "signed" || !!r.signed_at));
+
+  const copyLink = async (token: string | null) => {
+    if (!token) return;
+    const url = `${window.location.origin}/sign/${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Signing link copied");
+    } catch {
+      toast.error("Copy failed");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-title font-display font-semibold text-foreground">
+            Addendums
+          </h2>
+          <p className="text-body-sm text-muted-foreground">
+            Every signed addendum for this vehicle, scoped to VIN
+            <span className="font-mono ml-1">{vehicle.vin}</span>.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate("/addendum")}
+          className="h-10 px-4 rounded-md bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5"
+        >
+          <Plus className="w-4 h-4" />
+          New Addendum
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+          Loading addendums…
+        </div>
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title="No addendums for this vehicle yet"
+          description="Build one and the customer can sign on any phone. Every signed copy is hash-sealed and archived to the compliance record."
+          actions={[{ label: "Start Addendum", icon: Plus, onClick: () => navigate("/addendum") }]}
+        />
+      ) : (
+        <div className="space-y-3">
+          {signed.length > 0 && (
+            <Section title={`Signed (${signed.length})`}>
+              {signed.map((r) => (
+                <AddendumCard key={r.id} row={r} onOpen={() => navigate(`/addendum?id=${r.id}`)} onCopyLink={copyLink} />
+              ))}
+            </Section>
+          )}
+          {drafts.length > 0 && (
+            <Section title={`Drafts (${drafts.length})`}>
+              {drafts.map((r) => (
+                <AddendumCard key={r.id} row={r} onOpen={() => navigate(`/addendum?id=${r.id}`)} onCopyLink={copyLink} />
+              ))}
+            </Section>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div>
+    <p className="text-caption font-bold uppercase tracking-label text-muted-foreground mb-2">
+      {title}
+    </p>
+    <div className="space-y-2">{children}</div>
+  </div>
+);
+
+const AddendumCard = ({
+  row,
+  onOpen,
+  onCopyLink,
+}: {
+  row: AddendumRow;
+  onOpen: () => void;
+  onCopyLink: (token: string | null) => void;
+}) => {
+  const signed = row.status === "signed" || !!row.signed_at;
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-4 hover:bg-muted/40 transition-colors">
+      <div className={`w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0 ${
+        signed ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+      }`}>
+        {signed ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-body-sm font-semibold text-foreground truncate">
+          {row.customer_name || "Unnamed customer"}
+          {row.cobuyer_name ? <span className="text-muted-foreground"> + {row.cobuyer_name}</span> : null}
+        </p>
+        <div className="flex items-center gap-3 text-caption text-muted-foreground mt-0.5 flex-wrap">
+          <span>{new Date(row.created_at).toLocaleDateString()}</span>
+          {typeof row.total_price === "number" && (
+            <span className="tabular-nums">${row.total_price.toLocaleString()}</span>
+          )}
+          {row.content_hash && (
+            <span className="font-mono text-[10px]">hash: {row.content_hash.slice(0, 10)}…</span>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5">
+        {!signed && row.token && (
+          <button
+            onClick={() => onCopyLink(row.token)}
+            className="h-8 px-2.5 rounded-md border border-border text-caption font-semibold text-foreground inline-flex items-center gap-1"
+            title="Copy signing link"
+          >
+            <Copy className="w-3 h-3" />
+            Link
+          </button>
+        )}
+        <button
+          onClick={onOpen}
+          className="h-8 px-2.5 rounded-md bg-primary text-primary-foreground text-caption font-semibold inline-flex items-center gap-1"
+        >
+          Open
+          <ArrowUpRight className="w-3 h-3" />
+        </button>
       </div>
     </div>
   );
