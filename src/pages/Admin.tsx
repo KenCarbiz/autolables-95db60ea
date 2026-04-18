@@ -327,17 +327,64 @@ const Admin = () => {
 
         <div className="p-4 lg:p-6">
 
-        {/* Tabs */}
-        <div className="flex gap-1 bg-muted rounded-lg p-1 mb-6">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex-1 text-sm font-semibold py-2 rounded-md transition-colors ${tab === t.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* Mobile — dropdown picker. 18 tabs don't fit on a phone, and
+            scrolling pills hide features the admin can't see. A single
+            select surfaces every destination in one tap. */}
+        <div className="lg:hidden mb-4">
+          <label className="sr-only" htmlFor="admin-tab-picker">Admin section</label>
+          <select
+            id="admin-tab-picker"
+            value={tab}
+            onChange={(e) => setTab(e.target.value as AdminTab)}
+            className="w-full h-11 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <optgroup label="Dealer">
+              {tabs.filter((t) => t.group !== "platform").map((t) => (
+                <option key={t.id} value={t.id}>{t.label}</option>
+              ))}
+            </optgroup>
+            {tabs.some((t) => t.group === "platform") && (
+              <optgroup label="Platform">
+                {tabs.filter((t) => t.group === "platform").map((t) => (
+                  <option key={t.id} value={t.id}>{t.label}</option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+        </div>
+
+        {/* Desktop — horizontally scrollable pill bar. No wrapping, no
+            flex-1 (flex-1 forced each tab to 1/N of the width which
+            crushed labels). Platform tabs get a subtle divider + pill
+            treatment so they're visually grouped. */}
+        <div className="hidden lg:block mb-6 relative">
+          <div className="overflow-x-auto scrollbar-thin">
+            <div className="inline-flex items-center gap-1 bg-muted rounded-lg p-1 min-w-full whitespace-nowrap">
+              {tabs.map((t, idx) => {
+                const prevGroup = idx > 0 ? tabs[idx - 1].group : undefined;
+                const showDivider = t.group === "platform" && prevGroup !== "platform";
+                return (
+                  <span key={t.id} className="inline-flex items-center">
+                    {showDivider && <span className="mx-1.5 h-5 w-px bg-border" aria-hidden />}
+                    <button
+                      onClick={() => setTab(t.id)}
+                      className={`text-sm font-semibold px-3.5 py-1.5 rounded-md transition-colors ${
+                        tab === t.id
+                          ? t.group === "platform"
+                            ? "bg-slate-900 text-white shadow-sm"
+                            : "bg-card text-foreground shadow-sm"
+                          : t.group === "platform"
+                            ? "text-slate-600 hover:text-slate-900"
+                            : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* ─── Home Tab ─── */}
