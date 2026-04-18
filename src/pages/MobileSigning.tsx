@@ -298,26 +298,131 @@ const MobileSigning = () => {
   }
 
   if (submitted) {
+    const signedAt = new Date().toLocaleString();
+    const dealerName = addendum?.dealer_snapshot?.name || "Your Dealership";
+    const dealerPhone = addendum?.dealer_snapshot?.phone as string | undefined;
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <div className="text-center">
-          <div className="text-5xl mb-4">✅</div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Thank You!</h1>
-          <p className="text-muted-foreground">Your signature has been recorded. You may close this page.</p>
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-4">
+        <div className="max-w-lg mx-auto pt-8 space-y-4">
+          <div className="text-center space-y-3">
+            <div className="mx-auto w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-premium">
+              <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-black tracking-tight font-display text-foreground">
+              Signed and sealed
+            </h1>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              Your addendum is recorded. {dealerName} has a timestamped copy,
+              and so do you.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-card p-4 space-y-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Vehicle</p>
+              <p className="text-sm font-semibold text-foreground mt-0.5">
+                {addendum.vehicle_ymm || "Vehicle"}
+              </p>
+              {addendum.vehicle_vin && (
+                <p className="text-[11px] text-muted-foreground font-mono">VIN {addendum.vehicle_vin}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Signed by</p>
+              <p className="text-sm font-semibold text-foreground mt-0.5">{customerName || "—"}</p>
+              <p className="text-[11px] text-muted-foreground">{signedAt}</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-slate-900 text-white p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">Legally binding record</p>
+            </div>
+            <p className="text-[11px] text-white/70 leading-relaxed">
+              Your signature is tamper-evident. Every product, price, initial,
+              consent, and acknowledgment you reviewed is hashed (SHA-256) and
+              stored with your IP and device info so it can be defended under
+              the federal E-SIGN Act and your state's UETA.
+            </p>
+          </div>
+
+          {(dealerPhone || dealerName) && (
+            <div className="rounded-2xl border border-slate-200 bg-card p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                Questions? Contact the dealer
+              </p>
+              <p className="text-sm font-semibold text-foreground mt-0.5">{dealerName}</p>
+              {dealerPhone && (
+                <a href={`tel:${dealerPhone}`} className="mt-2 inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-[#1E90FF] text-white text-sm font-display font-bold">
+                  Call {dealerPhone}
+                </a>
+              )}
+            </div>
+          )}
+
+          <p className="text-center text-[10px] text-muted-foreground pb-6">
+            You can close this page safely. A copy has been archived with your
+            dealership. Keep an eye on your email for the signed packet.
+          </p>
         </div>
       </div>
     );
   }
 
+  // Progress — compute completion percentage of the required fields so the
+  // customer can see how much is left.
+  const requiredProducts = products;
+  const productsInitialedCount = requiredProducts.filter((p) => (initials[p.id] || "").trim()).length;
+  const optionalSelectedCount = optional.filter((p) => !!optionalSelections[p.id]).length;
+  const requirements = [
+    { label: "E-SIGN consent",  done: esignConsent },
+    { label: "Initials on all products", done: requiredProducts.length > 0 && productsInitialedCount === requiredProducts.length },
+    { label: "Optional items chosen",    done: optional.length === 0 || optionalSelectedCount === optional.length },
+    { label: "Warranty acknowledged",    done: warrantyAck },
+    { label: "Delivery mileage",         done: deliveryMileage.trim().length > 0 },
+    { label: "Sticker match acknowledged", done: stickerMatchAck },
+    { label: "Signature",                done: !!customerSig.data },
+  ];
+  const doneCount = requirements.filter((r) => r.done).length;
+  const progressPct = Math.round((doneCount / requirements.length) * 100);
+
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-lg mx-auto space-y-6">
-        {/* Header */}
-        <div className="bg-card rounded-xl p-5 shadow-sm">
-          <h1 className="text-xl font-bold font-barlow-condensed text-foreground">Dealer Addendum — Sign & Initial</h1>
-          {addendum.vehicle_ymm && <p className="text-sm font-semibold text-foreground mt-1">{addendum.vehicle_ymm}</p>}
-          {addendum.vehicle_vin && <p className="text-xs text-muted-foreground">VIN: {addendum.vehicle_vin}</p>}
+    <div className="min-h-screen bg-background">
+      {/* Sticky progress — always in view so the customer knows exactly how
+          far they have to go. Progress is computed from the required
+          completion criteria, not just scroll position. */}
+      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+        <div className="max-w-lg mx-auto px-4 py-3">
+          <div className="flex items-center justify-between gap-3 text-[11px]">
+            <span className="font-bold uppercase tracking-widest text-slate-500">
+              Sign addendum
+            </span>
+            <span className="font-bold tabular-nums text-slate-900">
+              {doneCount} of {requirements.length} · {progressPct}%
+            </span>
+          </div>
+          <div className="mt-1.5 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] transition-all duration-300"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
         </div>
+      </div>
+
+      <div className="p-4">
+        <div className="max-w-lg mx-auto space-y-6">
+          {/* Header */}
+          <div className="bg-card rounded-xl p-5 shadow-sm">
+            <h1 className="text-xl font-bold font-barlow-condensed text-foreground">Dealer Addendum — Sign & Initial</h1>
+            {addendum.vehicle_ymm && <p className="text-sm font-semibold text-foreground mt-1">{addendum.vehicle_ymm}</p>}
+            {addendum.vehicle_vin && <p className="text-xs text-muted-foreground">VIN: {addendum.vehicle_vin}</p>}
+          </div>
 
         {/* Fill All Initials */}
         <div className="bg-card rounded-xl p-5 shadow-sm">
@@ -643,6 +748,7 @@ const MobileSigning = () => {
         >
           {submitting ? "Submitting..." : "✅ Submit Signature"}
         </button>
+        </div>
       </div>
     </div>
   );
