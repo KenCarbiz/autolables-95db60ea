@@ -99,8 +99,13 @@ const App = () => (
 
                       {/* Signed-in routes — wrapped in AppShell + entitlement gate */}
                       <Route path="/addendum" element={<Gated><Index /></Gated>} />
-                      <Route path="/dashboard" element={<Gated><Dashboard /></Gated>} />
+                      {/* /dashboard is the dealer's landing. We now show the
+                          inventory-first view at both /dashboard and
+                          /inventory so the sidebar Dashboard link and the
+                          Inventory link both take you to the same place. */}
+                      <Route path="/dashboard" element={<Gated><Inventory /></Gated>} />
                       <Route path="/inventory" element={<Gated><Inventory /></Gated>} />
+                      <Route path="/dashboard-legacy" element={<Gated><Dashboard /></Gated>} />
                       <Route path="/vehicle-file/:id" element={<Gated><VehicleFile /></Gated>} />
                       {/* /admin is shared by dealer settings (products, rules,
                           branding, leads, queue, files, audit) AND the
