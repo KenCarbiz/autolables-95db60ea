@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { uploadPhoto } from "@/lib/storage";
 import PlatformTenants from "@/components/admin/PlatformTenants";
 import PlatformMembers from "@/components/admin/PlatformMembers";
 import PlatformEntitlements from "@/components/admin/PlatformEntitlements";
@@ -189,6 +190,7 @@ const Admin = () => {
     dealer_logo_url: settings.dealer_logo_url,
     primary_color: settings.primary_color,
   });
+  const [logoUploading, setLogoUploading] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
@@ -1026,13 +1028,49 @@ const Admin = () => {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-muted-foreground">Logo URL</label>
-                <input
-                  value={branding.dealer_logo_url}
-                  onChange={(e) => setBranding({ ...branding, dealer_logo_url: e.target.value })}
-                  placeholder="https://example.com/logo.png"
-                  className="w-full px-3 py-2 border border-border-custom rounded text-sm bg-background text-foreground placeholder:text-muted-foreground/50"
-                />
+                <label className="text-xs font-semibold text-muted-foreground">Logo</label>
+                <div className="mt-1 flex items-center gap-3">
+                  <label className="inline-flex items-center gap-1.5 h-10 px-3 rounded-md border border-border bg-background text-sm font-semibold cursor-pointer hover:bg-muted/50 whitespace-nowrap">
+                    {logoUploading ? "Uploading…" : "Upload logo"}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      className="hidden"
+                      disabled={logoUploading}
+                      onChange={async (e) => {
+                        const f = e.target.files?.[0];
+                        if (!f) return;
+                        setLogoUploading(true);
+                        const result = await uploadPhoto("listing-photos", f, {
+                          storeId: currentStore?.id,
+                          vin: "brand-logo",
+                        });
+                        setLogoUploading(false);
+                        e.target.value = "";
+                        if (result?.url) {
+                          setBranding({ ...branding, dealer_logo_url: result.url });
+                          toast.success("Logo uploaded");
+                        } else {
+                          toast.error("Upload failed");
+                        }
+                      }}
+                    />
+                  </label>
+                  <span className="text-[11px] text-muted-foreground">
+                    PNG, JPG, WebP, or SVG · up to 5 MB
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                    Or paste a URL
+                  </label>
+                  <input
+                    value={branding.dealer_logo_url}
+                    onChange={(e) => setBranding({ ...branding, dealer_logo_url: e.target.value })}
+                    placeholder="https://example.com/logo.png"
+                    className="mt-1 w-full px-3 py-2 border border-border-custom rounded text-sm bg-background text-foreground placeholder:text-muted-foreground/50"
+                  />
+                </div>
                 {branding.dealer_logo_url && (
                   <div className="mt-2 p-3 bg-muted rounded flex items-center justify-center">
                     <img src={branding.dealer_logo_url} alt="Logo preview" className="h-12 object-contain" />
