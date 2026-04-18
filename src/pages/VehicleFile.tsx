@@ -8,6 +8,7 @@ import {
   ArrowLeft, Car, FileText, Wrench, Tag, Signature, Globe,
   CheckCircle2, Clock, Gauge, DollarSign, MapPin, Copy, ExternalLink,
   FileUp, Upload, Printer, Sparkles, Plus, ArrowUpRight,
+  AlertTriangle, ShieldCheck, Lock, Unlock,
 } from "lucide-react";
 import EmptyState from "@/components/ui/empty-state";
 
@@ -234,7 +235,7 @@ const VehicleFile = () => {
         {tab === "overview"  && <OverviewPanel vehicle={vehicle} onReload={load} />}
         {tab === "documents" && <DocumentsPanel vehicle={vehicle} onReload={load} />}
         {tab === "addendum"  && <AddendumPanel vehicle={vehicle} />}
-        {tab === "prep"      && <JumpTo path="/prep" reason={`Sign off on prep & install for VIN ${vehicle.vin}`} />}
+        {tab === "prep"      && <PrepPanel vehicle={vehicle} />}
         {tab === "labels"    && <LabelsPanel vehicle={vehicle} />}
         {tab === "sign"      && <JumpTo path="/saved" reason="Generate or review customer signing links" />}
       </div>
@@ -703,6 +704,196 @@ const AddendumCard = ({
           <ArrowUpRight className="w-3 h-3" />
         </button>
       </div>
+    </div>
+  );
+};
+
+interface PrepRow {
+  id: string;
+  created_at: string;
+  signed_at: string | null;
+  updated_at: string;
+  status: "pending" | "signed" | "rejected" | "overridden";
+  foreman_name: string | null;
+  inspection_passed: boolean;
+  inspection_form_type: string | null;
+  rejection_reason: string | null;
+  listing_unlocked: boolean;
+  accessories_installed: Array<{ name: string; installed_date?: string | null }> | null;
+  install_photos: Array<{ url: string; caption?: string }> | null;
+  notes: string | null;
+}
+
+const PrepPanel = ({ vehicle }: { vehicle: VehicleRow }) => {
+  const navigate = useNavigate();
+  const [rows, setRows] = useState<PrepRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data } = await (supabase as any)
+        .from("prep_sign_offs")
+        .select(
+          "id,created_at,signed_at,updated_at,status,foreman_name,inspection_passed,inspection_form_type,rejection_reason,listing_unlocked,accessories_installed,install_photos,notes"
+        )
+        .eq("vin", vehicle.vin)
+        .order("updated_at", { ascending: false })
+        .limit(20);
+      if (!cancelled) {
+        setRows((data || []) as PrepRow[]);
+        setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [vehicle.vin]);
+
+  const latest = rows[0] || null;
+  const history = rows.slice(1);
+  const unlocked = !!latest?.listing_unlocked;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-title font-display font-semibold text-foreground">
+            Prep & Install
+          </h2>
+          <p className="text-body-sm text-muted-foreground">
+            Foreman sign-off unlocks publishing and freezes the install
+            record onto every signed addendum for this VIN.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate(`/prep?vin=${encodeURIComponent(vehicle.vin)}`)}
+          className="h-10 px-4 rounded-md bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5"
+        >
+          <Plus className="w-4 h-4" />
+          New Sign-Off
+        </button>
+      </div>
+
+      {/* Listing-unlock banner */}
+      <div
+        className={`rounded-xl border p-4 flex items-center gap-3 ${
+          unlocked
+            ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+            : "bg-amber-50 border-amber-200 text-amber-900"
+        }`}
+      >
+        {unlocked ? (
+          <Unlock className="w-5 h-5 flex-shrink-0" />
+        ) : (
+          <Lock className="w-5 h-5 flex-shrink-0" />
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-body-sm font-semibold">
+            {unlocked
+              ? "Publishing unlocked"
+              : "Publishing locked — prep sign-off required"}
+          </p>
+          <p className="text-caption opacity-80">
+            {unlocked
+              ? `Foreman ${latest?.foreman_name || ""} signed off ${
+                  latest?.signed_at
+                    ? new Date(latest.signed_at).toLocaleString()
+                    : ""
+                }.`
+              : "A signed prep record gates the public listing. Latest sign-off must have inspection passed and listing_unlocked = true."}
+          </p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+          Loading sign-offs…
+        </div>
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={ShieldCheck}
+          title="No prep sign-offs for this vehicle"
+          description="Run a foreman sign-off when the install is complete. Until then the public listing stays locked and addendums can't reference an install audit."
+          actions={[
+            {
+              label: "Start Sign-Off",
+              icon: Plus,
+              onClick: () => navigate(`/prep?vin=${encodeURIComponent(vehicle.vin)}`),
+            },
+          ]}
+        />
+      ) : (
+        <div className="space-y-3">
+          {latest && (
+            <Section title="Latest sign-off">
+              <PrepCard row={latest} onOpen={() => navigate("/prep")} />
+            </Section>
+          )}
+          {history.length > 0 && (
+            <Section title={`History (${history.length})`}>
+              {history.map((r) => (
+                <PrepCard key={r.id} row={r} onOpen={() => navigate("/prep")} />
+              ))}
+            </Section>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const PrepCard = ({ row, onOpen }: { row: PrepRow; onOpen: () => void }) => {
+  const installed = (row.accessories_installed || []).filter((a) => a.installed_date).length;
+  const total = (row.accessories_installed || []).length;
+  const photos = (row.install_photos || []).length;
+  const statusCls =
+    row.status === "signed" ? "bg-emerald-100 text-emerald-700" :
+    row.status === "rejected" ? "bg-red-100 text-red-700" :
+    row.status === "overridden" ? "bg-violet-100 text-violet-700" :
+    "bg-amber-100 text-amber-700";
+  const statusIcon =
+    row.status === "signed" ? <CheckCircle2 className="w-4 h-4" /> :
+    row.status === "rejected" ? <AlertTriangle className="w-4 h-4" /> :
+    <Clock className="w-4 h-4" />;
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-4 hover:bg-muted/40 transition-colors">
+      <div className={`w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0 ${statusCls}`}>
+        {statusIcon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-body-sm font-semibold text-foreground truncate">
+            {row.foreman_name || "Unassigned foreman"}
+          </p>
+          <span className={`text-[10px] font-bold uppercase tracking-label px-1.5 py-0.5 rounded ${statusCls}`}>
+            {row.status}
+          </span>
+          {row.listing_unlocked && (
+            <span className="text-[10px] font-bold uppercase tracking-label px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 inline-flex items-center gap-1">
+              <Unlock className="w-2.5 h-2.5" />
+              unlocked
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 text-caption text-muted-foreground mt-0.5 flex-wrap">
+          <span>{new Date(row.updated_at).toLocaleDateString()}</span>
+          {total > 0 && <span>{installed}/{total} installed</span>}
+          {photos > 0 && <span>{photos} photo{photos === 1 ? "" : "s"}</span>}
+          {row.inspection_form_type && row.inspection_form_type !== "None" && (
+            <span>{row.inspection_form_type} inspection</span>
+          )}
+          {row.status === "rejected" && row.rejection_reason && (
+            <span className="text-red-600 truncate">Reason: {row.rejection_reason}</span>
+          )}
+        </div>
+      </div>
+      <button
+        onClick={onOpen}
+        className="h-8 px-2.5 rounded-md bg-primary text-primary-foreground text-caption font-semibold inline-flex items-center gap-1"
+      >
+        Open
+        <ArrowUpRight className="w-3 h-3" />
+      </button>
     </div>
   );
 };
