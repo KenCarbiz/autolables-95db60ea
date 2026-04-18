@@ -158,6 +158,13 @@ export type Database = {
             foreignKeyName: "addendums_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "addendums_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -213,6 +220,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "app_entitlements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "app_entitlements_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -303,6 +317,13 @@ export type Database = {
             foreignKeyName: "billing_events_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -367,6 +388,13 @@ export type Database = {
           vehicle_payload?: Json
         }
         Relationships: [
+          {
+            foreignKeyName: "deal_signing_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "deal_signing_tokens_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -487,6 +515,13 @@ export type Database = {
             foreignKeyName: "handoff_tokens_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handoff_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -548,6 +583,13 @@ export type Database = {
           website?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "onboarding_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "onboarding_profiles_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -713,6 +755,13 @@ export type Database = {
             foreignKeyName: "prep_sign_offs_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prep_sign_offs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -838,6 +887,13 @@ export type Database = {
             foreignKeyName: "signed_document_archive_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signed_document_archive_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -879,6 +935,13 @@ export type Database = {
             foreignKeyName: "tenant_members_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -886,8 +949,10 @@ export type Database = {
       }
       tenants: {
         Row: {
+          autocheck_dealer_id: string | null
           autocurb_tenant_id: string | null
           billing_email: string | null
+          carfax_dealer_id: string | null
           created_at: string
           domain: string | null
           id: string
@@ -900,8 +965,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          autocheck_dealer_id?: string | null
           autocurb_tenant_id?: string | null
           billing_email?: string | null
+          carfax_dealer_id?: string | null
           created_at?: string
           domain?: string | null
           id?: string
@@ -914,8 +981,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          autocheck_dealer_id?: string | null
           autocurb_tenant_id?: string | null
           billing_email?: string | null
+          carfax_dealer_id?: string | null
           created_at?: string
           domain?: string | null
           id?: string
@@ -952,13 +1021,20 @@ export type Database = {
       }
       vehicle_listings: {
         Row: {
+          certification: Json | null
           condition: string | null
           created_at: string
           created_by: string | null
           dealer_snapshot: Json
+          description: string | null
           documents: Json
+          factory_sticker_url: string | null
+          features: Json
           id: string
+          key_specs: Json
           mileage: number | null
+          payment_estimate: Json | null
+          photos: Json
           prep_status: Json | null
           price: number | null
           published_at: string | null
@@ -966,6 +1042,8 @@ export type Database = {
           recall_override_at: string | null
           recall_override_by: string | null
           recall_override_notes: string | null
+          scrape_last_synced_at: string | null
+          scrape_source_url: string | null
           slug: string
           status: string
           sticker_snapshot: Json
@@ -980,13 +1058,20 @@ export type Database = {
           ymm: string | null
         }
         Insert: {
+          certification?: Json | null
           condition?: string | null
           created_at?: string
           created_by?: string | null
           dealer_snapshot?: Json
+          description?: string | null
           documents?: Json
+          factory_sticker_url?: string | null
+          features?: Json
           id?: string
+          key_specs?: Json
           mileage?: number | null
+          payment_estimate?: Json | null
+          photos?: Json
           prep_status?: Json | null
           price?: number | null
           published_at?: string | null
@@ -994,6 +1079,8 @@ export type Database = {
           recall_override_at?: string | null
           recall_override_by?: string | null
           recall_override_notes?: string | null
+          scrape_last_synced_at?: string | null
+          scrape_source_url?: string | null
           slug: string
           status?: string
           sticker_snapshot?: Json
@@ -1008,13 +1095,20 @@ export type Database = {
           ymm?: string | null
         }
         Update: {
+          certification?: Json | null
           condition?: string | null
           created_at?: string
           created_by?: string | null
           dealer_snapshot?: Json
+          description?: string | null
           documents?: Json
+          factory_sticker_url?: string | null
+          features?: Json
           id?: string
+          key_specs?: Json
           mileage?: number | null
+          payment_estimate?: Json | null
+          photos?: Json
           prep_status?: Json | null
           price?: number | null
           published_at?: string | null
@@ -1022,6 +1116,8 @@ export type Database = {
           recall_override_at?: string | null
           recall_override_by?: string | null
           recall_override_notes?: string | null
+          scrape_last_synced_at?: string | null
+          scrape_source_url?: string | null
           slug?: string
           status?: string
           sticker_snapshot?: Json
@@ -1040,6 +1136,13 @@ export type Database = {
             foreignKeyName: "vehicle_listings_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "tenant_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_listings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1047,9 +1150,88 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      tenant_summary: {
+        Row: {
+          active_apps: number | null
+          app_slugs: string[] | null
+          created_at: string | null
+          domain: string | null
+          id: string | null
+          is_active: boolean | null
+          last_activity: string | null
+          member_count: number | null
+          name: string | null
+          slug: string | null
+          source: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_apps?: never
+          app_slugs?: never
+          created_at?: string | null
+          domain?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_activity?: never
+          member_count?: never
+          name?: string | null
+          slug?: string | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_apps?: never
+          app_slugs?: never
+          created_at?: string | null
+          domain?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_activity?: never
+          member_count?: never
+          name?: string | null
+          slug?: string | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      admin_create_tenant: {
+        Args: {
+          _app_slug?: string
+          _domain: string
+          _name: string
+          _owner_email: string
+          _plan_tier?: string
+          _slug: string
+          _trial_days?: number
+        }
+        Returns: string
+      }
+      admin_invite_member: {
+        Args: { _email: string; _role?: string; _tenant_id: string }
+        Returns: string
+      }
+      admin_override_entitlement: {
+        Args: {
+          _app_slug: string
+          _expires_at?: string
+          _plan_tier: string
+          _seat_limit?: number
+          _status: string
+          _tenant_id: string
+        }
+        Returns: string
+      }
+      admin_set_member_role: {
+        Args: { _member_id: string; _role: string }
+        Returns: boolean
+      }
+      admin_set_tenant_active: {
+        Args: { _active: boolean; _tenant_id: string }
+        Returns: boolean
+      }
       bootstrap_tenant: {
         Args: {
           _app_slug?: string
@@ -1060,6 +1242,7 @@ export type Database = {
         }
         Returns: string
       }
+      claim_platform: { Args: never; Returns: Json }
       current_tenant_id: { Args: never; Returns: string }
       get_addendum_by_token: {
         Args: { _token: string }
@@ -1147,13 +1330,20 @@ export type Database = {
       get_vehicle_listing_by_slug: {
         Args: { _slug: string }
         Returns: {
+          certification: Json | null
           condition: string | null
           created_at: string
           created_by: string | null
           dealer_snapshot: Json
+          description: string | null
           documents: Json
+          factory_sticker_url: string | null
+          features: Json
           id: string
+          key_specs: Json
           mileage: number | null
+          payment_estimate: Json | null
+          photos: Json
           prep_status: Json | null
           price: number | null
           published_at: string | null
@@ -1161,6 +1351,8 @@ export type Database = {
           recall_override_at: string | null
           recall_override_by: string | null
           recall_override_notes: string | null
+          scrape_last_synced_at: string | null
+          scrape_source_url: string | null
           slug: string
           status: string
           sticker_snapshot: Json
@@ -1190,6 +1382,20 @@ export type Database = {
         Returns: boolean
       }
       increment_listing_view: { Args: { _slug: string }; Returns: undefined }
+      merge_scraped_vdp: {
+        Args: {
+          _description: string
+          _features: Json
+          _key_specs: Json
+          _mileage?: number
+          _options?: Json
+          _photos: Json
+          _price?: number
+          _source_url: string
+          _vehicle_id: string
+        }
+        Returns: string
+      }
       sign_deal_token: {
         Args: {
           _content_hash: string
