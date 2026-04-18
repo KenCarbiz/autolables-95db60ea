@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { MotionConfig } from "framer-motion";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -74,6 +75,17 @@ const PageLoader = () => (
 const App = () => (
   <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
+    {/* MotionConfig: Wave 2 motion ladder. All framer-motion
+        components inherit the out-expo easing + 320ms duration.
+        reducedMotion="user" honors prefers-reduced-motion so
+        accessibility users get instant state changes. */}
+    <MotionConfig
+      reducedMotion="user"
+      transition={{
+        duration: 0.32,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+    >
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -135,6 +147,7 @@ const App = () => (
         </TenantProvider>
       </AuthProvider>
     </TooltipProvider>
+    </MotionConfig>
   </QueryClientProvider>
   </ErrorBoundary>
 );
