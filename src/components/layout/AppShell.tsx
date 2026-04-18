@@ -238,7 +238,7 @@ const AppShell = ({ children }: AppShellProps) => {
         }`}
       >
         {/* Sidebar header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border/50 flex-shrink-0">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border flex-shrink-0">
           {tenant?.logo_url && tenant.logo_url !== "/logo-mark.svg" ? (
             <div className="flex items-center gap-2">
               <img src={tenant.logo_url} alt={tenant.name} className="w-8 h-8 rounded-md object-contain bg-white p-1" />
@@ -271,40 +271,40 @@ const AppShell = ({ children }: AppShellProps) => {
               setMobileOpen(false);
               navigate("/inventory?add=1");
             }}
-            className="h-11 rounded-xl bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white font-bold text-sm inline-flex items-center justify-center gap-1.5 shadow-premium hover:brightness-110 transition-all"
+            className="h-12 rounded-xl bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white inline-flex items-center justify-center gap-1.5 shadow-premium hover:brightness-110 transition-all"
           >
-            <Car className="w-4 h-4" />
-            Add Vehicle
+            <Car className="w-4 h-4 stroke-[2.5]" />
+            <span className="font-display font-black tracking-tight text-[15px]">Add Vehicle</span>
           </button>
           <button
             onClick={() => {
               setMobileOpen(false);
               navigate("/scan");
             }}
-            className="h-11 rounded-xl bg-sidebar-accent/60 hover:bg-sidebar-accent text-sidebar-foreground font-semibold text-sm inline-flex items-center justify-center gap-1.5 border border-sidebar-border/60 transition-colors"
+            className="h-12 rounded-xl bg-sidebar-accent/60 hover:bg-sidebar-accent text-sidebar-foreground inline-flex items-center justify-center gap-1.5 border border-sidebar-border transition-all"
             title="Scan a VIN barcode or windshield sticker"
           >
-            <ScanLine className="w-4 h-4" />
-            Scan Vehicle
+            <ScanLine className="w-4 h-4 stroke-[2.5]" />
+            <span className="font-display font-bold tracking-tight text-[15px]">Scan Vehicle</span>
           </button>
         </div>
 
         {/* Store Selector */}
         {stores.length > 0 && (
-          <div className="px-3 py-3 border-b border-sidebar-border/50 flex-shrink-0">
+          <div className="px-3 py-3 border-b border-sidebar-border flex-shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md bg-sidebar-accent/50 hover:bg-sidebar-accent transition-colors text-left group">
-                  <div className="w-7 h-7 rounded-md bg-sidebar-accent flex items-center justify-center flex-shrink-0">
-                    <Store className="w-3.5 h-3.5 text-sidebar-foreground/70" />
+                <button className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-sidebar-accent/60 hover:bg-sidebar-accent transition-colors text-left group border border-sidebar-border/50">
+                  <div className="w-7 h-7 rounded-md bg-gradient-to-br from-[#3BB4FF] to-[#1E90FF] flex items-center justify-center flex-shrink-0 shadow-premium">
+                    <Store className="w-3.5 h-3.5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-wider font-semibold">Store</p>
-                    <p className="text-xs font-medium text-sidebar-foreground truncate">
+                    <p className="text-[9px] text-sidebar-foreground/70 uppercase tracking-[0.18em] font-bold">Store</p>
+                    <p className="text-xs font-semibold text-sidebar-foreground truncate">
                       {currentStore?.name || "No store"}
                     </p>
                   </div>
-                  <ChevronsUpDown className="w-3.5 h-3.5 text-sidebar-foreground/50 flex-shrink-0" />
+                  <ChevronsUpDown className="w-3.5 h-3.5 text-sidebar-foreground/60 flex-shrink-0" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
@@ -337,7 +337,7 @@ const AppShell = ({ children }: AppShellProps) => {
                   onClick={() => toggleSection(key)}
                   className="w-full flex items-center justify-between px-2 mb-1.5 group"
                 >
-                  <span className="text-[10px] font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-sidebar-foreground/70 uppercase tracking-[0.18em]">
                     {section.title}
                   </span>
                   {isOpen ? (
@@ -358,9 +358,9 @@ const AppShell = ({ children }: AppShellProps) => {
                             navigate(item.path);
                             setMobileOpen(false);
                           }}
-                          className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors ${
+                          className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-all relative ${
                             active
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold pl-3 before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.5 before:bg-gradient-to-b before:from-[#3BB4FF] before:to-[#1E90FF] before:rounded-full"
                               : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                           }`}
                         >
@@ -382,7 +382,7 @@ const AppShell = ({ children }: AppShellProps) => {
         </nav>
 
         {/* Sidebar footer — Platform Updates + Command Center */}
-        <div className="border-t border-sidebar-border/50 p-3 space-y-1 flex-shrink-0">
+        <div className="border-t border-sidebar-border p-3 space-y-1 flex-shrink-0">
           <button className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors">
             <Rocket className="w-4 h-4 flex-shrink-0" />
             <span className="flex-1 text-left">Platform Updates</span>
