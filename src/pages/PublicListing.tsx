@@ -13,7 +13,12 @@ import {
   Sparkles,
   Clock,
   Award,
+  MessageSquare,
+  X,
+  Send,
+  Calendar,
 } from "lucide-react";
+import { toast } from "sonner";
 import Logo from "@/components/brand/Logo";
 import { QRCodeSVG } from "qrcode.react";
 import { useVehicleListing, type VehicleListing } from "@/hooks/useVehicleListing";
@@ -35,6 +40,8 @@ const PublicListing = () => {
   const [notFound, setNotFound] = useState(false);
   const [rateLimited, setRateLimited] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [inquiryOpen, setInquiryOpen] = useState(false);
+  const [inquirySent, setInquirySent] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -411,7 +418,7 @@ const PublicListing = () => {
         </section>
 
         {/* Footer */}
-        <footer className="text-center py-6">
+        <footer className="text-center py-6 pb-32 md:pb-6">
           <Logo variant="full" size={22} />
           <p className="text-[10px] text-muted-foreground mt-2">
             Powered by AutoLabels.io · <Clock className="inline w-2.5 h-2.5 -mt-0.5" /> Published{" "}
@@ -419,9 +426,249 @@ const PublicListing = () => {
           </p>
         </footer>
       </main>
+
+      {/* Sticky shopper CTA — thumbs-reach on mobile, anchored right on desktop */}
+      <div className="fixed bottom-0 inset-x-0 z-30 p-4 bg-gradient-to-t from-slate-950/50 to-transparent md:bg-none md:from-transparent md:pointer-events-none">
+        <div className="max-w-3xl mx-auto flex items-center justify-end gap-2 md:pointer-events-auto">
+          {dealer.phone && (
+            <a
+              href={`tel:${dealer.phone}`}
+              className="h-12 px-4 rounded-xl bg-white border border-slate-200 text-slate-900 inline-flex items-center gap-1.5 shadow-premium hover:brightness-95 transition-all whitespace-nowrap"
+            >
+              <Phone className="w-4 h-4 stroke-[2.5]" />
+              <span className="font-display font-bold tracking-tight">Call</span>
+            </a>
+          )}
+          <button
+            onClick={() => setInquiryOpen(true)}
+            className="h-12 px-5 rounded-xl bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white inline-flex items-center gap-1.5 shadow-premium hover:brightness-110 transition-all whitespace-nowrap"
+          >
+            <MessageSquare className="w-4 h-4 stroke-[2.5]" />
+            <span className="font-display font-black tracking-tight text-[15px]">Request this vehicle</span>
+          </button>
+        </div>
+      </div>
+
+      {inquiryOpen && (
+        <InquiryModal
+          listing={listing}
+          dealer={dealer}
+          onClose={() => {
+            setInquiryOpen(false);
+            if (inquirySent) setInquirySent(false);
+          }}
+          onSent={() => setInquirySent(true)}
+          sent={inquirySent}
+        />
+      )}
     </div>
   );
 };
+
+interface InquiryModalProps {
+  listing: VehicleListing;
+  dealer: { name?: string; phone?: string; address?: string; city?: string; state?: string };
+  onClose: () => void;
+  onSent: () => void;
+  sent: boolean;
+}
+
+const InquiryModal = ({ listing, dealer, onClose, onSent, sent }: InquiryModalProps) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("I'm interested in this vehicle. Please contact me.");
+  const [intent, setIntent] = useState<"info" | "test_drive" | "offer">("info");
+  const [submitting, setSubmitting] = useState(false);
+
+  const submit = async () => {
+    if (!name.trim() || (!email.trim() && !phone.trim())) {
+      toast.error("Name plus email or phone is required.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await (supabase as any).from("audit_log").insert({
+        action: "vehicle_inquiry",
+        entity_type: "vehicle_listing",
+        entity_id: listing.id,
+        store_id: listing.store_id,
+        details: {
+          slug: listing.slug,
+          vin: listing.vin,
+          ymm: listing.ymm,
+          intent,
+          name: name.trim(),
+          email: email.trim() || null,
+          phone: phone.trim() || null,
+          message: message.trim() || null,
+          page: typeof window !== "undefined" ? window.location.href : null,
+          at: new Date().toISOString(),
+        },
+      });
+      if (error) {
+        toast.error("Couldn't send your request. Try calling the dealer directly.");
+      } else {
+        onSent();
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full md:max-w-lg md:rounded-2xl rounded-t-[28px] overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Mobile drag handle */}
+        <div className="pt-2 md:hidden flex justify-center">
+          <div className="w-10 h-1 rounded-full bg-slate-300" />
+        </div>
+
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-black font-display tracking-tight">
+              {sent ? "You're all set" : "Request this vehicle"}
+            </h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              {sent ? `${dealer.name || "The dealer"} will be in touch shortly.` : listing.ymm || listing.vin}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {sent ? (
+          <div className="p-5 space-y-4">
+            <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-900 flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-semibold">Request sent.</p>
+                <p className="text-xs mt-0.5">
+                  Your message is now in the dealer's inbox with a timestamp
+                  and the vehicle you were looking at. They usually respond
+                  within a few hours during business days.
+                </p>
+              </div>
+            </div>
+
+            {(dealer.phone || dealer.address) && (
+              <div className="rounded-xl border border-slate-200 p-4 text-xs space-y-1">
+                <p className="font-bold text-slate-900">{dealer.name || "Dealership"}</p>
+                {dealer.phone && (
+                  <a href={`tel:${dealer.phone}`} className="text-slate-600 hover:text-[#1E90FF] block">
+                    <Phone className="inline w-3 h-3 mr-1" />
+                    {dealer.phone}
+                  </a>
+                )}
+                {dealer.address && (
+                  <p className="text-slate-600">
+                    {dealer.address}
+                    {dealer.city ? `, ${dealer.city}` : ""}
+                    {dealer.state ? `, ${dealer.state}` : ""}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={onClose}
+              className="w-full h-11 rounded-xl bg-slate-900 text-white font-display font-black text-sm hover:brightness-110"
+            >
+              Close
+            </button>
+          </div>
+        ) : (
+          <div className="p-5 space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: "info", label: "More info", icon: MessageSquare },
+                { id: "test_drive", label: "Test drive", icon: Calendar },
+                { id: "offer", label: "Make an offer", icon: DollarSign },
+              ].map((i) => (
+                <button
+                  key={i.id}
+                  onClick={() => setIntent(i.id as typeof intent)}
+                  className={`h-14 rounded-xl border text-[11px] font-semibold inline-flex flex-col items-center justify-center gap-0.5 ${
+                    intent === i.id
+                      ? "border-[#1E90FF] bg-[#1E90FF]/5 text-[#1E90FF]"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  <i.icon className="w-4 h-4" />
+                  {i.label}
+                </button>
+              ))}
+            </div>
+
+            <Field label="Your name" value={name} onChange={setName} placeholder="Full name" />
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Email" value={email} onChange={setEmail} placeholder="you@example.com" type="email" />
+              <Field label="Phone" value={phone} onChange={setPhone} placeholder="(555) 123-4567" type="tel" />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Message</label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={3}
+                className="mt-1 w-full rounded-lg border border-slate-200 p-3 text-sm focus:outline-none focus:border-[#1E90FF] focus:ring-2 focus:ring-[#1E90FF]/20"
+              />
+            </div>
+
+            <p className="text-[10px] text-slate-500 leading-relaxed">
+              By sending this you agree we can share your contact with this
+              dealership so they can follow up. Your request is time-stamped
+              and logged to the dealer's audit trail.
+            </p>
+
+            <button
+              onClick={submit}
+              disabled={submitting || !name.trim() || (!email.trim() && !phone.trim())}
+              className="w-full h-12 rounded-xl bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white font-display font-black text-sm inline-flex items-center justify-center gap-2 disabled:opacity-50 shadow-premium hover:brightness-110"
+            >
+              {submitting ? "Sending…" : (<><Send className="w-4 h-4 stroke-[2.5]" /> Send request</>)}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const Field = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: "text" | "email" | "tel";
+}) => (
+  <div>
+    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</label>
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      type={type}
+      placeholder={placeholder}
+      className="mt-1 w-full h-11 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-[#1E90FF] focus:ring-2 focus:ring-[#1E90FF]/20"
+    />
+  </div>
+);
 
 const ProductCard = ({
   p,
