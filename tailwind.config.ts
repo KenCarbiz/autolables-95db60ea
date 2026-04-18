@@ -72,10 +72,43 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        // Wave 2 scale — Apple/Tesla radius ladder
+        "xl": "24px",
+        "hero": "28px",
       },
       fontFamily: {
         "barlow": ["Barlow", "system-ui", "sans-serif"],
         "barlow-condensed": ["'Barlow Condensed'", "Barlow", "system-ui", "sans-serif"],
+      },
+      fontSize: {
+        // Wave 2 type scale — display-xl down to caption
+        "display-xl":  ["4.5rem",   { lineHeight: "1.05", letterSpacing: "-0.03em", fontWeight: "600" }], // 72
+        "display-lg":  ["3.5rem",   { lineHeight: "1.05", letterSpacing: "-0.03em", fontWeight: "600" }], // 56
+        "display":     ["2.5rem",   { lineHeight: "1.1",  letterSpacing: "-0.025em", fontWeight: "600" }], // 40
+        "headline":    ["2rem",     { lineHeight: "1.15", letterSpacing: "-0.02em", fontWeight: "600" }], // 32
+        "title":       ["1.5rem",   { lineHeight: "1.25", letterSpacing: "-0.015em", fontWeight: "500" }], // 24
+        "subtitle":    ["1.25rem",  { lineHeight: "1.35", letterSpacing: "-0.01em", fontWeight: "500" }], // 20
+        "body":        ["1rem",     { lineHeight: "1.5",  letterSpacing: "0",       fontWeight: "400" }], // 16
+        "body-sm":     ["0.875rem", { lineHeight: "1.45", letterSpacing: "0",       fontWeight: "400" }], // 14
+        "caption":     ["0.75rem",  { lineHeight: "1.4",  letterSpacing: "0",       fontWeight: "400" }], // 12
+      },
+      letterSpacing: {
+        // Wave 2 spacing tokens
+        "ui":          "0",
+        "label":       "0.14em",    // uppercase UI labels
+        "label-wide":  "0.18em",    // section titles
+      },
+      transitionTimingFunction: {
+        // Wave 2 motion ladder — out-expo for enters, fast-in for exits
+        "out-expo":  "cubic-bezier(0.22, 1, 0.36, 1)",
+        "in-fast":   "cubic-bezier(0.4, 0, 1, 1)",
+        "spring":    "cubic-bezier(0.34, 1.56, 0.64, 1)",
+      },
+      transitionDuration: {
+        "120": "120ms",
+        "200": "200ms",
+        "320": "320ms",
+        "480": "480ms",
       },
       keyframes: {
         "accordion-down": {
@@ -86,10 +119,21 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        // Wave 2 baseline motion: fade-in-up, press, ring-pulse
+        "fade-in-up": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to:   { opacity: "1", transform: "translateY(0)" },
+        },
+        "ring-pulse": {
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(239, 68, 68, 0.5)" },
+          "50%":      { boxShadow: "0 0 0 6px rgba(239, 68, 68, 0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "accordion-up":   "accordion-up 0.2s ease-out",
+        "fade-in-up":     "fade-in-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both",
+        "ring-pulse":     "ring-pulse 2s cubic-bezier(0.22, 1, 0.36, 1) infinite",
       },
     },
   },
