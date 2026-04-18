@@ -213,7 +213,7 @@ const Inventory = () => {
 
       {/* Vehicle table */}
       {loading ? (
-        <div className="py-16 text-center text-sm text-muted-foreground">Loading inventory…</div>
+        <InventorySkeleton />
       ) : filtered.length === 0 ? (
         <EmptyState onAdd={() => setShowAdd(true)} total={rows.length} />
       ) : (
@@ -341,6 +341,40 @@ const RowAction = ({ label, title, tone = "default", onClick }: RowActionProps) 
     </button>
   );
 };
+
+const InventorySkeleton = () => (
+  <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <table className="w-full text-sm">
+      <thead className="bg-muted/50 text-[11px] uppercase tracking-wide text-muted-foreground">
+        <tr>
+          <th className="text-left px-3 py-2 font-semibold">Vehicle</th>
+          <th className="text-left px-3 py-2 font-semibold">VIN</th>
+          <th className="text-left px-3 py-2 font-semibold hidden md:table-cell">Condition</th>
+          <th className="text-right px-3 py-2 font-semibold hidden md:table-cell">Mileage</th>
+          <th className="text-right px-3 py-2 font-semibold">Price</th>
+          <th className="text-left px-3 py-2 font-semibold">Status</th>
+          <th className="text-right px-3 py-2 font-semibold">Actions</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-border">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <tr key={i}>
+            <td className="px-3 py-3">
+              <div className="h-3.5 w-40 rounded bg-muted animate-pulse" />
+              <div className="mt-1.5 h-2.5 w-24 rounded bg-muted/70 animate-pulse" />
+            </td>
+            <td className="px-3 py-3"><div className="h-3 w-32 rounded bg-muted animate-pulse" /></td>
+            <td className="px-3 py-3 hidden md:table-cell"><div className="h-5 w-14 rounded-full bg-muted animate-pulse" /></td>
+            <td className="px-3 py-3 hidden md:table-cell text-right"><div className="h-3 w-16 rounded bg-muted animate-pulse inline-block" /></td>
+            <td className="px-3 py-3 text-right"><div className="h-3 w-20 rounded bg-muted animate-pulse inline-block" /></td>
+            <td className="px-3 py-3"><div className="h-5 w-16 rounded-full bg-muted animate-pulse" /></td>
+            <td className="px-3 py-3 text-right"><div className="h-6 w-24 rounded-md bg-muted animate-pulse inline-block" /></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
 
 const Stat = ({ label, value, accent }: { label: string; value: number; accent?: "amber" | "emerald" }) => (
   <div className="rounded-xl border border-border bg-card p-4">

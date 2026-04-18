@@ -103,11 +103,11 @@ const EntitlementGate = ({ app, children }: Props) => {
   }, [tenant, app, hasApp, activateApp]);
 
   if (authLoading || loading || pulling || activating) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
-    );
+    return <GateSpinner label={
+      activating ? "Activating your AutoLabels bundle…" :
+      pulling    ? "Checking your Autocurb profile…" :
+                   "Checking your subscription…"
+    } />;
   }
 
   if (!user) {
@@ -133,6 +133,47 @@ const EntitlementGate = ({ app, children }: Props) => {
   }
 
   return <>{children}</>;
+};
+
+const GateSpinner = ({ label }: { label: string }) => {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setElapsed((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const stalled = elapsed >= 5;
+  const long = elapsed >= 10;
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-6">
+      <div className="text-center space-y-3 max-w-sm">
+        <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
+        <p className="text-sm font-semibold text-foreground">{label}</p>
+        {!stalled && (
+          <p className="text-[11px] text-muted-foreground">This usually takes under a second.</p>
+        )}
+        {stalled && !long && (
+          <p className="text-[11px] text-amber-700">
+            Taking a moment longer than usual. Hang tight — we're asking the server twice.
+          </p>
+        )}
+        {long && (
+          <div className="text-[11px] text-muted-foreground space-y-2">
+            <p className="text-red-600 font-semibold">Still loading after 10 seconds.</p>
+            <p>
+              If this keeps happening, check your connection or try a hard refresh
+              (Ctrl+Shift+R / Cmd+Shift+R). You can also sign out and back in.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-xs font-semibold"
+            >
+              Reload now
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default EntitlementGate;
