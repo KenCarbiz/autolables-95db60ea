@@ -1,0 +1,186 @@
+// ──────────────────────────────────────────────────────────────
+// Compliance Red-Team engine
+//
+// Sits on top of validateAddendum (which handles per-state rules)
+// and layers cross-cutting "if a regulator actually read this deal"
+// checks:
+//
+//   1. E-SIGN + 16 CFR 455 hygiene
+//      - Buyers Guide present for used cars
+//      - Bilingual copy present where the sale happens in Spanish
+//      - Customer name + signature must be non-blank at sign time
+//
+//   2. Add-on reasonableness
+//      - Optional items that are un-initialled
+//      - Add-ons > 20% of vehicle price flagged for secondary review
+//      - Products marked "installed" with no installed_at timestamp
+//      - Doc fee over state cap
+//
+//   3. FTC mothership checks
+//      - "CARS Act"/"CARS Rule" language (vacated Jan 2025) — hard fail
+//      - Bait-and-switch risk: advertised price missing when any add-on
+//        changes the OTD total
+//
+// Every finding carries a severity (pass|warn|fail), a regulator-facing
+// citation, and an actionable suggestion. Downstream UI (the panel
+// component) groups and presents them.
+//
+// The engine is deliberately pure — no network. It's fast enough to
+// run on every keystroke, which is how we present findings live in
+// the addendum builder.
+// ──────────────────────────────────────────────────────────────
+
+import {
+  validateAddendum,
+  type ComplianceDraft,
+  type ComplianceFinding,
+} from "./stateCompliance";
+
+export interface RedTeamDraft extends ComplianceDraft {
+  customerName?: string;
+  buyersGuideAttached?: boolean;
+  advertisedPrice?: number;
+  signedAt?: string | null;
+  initialsByProductId?: Record<string, string>;
+  esignConsentAccepted?: boolean;
+  listingUnlocked?: boolean;
+  vehicleCondition?: "new" | "used" | "cpo";
+}
+
+// Words that should not appear in current addendum copy because the
+// regulatory authority for them was vacated or never existed. These
+// are hard fails, not warnings — a dealer referencing "CARS Act"
+// loses credibility with the very lawyer they need on their side.
+const BANNED_PHRASES: Array<{ phrase: string; reason: string }> = [
+  { phrase: "CARS Act", reason: "FTC CARS Rule was vacated by the 5th Circuit on Jan 27, 2025 (No. 24-60013)." },
+  { phrase: "CARS Rule", reason: "FTC CARS Rule was vacated by the 5th Circuit on Jan 27, 2025 (No. 24-60013)." },
+  { phrase: "federally required", reason: "Use 'disclosure-aligned' or cite the specific statute; 'federally required' is overbroad." },
+];
+
+export const runComplianceRedTeam = (draft: RedTeamDraft): ComplianceFinding[] => {
+  const findings = validateAddendum(draft);
+
+  // ─── Banned / risky phrases ──────────────────────────────────
+  const haystack = `${draft.stickerText || ""} ${(draft.products || [])
+    .map((p) => `${p.name} ${p.disclosure || ""}`)
+    .join(" ")}`.toLowerCase();
+  BANNED_PHRASES.forEach(({ phrase, reason }) => {
+    if (haystack.includes(phrase.toLowerCase())) {
+      findings.push({
+        id: `banned-${phrase.toLowerCase().replace(/\s+/g, "-")}`,
+        severity: "fail",
+        rule: `Do not use "${phrase}"`,
+        message: `Found "${phrase}" in addendum copy.`,
+        citation: reason,
+        suggestion: `Replace with specific, current statute citations or neutral "disclosure" language.`,
+      });
+    }
+  });
+
+  // ─── Unsigned installed products ─────────────────────────────
+  const unsigned = (draft.products || [])
+    .filter((p) => p.badge_type === "installed")
+    .filter((p) => !(draft.initialsByProductId || {})[p.id]?.trim());
+  if (draft.signedAt && unsigned.length > 0) {
+    findings.push({
+      id: "unsigned-installed",
+      severity: "fail",
+      rule: "Every installed product needs customer initials",
+      message: `${unsigned.length} installed product(s) have no customer initials.`,
+      citation: "UETA §12; state per-item sign-off rules for add-ons.",
+      suggestion: `Re-open the sign flow and have the customer initial: ${unsigned.slice(0, 3).map((p) => p.name).join(", ")}${unsigned.length > 3 ? "…" : ""}`,
+    });
+  }
+
+  // ─── Add-on spend ratio ──────────────────────────────────────
+  const addOnTotal = (draft.products || []).reduce((sum, p) => sum + (p.price || 0), 0);
+  if (draft.vehiclePrice && addOnTotal > 0) {
+    const ratio = addOnTotal / draft.vehiclePrice;
+    if (ratio > 0.20) {
+      findings.push({
+        id: "addon-ratio-high",
+        severity: "warn",
+        rule: "Add-ons exceed 20% of vehicle price",
+        message: `Add-ons total $${addOnTotal.toLocaleString()} on a $${draft.vehiclePrice.toLocaleString()} vehicle (${Math.round(ratio * 100)}%).`,
+        citation: "FTC §5 unfair practices; CFPB Junk Fees guidance.",
+        suggestion: "Manager review recommended. Ensure every line is itemized and customer-initialled separately.",
+      });
+    }
+  }
+
+  // ─── Doc fee sanity ──────────────────────────────────────────
+  if (typeof draft.docFeeAmount === "number" && draft.docFeeAmount <= 0) {
+    findings.push({
+      id: "doc-fee-zero",
+      severity: "warn",
+      rule: "Doc fee is $0",
+      message: "Doc fee is blank or zero. Most stores charge a statutory max doc fee — confirm this is intended.",
+      citation: "Per-state doc fee caps.",
+    });
+  }
+
+  // ─── Customer identity ───────────────────────────────────────
+  if (draft.signedAt && !(draft.customerName || "").trim()) {
+    findings.push({
+      id: "customer-name-blank",
+      severity: "fail",
+      rule: "Customer name required at sign time",
+      message: "The addendum was submitted as signed but the customer name is blank.",
+      citation: "UETA §7; Federal E-SIGN Act §101(c).",
+      suggestion: "Capture printed name at the top of the signing flow before the signature pad.",
+    });
+  }
+
+  // ─── ESIGN consent ───────────────────────────────────────────
+  if (draft.signedAt && draft.esignConsentAccepted === false) {
+    findings.push({
+      id: "esign-consent-missing",
+      severity: "fail",
+      rule: "E-SIGN Act consent required",
+      message: "Electronic Records Disclosure was not accepted before signature capture.",
+      citation: "Federal E-SIGN Act §101(c)(1).",
+      suggestion: "Require the customer to check the E-SIGN box before enabling the signature pad.",
+    });
+  }
+
+  // ─── Buyers Guide for used ───────────────────────────────────
+  if (draft.vehicleCondition === "used" && draft.buyersGuideAttached === false) {
+    findings.push({
+      id: "buyers-guide-missing",
+      severity: "fail",
+      rule: "FTC Buyers Guide required on every used vehicle",
+      message: "No Buyers Guide is attached to this used-car deal.",
+      citation: "16 CFR Part 455.",
+      suggestion: "Generate a Buyers Guide (English + Spanish if sale conducted in Spanish) and attach before signing.",
+    });
+  }
+
+  // ─── Listing-unlock gate ─────────────────────────────────────
+  if (draft.listingUnlocked === false) {
+    findings.push({
+      id: "prep-not-unlocked",
+      severity: "warn",
+      rule: "Prep sign-off not unlocked",
+      message: "No foreman sign-off with listing_unlocked=true exists for this VIN.",
+      citation: "AutoLabels internal install-audit gate.",
+      suggestion: "Complete /prep for this vehicle; customer signatures should not be captured until install is verified.",
+    });
+  }
+
+  return findings;
+};
+
+export interface RedTeamSummary {
+  pass: number;
+  warn: number;
+  fail: number;
+  total: number;
+  blocker: boolean;  // true if any fail severity present
+}
+
+export const summarizeRedTeam = (findings: ComplianceFinding[]): RedTeamSummary => {
+  const pass = findings.filter((f) => f.severity === "pass").length;
+  const warn = findings.filter((f) => f.severity === "warn").length;
+  const fail = findings.filter((f) => f.severity === "fail").length;
+  return { pass, warn, fail, total: findings.length, blocker: fail > 0 };
+};

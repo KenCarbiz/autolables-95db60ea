@@ -27,6 +27,8 @@ import { useTenant } from "@/contexts/TenantContext";
 import { useVehicleFiles } from "@/hooks/useVehicleFiles";
 import { QRCodeSVG } from "qrcode.react";
 import { ArrowLeft, Save, Send, Printer, Download } from "lucide-react";
+import ComplianceRedTeamPanel from "@/components/addendum/ComplianceRedTeamPanel";
+import { runComplianceRedTeam } from "@/lib/complianceRedTeam";
 
 // Paper size map (width in inches)
 // Paper size widths for the addendum card preview
@@ -508,6 +510,35 @@ const Index = () => {
           <div className="bg-teal/10 border border-teal/30 rounded-md px-3 py-1.5 text-[11px] text-teal font-semibold">
             Product rules active — showing {displayProducts?.length || 0} products matching {vehicleContext.year} {vehicleContext.make} {vehicleContext.model}
           </div>
+        </div>
+      )}
+
+      {/* Compliance red-team — Wave 4.2. Runs on every keystroke and
+          lists what a regulator would flag before the customer signs. */}
+      {!viewMode && (
+        <div style={{ maxWidth: paperWidth }} className="mx-auto mb-3 no-print">
+          <ComplianceRedTeamPanel
+            findings={runComplianceRedTeam({
+              state: settings.doc_fee_state || "",
+              vehiclePrice: undefined,
+              docFeeAmount: displayProducts?.find((p) => p.name.toLowerCase().includes("doc"))?.price,
+              stickerText: displayProducts
+                ?.map((p) => `${p.name} ${p.disclosure || ""}`)
+                .join(" ") || "",
+              products: displayProducts?.map((p) => ({
+                id: p.id,
+                name: p.name,
+                price: p.price,
+                badge_type: p.badge_type,
+                disclosure: p.disclosure || undefined,
+                separate_signoff: !!initials[p.id]?.trim(),
+              })) || [],
+              spanishVersion: false,
+              customerName: [customerInfo.buyer_first_name, customerInfo.buyer_last_name].filter(Boolean).join(" "),
+              initialsByProductId: initials,
+              vehicleCondition: undefined,
+            })}
+          />
         </div>
       )}
 
