@@ -69,7 +69,7 @@ const parseNumber = (s: string | null | undefined): number | null => {
 };
 
 const extractSchemaOrgVehicle = (doc: Doc): ScrapeResult | null => {
-  const scripts = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'));
+  const scripts = Array.from(doc.querySelectorAll('script[type="application/ld+json"]')) as Doc[];
   for (const script of scripts) {
     try {
       const data = JSON.parse(script.textContent || "");
@@ -125,7 +125,7 @@ const extractOpenGraph = (doc: Doc): ScrapeResult => {
   const metaName = (name: string) =>
     doc.querySelector(`meta[name="${name}"]`)?.getAttribute("content") || null;
 
-  const images = Array.from(doc.querySelectorAll('meta[property="og:image"]'))
+  const images = (Array.from(doc.querySelectorAll('meta[property="og:image"]')) as Doc[])
     .map((el) => el.getAttribute("content"))
     .filter(Boolean) as string[];
 
@@ -145,8 +145,8 @@ const extractOpenGraph = (doc: Doc): ScrapeResult => {
   };
 };
 
-const extractHeuristic = (doc: Document, baseUrl: URL): ScrapeResult => {
-  const images = Array.from(doc.querySelectorAll("img"))
+const extractHeuristic = (doc: Doc, baseUrl: URL): ScrapeResult => {
+  const images = (Array.from(doc.querySelectorAll("img")) as Doc[])
     .map((el) => {
       const src = el.getAttribute("data-src") || el.getAttribute("src") || "";
       const abs = src.startsWith("//")
