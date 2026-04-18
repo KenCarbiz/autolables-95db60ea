@@ -102,7 +102,14 @@ const App = () => (
                       <Route path="/dashboard" element={<Gated><Dashboard /></Gated>} />
                       <Route path="/inventory" element={<Gated><Inventory /></Gated>} />
                       <Route path="/vehicle-file/:id" element={<Gated><VehicleFile /></Gated>} />
-                      <Route path="/admin" element={<AdminOnly><Admin /></AdminOnly>} />
+                      {/* /admin is shared by dealer settings (products, rules,
+                          branding, leads, queue, files, audit) AND the
+                          platform-admin surfaces (tenants, members,
+                          entitlements, platform audit). The page renders
+                          behind Gated so any tenant member can reach their
+                          own settings; the platform-admin tabs are rendered
+                          only when isAdmin is true via the tab list itself. */}
+                      <Route path="/admin" element={<Gated><Admin /></Gated>} />
                       <Route path="/saved" element={<Gated><SavedAddendums /></Gated>} />
                       <Route path="/buyers-guide" element={<Gated><BuyersGuide /></Gated>} />
                       <Route path="/trade-up" element={<Gated><TradeUpSticker /></Gated>} />
