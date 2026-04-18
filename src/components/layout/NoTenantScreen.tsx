@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/brand/Logo";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, LogOut, ShieldAlert, Rocket } from "lucide-react";
+import { Mail, LogOut, ShieldAlert, Rocket, Copy, ChevronDown, ChevronUp } from "lucide-react";
 
 // ──────────────────────────────────────────────────────────────
 // NoTenantScreen — shown when a signed-in user is not a member
