@@ -1,0 +1,1 @@
+ALTER VIEW public.tenant_summary SET (security_invoker = true);
