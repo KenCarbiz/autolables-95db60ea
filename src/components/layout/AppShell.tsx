@@ -1,5 +1,6 @@
 import { ReactNode, useState } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate as useBaseNavigate, Link } from "react-router-dom";
+import { useViewTransitionNavigate } from "@/lib/navigation";
 import {
   LayoutDashboard,
   FileText,
@@ -74,7 +75,11 @@ const AppShell = ({ children }: AppShellProps) => {
   const { settings } = useDealerSettings();
   const { entries } = useAudit();
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useViewTransitionNavigate();
+  // Keep the base hook import exported in case any legacy code below
+  // still needs the raw version without view transitions.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _baseNavigate = useBaseNavigate;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showMobileQr, setShowMobileQr] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
@@ -556,7 +561,12 @@ const AppShell = ({ children }: AppShellProps) => {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main
+          className="flex-1 overflow-y-auto"
+          style={{ viewTransitionName: "main-content" }}
+        >
+          {children}
+        </main>
       </div>
 
       {/* Mobile QR Code Modal */}
