@@ -54,8 +54,7 @@ const EntitlementGate = ({ app, children }: Props) => {
   // dealership members. The pull is bounded by a hard 2s timeout so
   // a missing edge function never blocks the gate, and reload() is
   // bounded by a second 3s timeout so a hung Supabase query can't
-  // freeze the gate forever. Total worst case: 5s, then we let the
-  // render fall through to NoTenantScreen.
+  // freeze the gate forever.
   useEffect(() => {
     if (authLoading || loading || !user || isAdmin) return;
     if (tenant) return;
@@ -87,17 +86,21 @@ const EntitlementGate = ({ app, children }: Props) => {
         if (!cancelled) setPulling(false);
       }
     })();
-    // Safety net: no matter what, clear the pulling flag after 6s so
-    // the gate is guaranteed to move on. Protects against any hang
-    // we haven't anticipated (supabase client stalls, etc.).
-    const hardCap = setTimeout(() => {
-      if (!cancelled) setPulling(false);
-    }, 6000);
     return () => {
       cancelled = true;
-      clearTimeout(hardCap);
     };
   }, [authLoading, loading, user, tenant, app, reload, isAdmin]);
+
+  // Standalone watchdog: if pulling stays true for more than 6s for
+  // any reason (hung supabase client, network stall, previous effect
+  // didn't fire setPulling(false) before deps changed), unconditionally
+  // clear it. Depends ONLY on `pulling` so it survives re-renders
+  // driven by identity changes in reload/tenant etc.
+  useEffect(() => {
+    if (!pulling) return;
+    const cap = setTimeout(() => setPulling(false), 6000);
+    return () => clearTimeout(cap);
+  }, [pulling]);
 
   // Auto-provision the bundled AutoLabels essential tier when the
   // tenant is Autocurb-sourced and no entitlement exists yet.
