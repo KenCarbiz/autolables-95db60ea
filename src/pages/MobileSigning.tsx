@@ -410,7 +410,7 @@ const MobileSigning = () => {
       {/* Sticky progress — always in view so the customer knows exactly how
           far they have to go. Progress is computed from the required
           completion criteria, not just scroll position. */}
-      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+      <div className="sticky top-0 z-40 surface-blur border-b border-slate-200">
         <div className="max-w-lg mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-3 text-[11px]">
             <span className="font-bold uppercase tracking-widest text-slate-500">

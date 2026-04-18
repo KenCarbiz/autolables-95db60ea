@@ -191,19 +191,38 @@
     color: white;
   }
 
-  /* Top bar gradient — navy with the price-tag blue rolling through */
+  /* Top bar gradient — navy with the price-tag blue rolling through.
+     Semi-transparent stops + backdrop-filter blur give the bar the
+     Apple / Arc "depth through the glass" look when content scrolls
+     beneath it. Falls back to solid navy on browsers without
+     backdrop-filter support. */
   .topbar-navy {
     background:
       linear-gradient(
         120deg,
-        hsl(217 71% 10%) 0%,
-        hsl(218 65% 16%) 22%,
-        hsl(210 100% 28%) 48%,
-        hsl(218 65% 16%) 74%,
-        hsl(217 71% 10%) 100%
+        hsl(217 71% 10% / 0.82) 0%,
+        hsl(218 65% 16% / 0.82) 22%,
+        hsl(210 100% 28% / 0.82) 48%,
+        hsl(218 65% 16% / 0.82) 74%,
+        hsl(217 71% 10% / 0.82) 100%
       );
     background-size: 220% 220%;
     animation: shimmer-roll 18s ease-in-out infinite;
+    backdrop-filter: saturate(1.5) blur(18px);
+    -webkit-backdrop-filter: saturate(1.5) blur(18px);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .topbar-navy {
+      background:
+        linear-gradient(
+          120deg,
+          hsl(217 71% 10%) 0%,
+          hsl(218 65% 16%) 22%,
+          hsl(210 100% 28%) 48%,
+          hsl(218 65% 16%) 74%,
+          hsl(217 71% 10%) 100%
+        );
+    }
   }
 
   /* Hero shimmer — the big "$ tag" cyan-blue rolling shine for landing surfaces */

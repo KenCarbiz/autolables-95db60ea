@@ -555,8 +555,9 @@ const AppShell = ({ children }: AppShellProps) => {
           </div>
         </header>
 
-        {/* Breadcrumbs */}
-        <div className="h-10 flex items-center px-4 lg:px-6 bg-background border-b border-border flex-shrink-0">
+        {/* Breadcrumbs — sticky below the topbar with backdrop-blur so
+            content scrolls beneath it like a native toolbar. */}
+        <div className="sticky top-14 z-10 h-10 flex items-center px-4 lg:px-6 surface-blur border-b border-border flex-shrink-0">
           <div className="flex items-center gap-1.5 text-xs overflow-x-auto whitespace-nowrap">
             {breadcrumbs.map((crumb, i) => (
               <div key={i} className="flex items-center gap-1.5">

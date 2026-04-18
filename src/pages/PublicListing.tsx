@@ -427,8 +427,10 @@ const PublicListing = () => {
         </footer>
       </main>
 
-      {/* Sticky shopper CTA — thumbs-reach on mobile, anchored right on desktop */}
-      <div className="fixed bottom-0 inset-x-0 z-30 p-4 bg-gradient-to-t from-slate-950/50 to-transparent md:bg-none md:from-transparent md:pointer-events-none">
+      {/* Sticky shopper CTA — thumbs-reach on mobile, anchored right
+          on desktop. Mobile rail uses backdrop-blur so page content
+          stays visible under the action buttons. */}
+      <div className="fixed bottom-0 inset-x-0 z-30 p-4 surface-blur border-t border-border md:bg-transparent md:border-t-0 md:backdrop-blur-0 md:pointer-events-none">
         <div className="max-w-3xl mx-auto flex items-center justify-end gap-2 md:pointer-events-auto">
           {dealer.phone && (
             <a
