@@ -12,6 +12,7 @@ import { PRODUCT_ICONS } from "@/components/addendum/ProductRow";
 import { STATE_DOC_FEES } from "@/data/docFees";
 import { format } from "date-fns";
 import { useLeads } from "@/hooks/useLeads";
+import SigningFunnelWidget from "@/components/admin/SigningFunnelWidget";
 import { useVinQueue, QueuedVehicle } from "@/hooks/useVinQueue";
 import { useVehicleFiles } from "@/hooks/useVehicleFiles";
 import { useGetReady } from "@/hooks/useGetReady";
@@ -1176,6 +1177,12 @@ const Admin = () => {
         {/* ─── Leads Tab ─── */}
         {tab === "leads" && (
           <div className="space-y-4">
+            {/* Signing funnel — shows where shoppers drop off
+                between first contact and a signed addendum.
+                Populated by the record_signing_event RPC fired from
+                MobileSigning on open + first interaction. */}
+            <SigningFunnelWidget />
+
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">

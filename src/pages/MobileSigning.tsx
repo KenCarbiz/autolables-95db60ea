@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import SignaturePad from "@/components/addendum/SignaturePad";
@@ -34,6 +34,11 @@ const MobileSigning = () => {
   const [submitted, setSubmitted] = useState(false);
   const [addendum, setAddendum] = useState<any>(null);
   const [error, setError] = useState("");
+  // Funnel telemetry: fire opened once on load, started once on first
+  // user interaction. Refs because we don't want React re-renders to
+  // re-fire.
+  const openedFiredRef = useRef(false);
+  const startedFiredRef = useRef(false);
 
   const [initials, setInitials] = useState<Record<string, string>>({});
   const [optionalSelections, setOptionalSelections] = useState<Record<string, string>>({});
@@ -80,7 +85,30 @@ const MobileSigning = () => {
     setInitials((doc.initials as Record<string, string>) || {});
     setOptionalSelections((doc.optional_selections as Record<string, string>) || {});
     setLoading(false);
+    fireFunnelEvent("signing_link_opened", openedFiredRef);
   };
+
+  // Fires a single tenant-scoped audit event server-side via the
+  // record_signing_event RPC. Silently swallows errors so a telemetry
+  // blip never blocks the signer.
+  const fireFunnelEvent = (
+    event: "signing_link_opened" | "signing_link_started",
+    ref: React.MutableRefObject<boolean>,
+  ) => {
+    if (ref.current || !token) return;
+    ref.current = true;
+    (supabase as any).rpc("record_signing_event", {
+      _signing_token: token,
+      _event: event,
+      _details: {
+        ua: typeof navigator !== "undefined" ? navigator.userAgent : null,
+      },
+    }).catch(() => { /* best-effort telemetry */ });
+  };
+
+  // Called from any onChange/onFocus in the form below. The ref
+  // guards against spamming the RPC on every keystroke.
+  const markStarted = () => fireFunnelEvent("signing_link_started", startedFiredRef);
 
   const products: ProductSnapshot[] = addendum?.products_snapshot || [];
   const installed = products.filter((p) => p.badge_type === "installed");
@@ -421,7 +449,11 @@ const MobileSigning = () => {
       </div>
 
       <div className="px-4 pt-6 pb-4">
-        <div className="max-w-lg mx-auto space-y-6">
+        <div
+          className="max-w-lg mx-auto space-y-6"
+          onFocusCapture={markStarted}
+          onTouchStartCapture={markStarted}
+        >
           {/* Vehicle is the hero. No wrapper card, no drop shadow —
               just confident typography. */}
           <div>
