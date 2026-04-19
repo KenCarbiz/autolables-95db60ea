@@ -24,9 +24,12 @@ import {
   Car as CarIcon,
   Cog,
   Palette,
+  QrCode,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import Logo from "@/components/brand/Logo";
+import { QRCodeSVG } from "qrcode.react";
 import { useVehicleListing, type VehicleListing } from "@/hooks/useVehicleListing";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -48,6 +51,7 @@ const PublicListing = () => {
   const [copied, setCopied] = useState(false);
   const [inquiryOpen, setInquiryOpen] = useState(false);
   const [inquirySent, setInquirySent] = useState(false);
+  const [handoffOpen, setHandoffOpen] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -163,14 +167,27 @@ const PublicListing = () => {
             )}
             <p className="text-[11px] font-semibold text-slate-700 truncate">{dealer.name || ""}</p>
           </div>
-          <button
-            onClick={handleShare}
-            className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
-            aria-label={copied ? "Link copied" : "Share vehicle"}
-            title={copied ? "Link copied" : "Share"}
-          >
-            <Share2 className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Handoff — shopper on desktop opens this on phone, or
+                sales rep hands the iPad to the customer at delivery
+                and the buyer scans it to sign on their own device. */}
+            <button
+              onClick={() => setHandoffOpen(true)}
+              className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+              aria-label="Open on another device"
+              title="Open on phone / delivery signing"
+            >
+              <Smartphone className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleShare}
+              className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+              aria-label={copied ? "Link copied" : "Share vehicle"}
+              title={copied ? "Link copied" : "Share"}
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -404,6 +421,14 @@ const PublicListing = () => {
           }}
           onSent={() => setInquirySent(true)}
           sent={inquirySent}
+        />
+      )}
+
+      {handoffOpen && (
+        <HandoffModal
+          url={viewUrl}
+          ymm={listing.ymm || "this vehicle"}
+          onClose={() => setHandoffOpen(false)}
         />
       )}
     </div>
@@ -703,6 +728,93 @@ const TrustItem = ({ text }: { text: string }) => (
     <p className="text-[11px] text-muted-foreground">{text}</p>
   </div>
 );
+
+// ──────────────────────────────────────────────────────────────
+// HandoffModal — the cross-device + delivery-signing affordance.
+// Sales rep at the pickup desk can hand an iPad over, the buyer
+// scans this QR with their phone, and loads the listing (and
+// eventually the signing flow) on their own device so the
+// signature and hash chain are bound to their hardware, not the
+// dealer's.
+// ──────────────────────────────────────────────────────────────
+
+const HandoffModal = ({
+  url,
+  ymm,
+  onClose,
+}: {
+  url: string;
+  ymm: string;
+  onClose: () => void;
+}) => {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      /* noop */
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full md:max-w-sm md:rounded-2xl rounded-t-[28px] overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="pt-2 md:hidden flex justify-center">
+          <div className="w-10 h-1 rounded-full bg-slate-300" />
+        </div>
+
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div className="min-w-0">
+            <h3 className="text-base font-black font-display tracking-tight">Open on another device</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5 truncate">{ymm}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-6 text-center space-y-4">
+          <div className="inline-flex p-4 rounded-2xl bg-white border border-slate-200">
+            <QRCodeSVG value={url} size={192} level="M" />
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-slate-900">Scan to continue on your phone</p>
+            <p className="text-[11px] text-slate-600 leading-relaxed">
+              Point your phone camera at the code. At delivery, this is also how the buyer signs on their own device — every signature stays bound to the buyer's hardware.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-center gap-1 text-[10px] font-mono text-slate-500 break-all px-2">
+              {url}
+            </div>
+            <button
+              onClick={copy}
+              className="w-full h-10 rounded-xl border border-slate-200 text-slate-800 text-sm font-semibold hover:bg-slate-50 inline-flex items-center justify-center gap-2"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              {copied ? "Link copied" : "Copy link"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ──────────────────────────────────────────────────────────────
 // Trust-first layout components (new for Wave 6.1)
