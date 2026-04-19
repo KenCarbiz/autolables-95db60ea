@@ -45,7 +45,7 @@ const ScanPage = () => {
   const [vin, setVin] = useState("");
   const [mileage, setMileage] = useState("");
   const [stockNumber, setStockNumber] = useState("");
-  const [condition, setCondition] = useState<"new" | "used">("used");
+  const [condition, setCondition] = useState<"new" | "used" | null>(null);
   const [notes, setNotes] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
 
@@ -104,6 +104,10 @@ const ScanPage = () => {
       toast.error("Decode a VIN first");
       return;
     }
+    if (!condition) {
+      toast.error("Pick New or Pre-owned first");
+      return;
+    }
 
     const item = addToQueue(vin.trim().toUpperCase(), stockNumber, mileage, notes);
 
@@ -160,7 +164,7 @@ const ScanPage = () => {
     setFactoryData(null);
     setShowEquipment(false);
     setAdded(false);
-    setCondition("used");
+    setCondition(null);
     vinRef.current?.focus();
   };
 
@@ -331,29 +335,50 @@ const ScanPage = () => {
                   </div>
                 )}
 
-                {/* Mileage + Stock + Condition */}
-                <div className="p-5 space-y-4">
-                  {/* Condition toggle */}
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Condition</label>
+                {/* Step 1 — required condition gate. The rest of the
+                    form stays hidden until the user picks New or
+                    Pre-owned, so every scanned VIN gets labelled with
+                    its inventory bucket. */}
+                {!condition && (
+                  <div className="p-5 border-t border-border bg-muted/30">
+                    <div className="text-center mb-4">
+                      <p className="text-sm font-semibold text-foreground">Is this new or pre-owned inventory?</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Pick one to continue.</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => setCondition("new")}
-                        className={`h-11 rounded-lg text-sm font-semibold border-2 transition-all ${
-                          condition === "new" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-muted"
-                        }`}
+                        className="h-16 rounded-lg border-2 border-border bg-card text-sm font-semibold text-foreground hover:border-primary hover:bg-muted transition-all"
                       >
                         New
                       </button>
                       <button
                         onClick={() => setCondition("used")}
-                        className={`h-11 rounded-lg text-sm font-semibold border-2 transition-all ${
-                          condition === "used" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-muted"
-                        }`}
+                        className="h-16 rounded-lg border-2 border-border bg-card text-sm font-semibold text-foreground hover:border-primary hover:bg-muted transition-all"
                       >
-                        Used / CPO
+                        Pre-owned
                       </button>
                     </div>
+                  </div>
+                )}
+
+                {/* Step 2 — rest of the form, revealed once condition is set */}
+                {condition && (
+                <div className="p-5 space-y-4">
+                  {/* Condition chip with Change link */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Condition</span>
+                      <span className="inline-flex items-center text-xs font-semibold px-2 py-1 rounded-md bg-primary text-primary-foreground">
+                        {condition === "new" ? "New" : "Pre-owned"}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setCondition(null)}
+                      className="text-xs font-semibold text-blue-600 hover:underline"
+                    >
+                      Change
+                    </button>
                   </div>
 
                   {/* Mileage */}
@@ -409,6 +434,7 @@ const ScanPage = () => {
                     Add to Print Queue
                   </button>
                 </div>
+                )}
               </div>
             )}
 
