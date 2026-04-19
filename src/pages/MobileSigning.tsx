@@ -359,6 +359,12 @@ const MobileSigning = () => {
           </div>
           <h1 className="text-2xl font-black font-display tracking-tight text-slate-950">Cannot open</h1>
           <p className="text-sm text-slate-600 mt-2">{error}</p>
+          <a
+            href="/lookup"
+            className="mt-6 inline-flex items-center justify-center h-11 px-5 rounded-xl bg-slate-950 text-white text-sm font-bold hover:bg-slate-900 transition-colors"
+          >
+            Look up my signing link
+          </a>
         </div>
       </div>
     );

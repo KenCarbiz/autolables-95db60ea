@@ -44,6 +44,7 @@ const VehicleFile = lazy(() => import("./pages/VehicleFile"));
 const SavedAddendums = lazy(() => import("./pages/SavedAddendums"));
 const BuyersGuide = lazy(() => import("./pages/BuyersGuide"));
 const MobileSigning = lazy(() => import("./pages/MobileSigning"));
+const SigningLookup = lazy(() => import("./pages/SigningLookup"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const TradeUpSticker = lazy(() => import("./pages/TradeUpSticker"));
 const About = lazy(() => import("./pages/About"));
@@ -102,6 +103,8 @@ const App = () => (
                       <Route path="/" element={<Landing />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/sign/:token" element={<MobileSigning />} />
+                      {/* Buyer recovery path: VIN + contact \u2192 email a fresh signing link */}
+                      <Route path="/lookup" element={<SigningLookup />} />
                       <Route path="/onboarding" element={<Onboarding />} />
                       <Route path="/scan" element={<ScanPage />} />
                       <Route path="/vehicle/:vin" element={<VehiclePortal />} />
