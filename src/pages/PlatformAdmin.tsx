@@ -6,7 +6,8 @@ import PlatformMembers from "@/components/admin/PlatformMembers";
 import PlatformEntitlements from "@/components/admin/PlatformEntitlements";
 import PlatformAudit from "@/components/admin/PlatformAudit";
 import RecallRefreshTool from "@/components/admin/RecallRefreshTool";
-import { Store, Users, Award, ShieldCheck, RefreshCw } from "lucide-react";
+import BillingHandshakeDiagnostic from "@/components/admin/BillingHandshakeDiagnostic";
+import { Store, Users, Award, ShieldCheck, RefreshCw, CreditCard } from "lucide-react";
 
 // ──────────────────────────────────────────────────────────────
 // PlatformAdmin — cross-tenant surfaces (Tenants, Members,
@@ -18,8 +19,8 @@ import { Store, Users, Award, ShieldCheck, RefreshCw } from "lucide-react";
 // whole route on isAdmin = true.
 // ──────────────────────────────────────────────────────────────
 
-type PlatformTab = "tenants" | "members" | "entitlements" | "audit" | "recalls";
-const VALID: PlatformTab[] = ["tenants", "members", "entitlements", "audit", "recalls"];
+type PlatformTab = "tenants" | "members" | "entitlements" | "audit" | "recalls" | "billing";
+const VALID: PlatformTab[] = ["tenants", "members", "entitlements", "audit", "recalls", "billing"];
 
 const TABS: { id: PlatformTab; label: string; icon: typeof Store }[] = [
   { id: "tenants",      label: "Tenants",      icon: Store },
@@ -27,6 +28,7 @@ const TABS: { id: PlatformTab; label: string; icon: typeof Store }[] = [
   { id: "entitlements", label: "Entitlements", icon: Award },
   { id: "audit",        label: "Platform Audit", icon: ShieldCheck },
   { id: "recalls",      label: "Recall refresh", icon: RefreshCw },
+  { id: "billing",      label: "Billing handshake", icon: CreditCard },
 ];
 
 const PlatformAdmin = () => {
@@ -90,6 +92,7 @@ const PlatformAdmin = () => {
         {tab === "entitlements" && <PlatformEntitlements />}
         {tab === "audit"        && <PlatformAudit />}
         {tab === "recalls"      && <RecallRefreshTool />}
+        {tab === "billing"      && <BillingHandshakeDiagnostic />}
       </div>
     </div>
   );
