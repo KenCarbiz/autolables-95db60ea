@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   ShieldCheck,
@@ -17,6 +17,15 @@ import {
   X,
   Send,
   Calendar,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Gauge,
+  Fuel,
+  Car as CarIcon,
+  Cog,
+  Palette,
 } from "lucide-react";
 import { toast } from "sonner";
 import Logo from "@/components/brand/Logo";
@@ -170,69 +179,59 @@ const PublicListing = () => {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-5">
-        {/* Hero */}
-        <section
-          className="rounded-2xl border border-border overflow-hidden shadow-premium"
-          style={{ background: "linear-gradient(135deg, #0B2041 0%, #1E90FF 100%)" }}
-        >
-          <div className="text-white p-6">
-            <p className="text-[10px] uppercase tracking-label text-white/60 mb-1">
-              {listing.condition === "new"
-                ? "New Vehicle"
-                : listing.condition === "cpo"
-                  ? "Certified Pre-Owned"
-                  : "Pre-Owned Vehicle"}
+        {/* Hero — photo-first when available, gradient fallback. No
+            price above the fold: the Trust Band and Price Block
+            below carry the FTC-aligned "advertised = drive-out"
+            story. */}
+        <HeroSection listing={listing} dealer={dealer} />
+
+        {/* Trust Band — the defining value of this page. Every chip
+            is a hashed receipt, not a marketing claim:
+            prep-signed, recall-clear, archival-hashed. This is what
+            no VDP on the market shows today. */}
+        <TrustBand listing={listing} />
+
+        {/* Recall banner — only shows if the campaign data has
+            anything actionable. Clear listings don't need the visual
+            weight; do-not-drive blocks publish upstream so we only
+            have to handle "open but safe to drive" here. */}
+        <RecallBanner listing={listing} />
+
+        {/* Drive-out price block — FTC 97-letter alignment. The
+            number at the top is the real, no-asterisk total. The
+            breakdown is tappable so shoppers can see exactly what's
+            in the number. */}
+        <PriceBlock listing={listing} />
+
+        {/* Key specs grid — pulls from listing.key_specs */}
+        <KeySpecs listing={listing} />
+
+        {/* Photos gallery — only renders if the listing has photos */}
+        <PhotosGallery listing={listing} />
+
+        {/* Description — long-form vehicle write-up if the dealer
+            filled one in (or the VDP scraper did). */}
+        {listing.description && (
+          <section className="rounded-2xl border border-border bg-card shadow-premium p-5">
+            <h2 className="text-sm font-semibold text-foreground mb-2">About this vehicle</h2>
+            <p className="text-[12px] text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {listing.description}
             </p>
-            <h1 className="text-2xl font-bold tracking-tight">{listing.ymm || "Vehicle"}</h1>
-            {listing.trim && <p className="text-sm text-white/80 mt-0.5">{listing.trim}</p>}
-            <div className="mt-3 flex items-center gap-4 text-[11px] text-white/70 flex-wrap">
-              <span>VIN: {listing.vin}</span>
-              {listing.mileage != null && <span>{listing.mileage.toLocaleString()} miles</span>}
-              {dealer.city && dealer.state && (
-                <span>
-                  {dealer.city}, {dealer.state}
-                </span>
-              )}
-            </div>
-          </div>
+          </section>
+        )}
 
-          {/* Pricing */}
-          {(typeof listing.price === "number" || typeof totals.final_price === "number") && (
-            <div className="p-5 bg-white border-t border-border flex items-center justify-between">
-              <div>
-                <p className="text-[10px] uppercase tracking-label text-muted-foreground">
-                  {listing.condition === "new" ? "Suggested Retail" : "Asking Price"}
-                </p>
-                <p className="text-3xl font-black tracking-tight font-display tabular-nums text-foreground">
-                  ${(listing.price ?? totals.final_price ?? 0).toLocaleString()}
-                </p>
-              </div>
-              <div className="text-right text-[10px] text-muted-foreground space-y-0.5">
-                {typeof totals.base_price === "number" && (
-                  <p>Base ${totals.base_price.toLocaleString()}</p>
-                )}
-                {typeof totals.accessories_total === "number" && (
-                  <p>Accessories ${totals.accessories_total.toLocaleString()}</p>
-                )}
-                {typeof totals.doc_fee === "number" && totals.doc_fee > 0 && (
-                  <p>Doc fee ${totals.doc_fee}</p>
-                )}
-              </div>
-            </div>
-          )}
-        </section>
+        {/* Certification card — only CPO vehicles */}
+        {listing.certification && (
+          <CertificationCard cert={listing.certification} />
+        )}
 
-        {/* Prep verified banner */}
-        {listing.prep_status?.foreman_signed_at && (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3">
-            <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-emerald-900">Prep & install verified</p>
-              <p className="text-[10px] text-emerald-800/80">
-                All accessories on this vehicle were installed and photographed before it was listed for sale.
-              </p>
-            </div>
-          </div>
+        {/* Payment estimator — client-side, default APR/term from
+            the listing record. Shoppers can tweak inputs inline. */}
+        {listing.payment_estimate && typeof listing.price === "number" && (
+          <PaymentEstimator
+            price={listing.price}
+            estimate={listing.payment_estimate}
+          />
         )}
 
         {/* Videos */}
@@ -329,34 +328,30 @@ const PublicListing = () => {
           </section>
         )}
 
-        {/* Documents */}
-        {listing.documents?.length > 0 && (
+        {/* Features grid — a quick-scan list of dealer-highlighted
+            features (safety package, tech package, etc.). */}
+        {listing.features?.length > 0 && (
           <section className="rounded-2xl border border-border bg-card shadow-premium p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Package className="w-4 h-4 text-[#1E90FF]" />
-              <h2 className="text-sm font-semibold text-foreground">Program Documents</h2>
-            </div>
-            <div className="space-y-2">
-              {listing.documents.map((d, i) => (
-                <a
-                  key={i}
-                  href={d.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                >
-                  <div className="w-8 h-8 rounded bg-[#1E90FF]/10 flex items-center justify-center flex-shrink-0">
-                    <Package className="w-4 h-4 text-[#1E90FF]" />
-                  </div>
+            <h2 className="text-sm font-semibold text-foreground mb-3">Notable features</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {listing.features.map((f, i) => (
+                <div key={i} className="flex items-start gap-2 p-3 rounded-lg border border-border">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{d.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{d.type} — Tap to view</p>
+                    <p className="text-[13px] font-semibold text-foreground">{f.title}</p>
+                    {f.subtitle && <p className="text-[10px] text-muted-foreground mt-0.5">{f.subtitle}</p>}
                   </div>
-                </a>
+                </div>
               ))}
             </div>
           </section>
         )}
+
+        {/* Program documents — Monroney PDF, Buyers Guide, factory
+            sticker, and anything else the dealer attached. These
+            are the legally required artifacts a shopper should be
+            able to take with them. */}
+        <ProgramDocuments listing={listing} />
 
         {/* Trust */}
         <section className="rounded-2xl border border-border bg-card shadow-premium p-5">
@@ -490,7 +485,27 @@ const InquiryModal = ({ listing, dealer, onClose, onSent, sent }: InquiryModalPr
     }
     setSubmitting(true);
     try {
-      const { error } = await (supabase as any).from("audit_log").insert({
+      // Persist to the leads table so it shows up in the dealer's
+      // leads panel (Admin > Leads) as a real CRM record, not just
+      // an audit entry. tenant_id is auto-filled server-side via
+      // set_tenant_id_leads trigger.
+      const { error: leadError } = await (supabase as any).from("leads").insert({
+        store_id: listing.store_id,
+        name: name.trim(),
+        phone: phone.trim() || "",
+        email: email.trim() || "",
+        vehicle_interest: `${listing.ymm || "Vehicle"}${listing.trim ? " " + listing.trim : ""}`,
+        vehicle_vin: listing.vin,
+        source: "website",
+        signing_url: typeof window !== "undefined" ? window.location.href : "",
+        status: "new",
+        notes: `[intent=${intent}] ${message.trim()}`,
+      });
+
+      // Dual-log to audit so the inquiry also appears in the tamper-
+      // evident timeline even if the lead row was rejected (missing
+      // tenant, etc.).
+      await (supabase as any).from("audit_log").insert({
         action: "vehicle_inquiry",
         entity_type: "vehicle_listing",
         entity_id: listing.id,
@@ -504,15 +519,35 @@ const InquiryModal = ({ listing, dealer, onClose, onSent, sent }: InquiryModalPr
           email: email.trim() || null,
           phone: phone.trim() || null,
           message: message.trim() || null,
+          lead_persisted: !leadError,
           page: typeof window !== "undefined" ? window.location.href : null,
           at: new Date().toISOString(),
         },
       });
-      if (error) {
-        toast.error("Couldn't send your request. Try calling the dealer directly.");
-      } else {
-        onSent();
+
+      // Fire-and-forget email confirmation to the shopper so they
+      // have the vehicle + dealer contact in their inbox.
+      if (email.trim()) {
+        const dealerName = dealer.name || "the dealership";
+        const html = `
+          <p>Hi ${name.trim() || "there"},</p>
+          <p>Thanks for your interest in the <strong>${listing.ymm || "vehicle"}${listing.trim ? " " + listing.trim : ""}</strong> (VIN ${listing.vin}) at ${dealerName}.</p>
+          <p>The team has your request and the vehicle details saved. You can revisit the listing any time:</p>
+          <p><a href="${typeof window !== "undefined" ? window.location.href : ""}" style="display:inline-block;padding:10px 16px;background:#1E90FF;color:#fff;text-decoration:none;border-radius:6px">View vehicle</a></p>
+          ${dealer.phone ? `<p>Or call ${dealerName} directly: <a href="tel:${dealer.phone}">${dealer.phone}</a></p>` : ""}
+        `;
+        supabase.functions.invoke("send-email", {
+          body: {
+            to: email.trim(),
+            subject: `Your request — ${listing.ymm || "Vehicle"}`,
+            html,
+          },
+        }).catch(() => { /* best-effort */ });
       }
+
+      onSent();
+    } catch {
+      toast.error("Couldn't send your request. Try calling the dealer directly.");
     } finally {
       setSubmitting(false);
     }
@@ -719,5 +754,428 @@ const TrustItem = ({ text }: { text: string }) => (
     <p className="text-[11px] text-muted-foreground">{text}</p>
   </div>
 );
+
+// ──────────────────────────────────────────────────────────────
+// Trust-first layout components (new for Wave 6.1)
+// ──────────────────────────────────────────────────────────────
+
+interface DealerMini {
+  name?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  tagline?: string;
+  logo_url?: string;
+  primary_color?: string;
+}
+
+const HeroSection = ({ listing, dealer }: { listing: VehicleListing; dealer: DealerMini }) => {
+  const heroPhoto = listing.photos?.find((p) => p.kind === "hero") || listing.photos?.[0];
+  const conditionLabel =
+    listing.condition === "new"
+      ? "New Vehicle"
+      : listing.condition === "cpo"
+        ? "Certified Pre-Owned"
+        : "Pre-Owned Vehicle";
+
+  return (
+    <section className="rounded-2xl border border-border overflow-hidden shadow-premium">
+      <div
+        className="relative aspect-[16/9] w-full bg-slate-100"
+        style={
+          heroPhoto
+            ? { backgroundImage: `url(${heroPhoto.url})`, backgroundSize: "cover", backgroundPosition: "center" }
+            : { background: "linear-gradient(135deg, #0B2041 0%, #1E90FF 100%)" }
+        }
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+          <p className="text-[10px] uppercase tracking-label text-white/80 mb-1">{conditionLabel}</p>
+          <h1 className="text-2xl md:text-3xl font-black font-display tracking-tight">
+            {listing.ymm || "Vehicle"}
+          </h1>
+          {listing.trim && <p className="text-sm text-white/90 mt-0.5">{listing.trim}</p>}
+          <div className="mt-2 flex items-center gap-3 text-[11px] text-white/80 flex-wrap">
+            <span className="font-mono">VIN {listing.vin}</span>
+            {listing.mileage != null && <span>{listing.mileage.toLocaleString()} mi</span>}
+            {dealer.city && dealer.state && (
+              <span>{dealer.city}, {dealer.state}</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const TrustBand = ({ listing }: { listing: VehicleListing }) => {
+  const prepSigned = listing.prep_status?.foreman_signed_at;
+  const prepDate = prepSigned ? new Date(prepSigned).toLocaleDateString() : null;
+
+  const recall = listing.recall_check;
+  const recallDate = recall?.checked_at ? new Date(recall.checked_at).toLocaleDateString() : null;
+  const recallHasOpen = recall?.has_open || false;
+  const recallCampaigns = recall?.campaigns?.length || 0;
+
+  const publishedDate = listing.published_at ? new Date(listing.published_at).toLocaleDateString() : null;
+
+  return (
+    <section className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {/* Prep-signed */}
+        <Chip
+          tone="emerald"
+          icon={ShieldCheck}
+          label="Prep-signed"
+          value={prepDate || "Pending"}
+          title={prepSigned ? `Shop foreman signed on ${prepDate}` : "Foreman sign-off required before publish"}
+        />
+        {/* Recall status */}
+        <Chip
+          tone={recallHasOpen ? "amber" : "emerald"}
+          icon={recallHasOpen ? AlertTriangle : CheckCircle2}
+          label={recallHasOpen ? `${recallCampaigns} recall${recallCampaigns === 1 ? "" : "s"} open` : "Recalls clear"}
+          value={recallDate ? `as of ${recallDate}` : "Checked"}
+          title={recallHasOpen
+            ? "One or more open NHTSA campaigns. Ask the dealer about remedy status."
+            : `NHTSA campaign check found no open do-not-drive recalls.`}
+        />
+        {/* Archive receipt */}
+        <Chip
+          tone="emerald"
+          icon={FileText}
+          label="Archived"
+          value={publishedDate || "Pending"}
+          title="Every signed document for this VIN is retained in a tamper-evident archive for 7 years."
+        />
+      </div>
+    </section>
+  );
+};
+
+const Chip = ({
+  tone,
+  icon: Icon,
+  label,
+  value,
+  title,
+}: {
+  tone: "emerald" | "amber";
+  icon: typeof ShieldCheck;
+  label: string;
+  value: string;
+  title?: string;
+}) => {
+  const toneClasses = tone === "amber"
+    ? "border-amber-200 bg-white text-amber-900"
+    : "border-emerald-200 bg-white text-emerald-900";
+  const iconTone = tone === "amber" ? "text-amber-600" : "text-emerald-600";
+  return (
+    <div className={`rounded-xl border px-3 py-2 flex items-center gap-2 ${toneClasses}`} title={title}>
+      <Icon className={`w-4 h-4 flex-shrink-0 ${iconTone}`} />
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-label leading-tight">{label}</p>
+        <p className="text-[11px] font-semibold truncate">{value}</p>
+      </div>
+    </div>
+  );
+};
+
+const RecallBanner = ({ listing }: { listing: VehicleListing }) => {
+  const recall = listing.recall_check;
+  if (!recall || !recall.has_open || !recall.campaigns || recall.campaigns.length === 0) return null;
+  return (
+    <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-amber-900">Open NHTSA recall{recall.campaigns.length === 1 ? "" : "s"} on this VIN</p>
+          <p className="text-[11px] text-amber-800 mt-1">
+            The campaigns below are on file with NHTSA. Ask the dealer whether remedies have been applied before purchase.
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {recall.campaigns.slice(0, 3).map((c, i) => (
+              <li key={i} className="text-[11px] text-amber-900">
+                <span className="font-mono font-bold">{c.campaignNumber || "—"}</span>
+                {c.component ? ` · ${c.component}` : ""}
+                {c.summary ? ` — ${c.summary}` : ""}
+              </li>
+            ))}
+            {recall.campaigns.length > 3 && (
+              <li className="text-[10px] text-amber-700 italic">+ {recall.campaigns.length - 3} more</li>
+            )}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const PriceBlock = ({ listing }: { listing: VehicleListing }) => {
+  const [open, setOpen] = useState(false);
+  const totals = listing.sticker_snapshot?.totals || {};
+  const driveOut = typeof totals.final_price === "number" ? totals.final_price : listing.price;
+  if (driveOut == null) return null;
+
+  const lines: { label: string; value: number; note?: string }[] = [];
+  if (typeof totals.base_price === "number") lines.push({ label: "Base price", value: totals.base_price });
+  if (typeof totals.accessories_total === "number" && totals.accessories_total > 0) {
+    lines.push({ label: "Dealer-installed add-ons", value: totals.accessories_total, note: "Included in the total above" });
+  }
+  if (typeof totals.doc_fee === "number" && totals.doc_fee > 0) {
+    lines.push({ label: "Doc fee", value: totals.doc_fee });
+  }
+
+  return (
+    <section className="rounded-2xl border border-border bg-card shadow-premium overflow-hidden">
+      <div className="p-5">
+        <p className="text-[10px] uppercase tracking-label text-muted-foreground">
+          Drive-out price
+          <span className="ml-1.5 text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+            Before tax &amp; tag
+          </span>
+        </p>
+        <p className="text-4xl font-black tracking-tight font-display tabular-nums text-foreground mt-1">
+          ${driveOut.toLocaleString()}
+        </p>
+        <p className="text-[11px] text-muted-foreground mt-1.5">
+          Everything the dealer requires is in this number. No surprise add-ons at the F&amp;I desk — every mandatory item is disclosed below.
+        </p>
+      </div>
+
+      {lines.length > 0 && (
+        <>
+          <button
+            onClick={() => setOpen((o) => !o)}
+            className="w-full flex items-center justify-between px-5 py-3 border-t border-border text-[12px] font-semibold text-foreground hover:bg-muted/40"
+          >
+            <span>What's in this price</span>
+            {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+          {open && (
+            <div className="px-5 pb-4 space-y-1.5">
+              {lines.map((l, i) => (
+                <div key={i} className="flex items-start justify-between text-[12px]">
+                  <div className="min-w-0">
+                    <p className="text-foreground">{l.label}</p>
+                    {l.note && <p className="text-[10px] text-muted-foreground">{l.note}</p>}
+                  </div>
+                  <p className="font-bold tabular-nums">${l.value.toLocaleString()}</p>
+                </div>
+              ))}
+              <p className="text-[10px] text-muted-foreground italic pt-2 border-t border-border/60">
+                Tax, tag, and registration are state-set and added at titling. They are not discretionary dealer charges.
+              </p>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+};
+
+const KeySpecs = ({ listing }: { listing: VehicleListing }) => {
+  const s = listing.key_specs;
+  if (!s) return null;
+  const items: { icon: typeof CarIcon; label: string; value?: string | number | null }[] = [
+    { icon: CarIcon, label: "Body", value: s.body_style },
+    { icon: Cog, label: "Drivetrain", value: s.drivetrain },
+    { icon: Gauge, label: "Transmission", value: s.transmission },
+    { icon: Fuel, label: "Fuel", value: s.fuel },
+    { icon: Gauge, label: "MPG", value: s.mpg_combined ? `${s.mpg_combined} comb.` : s.mpg_city && s.mpg_hwy ? `${s.mpg_city}/${s.mpg_hwy}` : null },
+    { icon: Palette, label: "Exterior", value: s.exterior_color },
+  ];
+  const populated = items.filter((i) => i.value != null && i.value !== "");
+  if (populated.length === 0) return null;
+  return (
+    <section className="rounded-2xl border border-border bg-card shadow-premium p-5">
+      <h2 className="text-sm font-semibold text-foreground mb-3">Key specs</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {populated.map((it, i) => {
+          const Icon = it.icon;
+          return (
+            <div key={i} className="flex items-start gap-2">
+              <Icon className="w-4 h-4 text-[#1E90FF] mt-0.5 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-label text-muted-foreground">{it.label}</p>
+                <p className="text-[13px] font-semibold text-foreground truncate">{it.value}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
+
+const PhotosGallery = ({ listing }: { listing: VehicleListing }) => {
+  const photos = listing.photos || [];
+  if (photos.length <= 1) return null; // hero already shown
+  return (
+    <section className="rounded-2xl border border-border bg-card shadow-premium p-5">
+      <h2 className="text-sm font-semibold text-foreground mb-3">Photos</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {photos.slice(0, 9).map((p, i) => (
+          <a
+            key={i}
+            href={p.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block aspect-square rounded-lg overflow-hidden bg-slate-100 hover:opacity-90 transition-opacity"
+          >
+            <img
+              src={p.url}
+              alt={p.alt || `Vehicle photo ${i + 1}`}
+              loading="lazy"
+              className="w-full h-full object-cover"
+            />
+          </a>
+        ))}
+      </div>
+      {photos.length > 9 && (
+        <p className="text-[10px] text-muted-foreground mt-2">+ {photos.length - 9} more photos available from the dealership</p>
+      )}
+    </section>
+  );
+};
+
+const CertificationCard = ({ cert }: { cert: NonNullable<VehicleListing["certification"]> }) => (
+  <section className="rounded-2xl border border-border bg-card shadow-premium p-5">
+    <div className="flex items-center gap-2 mb-2">
+      <Award className="w-4 h-4 text-amber-500" />
+      <h2 className="text-sm font-semibold text-foreground">{cert.program_name || "Certified Pre-Owned"}</h2>
+    </div>
+    <div className="grid grid-cols-3 gap-3 text-center">
+      {cert.coverage_months != null && (
+        <Stat label="Warranty" value={`${cert.coverage_months} mo`} />
+      )}
+      {cert.coverage_miles != null && (
+        <Stat label="Coverage" value={`${cert.coverage_miles.toLocaleString()} mi`} />
+      )}
+      {cert.inspection_points != null && (
+        <Stat label="Inspection" value={`${cert.inspection_points} pts`} />
+      )}
+    </div>
+    {cert.url && (
+      <a href={cert.url} target="_blank" rel="noopener noreferrer" className="block mt-3 text-[11px] text-[#1E90FF] font-semibold hover:underline">
+        View full program details →
+      </a>
+    )}
+  </section>
+);
+
+const Stat = ({ label, value }: { label: string; value: string }) => (
+  <div className="rounded-lg border border-border p-3">
+    <p className="text-[9px] font-bold uppercase tracking-label text-muted-foreground">{label}</p>
+    <p className="text-base font-bold font-display tabular-nums text-foreground mt-0.5">{value}</p>
+  </div>
+);
+
+const PaymentEstimator = ({
+  price,
+  estimate,
+}: {
+  price: number;
+  estimate: NonNullable<VehicleListing["payment_estimate"]>;
+}) => {
+  const [apr, setApr] = useState(estimate.default_apr ?? 7.5);
+  const [down, setDown] = useState(estimate.default_down ?? Math.round(price * 0.1));
+  const [months, setMonths] = useState(estimate.default_term_months ?? 72);
+
+  const monthly = useMemo(() => {
+    const principal = Math.max(price - down, 0);
+    const r = apr / 100 / 12;
+    if (r === 0) return principal / months;
+    return (principal * r) / (1 - Math.pow(1 + r, -months));
+  }, [price, down, apr, months]);
+
+  return (
+    <section className="rounded-2xl border border-border bg-card shadow-premium p-5">
+      <h2 className="text-sm font-semibold text-foreground mb-3">Estimated monthly payment</h2>
+      <p className="text-3xl font-black font-display tabular-nums text-foreground">
+        ${isFinite(monthly) ? Math.round(monthly).toLocaleString() : "—"}<span className="text-sm font-semibold text-muted-foreground">/mo</span>
+      </p>
+      <div className="grid grid-cols-3 gap-3 mt-3">
+        <Slider label="APR %" value={apr} min={0} max={20} step={0.1} onChange={setApr} />
+        <Slider label="Down $" value={down} min={0} max={Math.round(price * 0.5)} step={100} onChange={setDown} />
+        <Slider label="Term mo" value={months} min={24} max={84} step={6} onChange={setMonths} />
+      </div>
+      <p className="text-[10px] text-muted-foreground mt-3 italic">
+        Estimate only. Your actual rate and payment depend on your credit and the lender's terms.
+      </p>
+    </section>
+  );
+};
+
+const Slider = ({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (n: number) => void;
+}) => (
+  <div>
+    <div className="flex items-center justify-between">
+      <label className="text-[10px] font-bold uppercase tracking-label text-muted-foreground">{label}</label>
+      <span className="text-[11px] font-bold tabular-nums">{value}</span>
+    </div>
+    <input
+      type="range"
+      min={min}
+      max={max}
+      step={step}
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="w-full mt-1 accent-[#1E90FF]"
+    />
+  </div>
+);
+
+const ProgramDocuments = ({ listing }: { listing: VehicleListing }) => {
+  const docs: { name: string; url: string; type: string }[] = [];
+  if (listing.factory_sticker_url) {
+    docs.push({ name: "Factory Monroney label", url: listing.factory_sticker_url, type: "Monroney PDF" });
+  }
+  docs.push(...(listing.documents || []));
+  if (docs.length === 0) return null;
+
+  return (
+    <section className="rounded-2xl border border-border bg-card shadow-premium p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Package className="w-4 h-4 text-[#1E90FF]" />
+        <h2 className="text-sm font-semibold text-foreground">Program documents</h2>
+      </div>
+      <div className="space-y-2">
+        {docs.map((d, i) => (
+          <a
+            key={i}
+            href={d.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+          >
+            <div className="w-8 h-8 rounded bg-[#1E90FF]/10 flex items-center justify-center flex-shrink-0">
+              <FileText className="w-4 h-4 text-[#1E90FF]" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{d.name}</p>
+              <p className="text-[10px] text-muted-foreground">{d.type} — Tap to view</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+};
 
 export default PublicListing;
