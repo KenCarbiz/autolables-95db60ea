@@ -13,6 +13,7 @@ import { STATE_DOC_FEES } from "@/data/docFees";
 import { format } from "date-fns";
 import { useLeads } from "@/hooks/useLeads";
 import SigningFunnelWidget from "@/components/admin/SigningFunnelWidget";
+import ReturnsQueue from "@/components/admin/ReturnsQueue";
 import { useVinQueue, QueuedVehicle } from "@/hooks/useVinQueue";
 import { useVehicleFiles } from "@/hooks/useVehicleFiles";
 import { useGetReady } from "@/hooks/useGetReady";
@@ -1177,6 +1178,10 @@ const Admin = () => {
         {/* ─── Leads Tab ─── */}
         {tab === "leads" && (
           <div className="space-y-4">
+            {/* SB 766 returns — top priority because open return
+                requests have a countdown and a legal obligation. */}
+            <ReturnsQueue />
+
             {/* Signing funnel — shows where shoppers drop off
                 between first contact and a signed addendum.
                 Populated by the record_signing_event RPC fired from

@@ -27,6 +27,18 @@ interface ProductSnapshot {
   disclosure: string | null;
 }
 
+interface ReturnStatus {
+  addendum_id: string;
+  signing_id: string | null;
+  signed_at: string | null;
+  return_window_closes_at: string | null;
+  return_status: string | null;
+  return_requested_at: string | null;
+  vehicle_vin: string | null;
+  vehicle_ymm: string | null;
+  dealer_snapshot: any;
+}
+
 const MobileSigning = () => {
   const { token } = useParams<{ token: string }>();
   const [loading, setLoading] = useState(true);
@@ -39,6 +51,9 @@ const MobileSigning = () => {
   // re-fire.
   const openedFiredRef = useRef(false);
   const startedFiredRef = useRef(false);
+  // SB 766: return window state loaded after a signed-addendum visit
+  const [returnStatus, setReturnStatus] = useState<ReturnStatus | null>(null);
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
 
   const [initials, setInitials] = useState<Record<string, string>>({});
   const [optionalSelections, setOptionalSelections] = useState<Record<string, string>>({});
@@ -76,14 +91,17 @@ const MobileSigning = () => {
       return;
     }
     const doc = data[0];
-    if (doc.status === "signed") {
-      setError("This addendum has already been signed.");
-      setLoading(false);
-      return;
-    }
     setAddendum(doc);
     setInitials((doc.initials as Record<string, string>) || {});
     setOptionalSelections((doc.optional_selections as Record<string, string>) || {});
+    if (doc.status === "signed") {
+      // Already signed — render the post-sign screen (with SB 766
+      // return flow when applicable) instead of erroring out.
+      setSubmitted(true);
+      const { data: rs } = await (supabase as any).rpc("get_signing_return_status", { _signing_token: token });
+      const first = Array.isArray(rs) ? rs[0] : rs;
+      if (first) setReturnStatus(first as ReturnStatus);
+    }
     setLoading(false);
     fireFunnelEvent("signing_link_opened", openedFiredRef);
   };
@@ -385,6 +403,16 @@ const MobileSigning = () => {
 
           <div className="border-t border-slate-200" />
 
+          {/* SB 766 — 3-day return window. Only renders when the
+              signing row was stamped with return_window_closes_at
+              (i.e. CA, used under $50k, on/after Oct 1 2026). */}
+          {returnStatus?.return_window_closes_at && (
+            <ReturnWindowBand
+              status={returnStatus}
+              onRequest={() => setReturnModalOpen(true)}
+            />
+          )}
+
           <div>
             <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500">Legally binding</p>
             <p className="text-[12px] text-slate-700 leading-relaxed mt-1">
@@ -405,6 +433,19 @@ const MobileSigning = () => {
             You can close this page. A copy is on its way.
           </p>
         </div>
+
+        {returnModalOpen && returnStatus && (
+          <ReturnRequestModal
+            token={token!}
+            status={returnStatus}
+            onClose={() => setReturnModalOpen(false)}
+            onRequested={(requestedAt) => {
+              setReturnStatus({ ...returnStatus, return_status: "requested", return_requested_at: requestedAt });
+              setReturnModalOpen(false);
+              toast.success("Return requested. The dealer will reach out.");
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -797,6 +838,173 @@ const MobileSigning = () => {
         <p className="text-center text-[10px] font-mono uppercase tracking-wider text-slate-500">
           By signing, you're hashed, archived, and legally bound.
         </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ──────────────────────────────────────────────────────────────
+// SB 766 return-window UI
+// ──────────────────────────────────────────────────────────────
+
+const ReturnWindowBand = ({
+  status,
+  onRequest,
+}: {
+  status: ReturnStatus;
+  onRequest: () => void;
+}) => {
+  const closesAt = status.return_window_closes_at ? new Date(status.return_window_closes_at) : null;
+  const now = new Date();
+  const expired = closesAt ? now > closesAt : false;
+  const alreadyRequested = status.return_status === "requested" || status.return_status === "completed";
+
+  const fmt = (d: Date) =>
+    d.toLocaleString(undefined, {
+      weekday: "short", month: "short", day: "numeric",
+      hour: "numeric", minute: "2-digit",
+    });
+
+  return (
+    <div className="rounded-2xl border border-slate-300 bg-slate-50 p-4 md:p-5">
+      <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500 font-semibold">
+        California 3-day right to cancel (SB 766)
+      </p>
+      {alreadyRequested ? (
+        <p className="mt-2 text-sm font-bold text-slate-950">
+          Return requested
+          {status.return_requested_at && (
+            <span className="block text-[11px] font-mono font-normal text-slate-500 mt-1">
+              {fmt(new Date(status.return_requested_at))}
+            </span>
+          )}
+        </p>
+      ) : expired ? (
+        <p className="mt-2 text-sm font-bold text-slate-600">
+          Return window closed
+          {closesAt && (
+            <span className="block text-[11px] font-mono font-normal text-slate-500 mt-1">
+              Closed {fmt(closesAt)}
+            </span>
+          )}
+        </p>
+      ) : (
+        <>
+          <p className="mt-2 text-base font-bold text-slate-950">
+            Return by {closesAt ? fmt(closesAt) : "—"}
+          </p>
+          <p className="mt-1 text-[12px] text-slate-600 leading-relaxed">
+            Under $50k, unconditional right to cancel within 3 calendar days.
+            400-mile cap, $1/mile over 250 (capped at $150), and a 1.5% restocking fee ($200–$600).
+          </p>
+          <button
+            onClick={onRequest}
+            className="mt-3 w-full h-11 rounded-xl bg-slate-950 text-white text-sm font-bold hover:bg-slate-900 transition-colors"
+          >
+            Request return
+          </button>
+        </>
+      )}
+    </div>
+  );
+};
+
+const ReturnRequestModal = ({
+  token,
+  status,
+  onClose,
+  onRequested,
+}: {
+  token: string;
+  status: ReturnStatus;
+  onClose: () => void;
+  onRequested: (requestedAt: string) => void;
+}) => {
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const submit = async () => {
+    setSubmitting(true);
+    const { data, error } = await (supabase as any).rpc("request_return", {
+      _signing_token: token,
+      _reason: reason.trim() || null,
+    });
+    setSubmitting(false);
+    if (error) {
+      toast.error("Couldn't submit. Try calling the dealer directly.");
+      return;
+    }
+    const result = data as { ok?: boolean; reason?: string };
+    if (!result?.ok) {
+      const msg = {
+        unknown_token: "This signing link isn't recognized.",
+        not_signed: "This purchase isn't signed yet.",
+        not_eligible: "This purchase doesn't qualify for the 3-day right to cancel.",
+        window_closed: "The 3-day return window has closed.",
+      }[result?.reason || ""] || "Couldn't submit.";
+      toast.error(msg);
+      return;
+    }
+    onRequested(new Date().toISOString());
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full md:max-w-md md:rounded-2xl rounded-t-[28px] overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="pt-2 md:hidden flex justify-center">
+          <div className="w-10 h-1 rounded-full bg-slate-300" />
+        </div>
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-black font-display tracking-tight">Request return</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">{status.vehicle_ymm || "Vehicle"}</p>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center" aria-label="Close">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-700 leading-relaxed">
+            <p className="font-bold text-slate-900 mb-1">What happens next</p>
+            <ul className="list-disc pl-4 space-y-0.5">
+              <li>The dealer is notified immediately and has your request on record.</li>
+              <li>Return the vehicle in the same condition within the 3-day window.</li>
+              <li>The dealer may retain a 1.5% restocking fee ($200–$600) and charge $1/mile over 250 (capped at $150).</li>
+            </ul>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Reason (optional)</label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+              placeholder="Anything that would help the dealer process the return."
+              className="mt-1 w-full rounded-lg border border-slate-200 p-3 text-sm focus:outline-none focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10"
+            />
+          </div>
+
+          <button
+            onClick={submit}
+            disabled={submitting}
+            className="w-full h-12 rounded-xl bg-slate-950 text-white font-display font-bold text-sm disabled:opacity-50 hover:bg-slate-900 transition-colors"
+          >
+            {submitting ? "Requesting…" : "Request return"}
+          </button>
+          <p className="text-center text-[10px] font-mono uppercase tracking-wider text-slate-400">
+            This is an exercise of your SB 766 right. It cannot be waived.
+          </p>
         </div>
       </div>
     </div>
