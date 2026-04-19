@@ -259,11 +259,13 @@
     background:
       linear-gradient(
         120deg,
-        hsl(217 71% 10% / 0.82) 0%,
-        hsl(218 65% 16% / 0.82) 22%,
-        hsl(210 100% 28% / 0.82) 48%,
-        hsl(218 65% 16% / 0.82) 74%,
-        hsl(217 71% 10% / 0.82) 100%
+        hsl(217 71% 10% / 0.85) 0%,
+        hsl(218 65% 16% / 0.85) 20%,
+        hsl(214 80% 24% / 0.85) 40%,
+        hsl(210 100% 50% / 0.85) 52%,
+        hsl(214 80% 24% / 0.85) 64%,
+        hsl(218 65% 16% / 0.85) 80%,
+        hsl(217 71% 10% / 0.85) 100%
       );
     background-size: 220% 220%;
     animation: shimmer-roll 18s ease-in-out infinite;
@@ -276,9 +278,11 @@
         linear-gradient(
           120deg,
           hsl(217 71% 10%) 0%,
-          hsl(218 65% 16%) 22%,
-          hsl(210 100% 28%) 48%,
-          hsl(218 65% 16%) 74%,
+          hsl(218 65% 16%) 20%,
+          hsl(214 80% 24%) 40%,
+          hsl(210 100% 50%) 52%,
+          hsl(214 80% 24%) 64%,
+          hsl(218 65% 16%) 80%,
           hsl(217 71% 10%) 100%
         );
     }
@@ -333,6 +337,50 @@
     background: linear-gradient(135deg, #3BB4FF 0%, #1E90FF 55%, #0066CC 100%);
     color: white;
   }
+
+  /* Sidebar shimmer — deep navy→blue vertical roll that mirrors
+     the Landing shimmer-hero but tuned for a tall chrome panel.
+     The ::after radial glow matches the hero's highlight pools so
+     the sidebar visually reads as the same blue family. */
+  .shimmer-sidebar {
+    position: relative;
+    background:
+      linear-gradient(
+        180deg,
+        #050a18 0%,
+        #0B2041 18%,
+        #0f3a7a 42%,
+        #1E90FF 55%,
+        #0f3a7a 68%,
+        #0B2041 82%,
+        #050a18 100%
+      );
+    background-size: 100% 240%;
+    animation: shimmer-roll 26s ease-in-out infinite;
+  }
+  .shimmer-sidebar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(60% 30% at 20% 20%, rgba(59, 180, 255, 0.14), transparent 70%),
+      radial-gradient(50% 40% at 85% 75%, rgba(30, 144, 255, 0.12), transparent 70%);
+    pointer-events: none;
+    mix-blend-mode: screen;
+    z-index: 0;
+  }
+  /* Keep the sidebar's content stacked above the shine pools */
+  .shimmer-sidebar > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* View-transition helpers — when the Admin tab changes, only the
+     main content should cross-fade. Naming the chrome prevents the
+     default root-fade from washing over the whole page. */
+  .vt-sidebar   { view-transition-name: app-sidebar; }
+  .vt-topbar    { view-transition-name: app-topbar; }
+  .vt-crumbs    { view-transition-name: app-crumbs; }
 
   @keyframes shimmer-roll {
     0%   { background-position: 0% 50%; }

@@ -94,11 +94,15 @@ const AppShell = ({ children }: AppShellProps) => {
     }
     return false;
   });
+  // Sections start with sensible defaults, but any section whose
+  // items include the current route is force-opened below so links
+  // are actually visible while you're on the matching page.
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     documents: true,
     inventory: true,
-    admin: false,
-    compliance: false,
+    admin: true,
+    compliance: true,
+    platform: true,
   });
 
   const sections: Record<string, NavSection> = {
@@ -261,9 +265,11 @@ const AppShell = ({ children }: AppShellProps) => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
+      {/* Sidebar — shimmer-sidebar paints the landing-page blue shine.
+          vt-sidebar opts into a stable view-transition-name so route
+          changes only cross-fade the main content area, not the chrome. */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transform transition-transform lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-64 shimmer-sidebar vt-sidebar border-r border-white/10 flex flex-col transform transition-transform lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -442,8 +448,10 @@ const AppShell = ({ children }: AppShellProps) => {
 
       {/* Main content area */}
       <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
-        {/* Top bar — HarteCash navy gradient style */}
-        <header className="sticky top-0 z-20 topbar-navy text-white border-b border-white/10">
+        {/* Top bar — topbar-navy already has the shimmer-roll animation.
+            vt-topbar stabilises the header across admin tab switches so
+            only the main pane cross-fades. */}
+        <header className="sticky top-0 z-20 topbar-navy vt-topbar text-white border-b border-white/10">
           <div className="flex items-center justify-between h-14 px-4 lg:px-6">
             <div className="flex items-center gap-3 min-w-0">
               <button
@@ -583,8 +591,9 @@ const AppShell = ({ children }: AppShellProps) => {
         </header>
 
         {/* Breadcrumbs — sticky below the topbar with backdrop-blur so
-            content scrolls beneath it like a native toolbar. */}
-        <div className="sticky top-14 z-10 h-10 flex items-center px-4 lg:px-6 surface-blur border-b border-border flex-shrink-0">
+            content scrolls beneath it like a native toolbar.
+            vt-crumbs keeps this strip out of the route cross-fade. */}
+        <div className="sticky top-14 z-10 h-10 flex items-center px-4 lg:px-6 surface-blur vt-crumbs border-b border-border flex-shrink-0">
           <div className="flex items-center gap-1.5 text-xs overflow-x-auto whitespace-nowrap">
             {breadcrumbs.map((crumb, i) => (
               <div key={i} className="flex items-center gap-1.5">
