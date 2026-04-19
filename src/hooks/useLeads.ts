@@ -1,48 +1,65 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import type { Lead } from "@/types/tenant";
 
-const STORAGE_KEY = "leads";
+// ──────────────────────────────────────────────────────────────
+// useLeads — Supabase-backed. Reads the current tenant's rows
+// from public.leads (tenant_id auto-filled server-side via
+// set_tenant_id_leads trigger).
+// ──────────────────────────────────────────────────────────────
 
 export const useLeads = (storeId: string) => {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    load();
+  const load = useCallback(async () => {
+    if (!storeId) { setLeads([]); return; }
+    setLoading(true);
+    const { data } = await (supabase as any)
+      .from("leads")
+      .select("*")
+      .eq("store_id", storeId)
+      .order("captured_at", { ascending: false });
+    setLeads((data as Lead[]) || []);
+    setLoading(false);
   }, [storeId]);
 
-  const load = () => {
-    try {
-      const all: Lead[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      setLeads(all.filter(l => l.store_id === storeId));
-    } catch { /* ignore */ }
-  };
+  useEffect(() => { load(); }, [load]);
 
-  const getAll = (): Lead[] => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
-  };
+  const addLead = useCallback(
+    async (data: Omit<Lead, "id" | "captured_at" | "updated_at">): Promise<Lead | null> => {
+      const { data: row, error } = await (supabase as any)
+        .from("leads")
+        .insert({
+          store_id: data.store_id,
+          name: data.name,
+          phone: data.phone,
+          email: data.email,
+          vehicle_interest: data.vehicle_interest,
+          vehicle_vin: data.vehicle_vin,
+          source: data.source,
+          signing_url: data.signing_url,
+          status: data.status,
+          notes: data.notes,
+        })
+        .select()
+        .single();
+      if (error || !row) return null;
+      await load();
+      return row as Lead;
+    },
+    [load]
+  );
 
-  const addLead = (data: Omit<Lead, "id" | "captured_at" | "updated_at">) => {
-    const lead: Lead = {
-      ...data,
-      id: crypto.randomUUID(),
-      captured_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...getAll(), lead]));
-    load();
-    return lead;
-  };
+  const updateLead = useCallback(async (id: string, updates: Partial<Lead>) => {
+    await (supabase as any).from("leads").update(updates).eq("id", id);
+    await load();
+  }, [load]);
 
-  const updateLead = (id: string, updates: Partial<Lead>) => {
-    const all = getAll().map(l => l.id === id ? { ...l, ...updates, updated_at: new Date().toISOString() } : l);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-    load();
-  };
-
-  const deleteLead = (id: string) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(getAll().filter(l => l.id !== id)));
-    load();
-  };
+  const deleteLead = useCallback(async (id: string) => {
+    await (supabase as any).from("leads").delete().eq("id", id);
+    await load();
+  }, [load]);
 
   const exportCsv = (): string => {
     const header = "Name,Phone,Email,Vehicle,VIN,Source,Status,Captured At";
@@ -52,5 +69,5 @@ export const useLeads = (storeId: string) => {
     return [header, ...rows].join("\n");
   };
 
-  return { leads, addLead, updateLead, deleteLead, exportCsv };
+  return { leads, loading, addLead, updateLead, deleteLead, exportCsv };
 };

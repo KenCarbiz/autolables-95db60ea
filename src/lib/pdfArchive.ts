@@ -118,6 +118,55 @@ const buildXmp = (fields: ArchivalFields, hash: string, timestamp: string): stri
 // value twice-joined so both entries of the /ID array match.
 const hashToFileId = (hash: string): string => hash.slice(0, 32).toUpperCase();
 
+export type ArchivalDocType =
+  | "addendum"
+  | "deal"
+  | "sticker"
+  | "buyers_guide"
+  | "prep_signoff"
+  | "disclosure";
+
+/**
+ * Ship a stamped PDF to the archive-pdf edge function so it lands
+ * in signed_document_archive with an immutable SHA-256 receipt.
+ * Best-effort: failures are logged and swallowed so a blip in the
+ * archive path never blocks the dealer's PDF download.
+ */
+export const persistArchivedPdf = async (
+  doc: jsPDF,
+  params: {
+    docType: ArchivalDocType;
+    entityId: string;       // addendum id, listing id, buyers-guide draft, etc.
+    vin?: string | null;
+    retentionYears?: number;
+  }
+): Promise<{ ok: boolean; archiveId?: string; error?: string }> => {
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+    // jsPDF 2.x can return a Base64 data URI via output("datauristring")
+    const dataUri = doc.output("datauristring") as string;
+    const pdfBase64 = dataUri.replace(/^data:[^;]+;base64,/, "");
+
+    const { data, error } = await supabase.functions.invoke("archive-pdf", {
+      body: {
+        doc_type: params.docType,
+        entity_id: params.entityId,
+        vin: params.vin ?? undefined,
+        pdf_base64: pdfBase64,
+        retention_years: params.retentionYears ?? 7,
+      },
+    });
+
+    if (error || !data) {
+      return { ok: false, error: error?.message || "archive-pdf invoke failed" };
+    }
+    const result = data as { archive_id?: string };
+    return { ok: true, archiveId: result.archive_id };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "unknown" };
+  }
+};
+
 /**
  * Stamp a jsPDF instance with PDF/A-3 archival metadata and draw a
  * visible hash footer. Resolves with the computed hash + canonical

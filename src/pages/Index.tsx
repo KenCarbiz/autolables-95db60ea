@@ -12,7 +12,7 @@ import IntentBox from "@/components/addendum/IntentBox";
 import ProductRow from "@/components/addendum/ProductRow";
 import TotalBar from "@/components/addendum/TotalBar";
 import SelectionRecord from "@/components/addendum/SelectionRecord";
-import Disclosures from "@/components/addendum/Disclosures";
+import Disclosures, { type DisclosureLanguage } from "@/components/addendum/Disclosures";
 import FinancingImpact from "@/components/addendum/FinancingImpact";
 import SignaturePad from "@/components/addendum/SignaturePad";
 import AddendumFooter from "@/components/addendum/AddendumFooter";
@@ -57,6 +57,10 @@ const Index = () => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [generating, setGenerating] = useState(false);
   const [inkSaving, setInkSaving] = useState(false);
+  // Language of the disclosure block. FTC Used Car Rule + CA SB 766
+  // require the disclosure to be presented in the language the sale
+  // is conducted in. Dealer picks per-addendum; "en" is default.
+  const [disclosureLanguage, setDisclosureLanguage] = useState<DisclosureLanguage>("en");
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState(false);
   const [loadedProducts, setLoadedProducts] = useState<Product[] | null>(null);
@@ -244,7 +248,7 @@ const Index = () => {
     try {
       const { default: html2canvas } = await import("html2canvas-pro");
       const { default: jsPDF } = await import("jspdf");
-      const { archivePdf } = await import("@/lib/pdfArchive");
+      const { archivePdf, persistArchivedPdf } = await import("@/lib/pdfArchive");
       const canvas = await html2canvas(card, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const pdfWidth = 8.5;
@@ -281,6 +285,11 @@ const Index = () => {
       );
 
       pdf.save(`Dealer-Addendum-${storeName.replace(/\s+/g, "-")}.pdf`);
+      persistArchivedPdf(pdf, {
+        docType: "addendum",
+        entityId: viewId || vehicle.vin || `addendum-${Date.now()}`,
+        vin: vehicle.vin || null,
+      }).catch(() => { /* archive best-effort */ });
       if (user) log({
         store_id: currentStore?.id || "",
         user_id: user.id,
@@ -535,6 +544,20 @@ const Index = () => {
               Ink-saving
             </label>
           )}
+          {/* Disclosure language toggle — flip to Spanish when the
+              sale is being conducted primarily in Spanish per SB 766
+              / FTC Used Car Rule. */}
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground ml-2">
+            <span>Disclosure</span>
+            <select
+              value={disclosureLanguage}
+              onChange={(e) => setDisclosureLanguage(e.target.value as DisclosureLanguage)}
+              className="h-7 text-xs rounded border border-border bg-background px-1.5"
+            >
+              <option value="en">English</option>
+              <option value="es">Español</option>
+            </select>
+          </label>
         </div>
       </div>
 
@@ -694,7 +717,7 @@ const Index = () => {
             inkSaving={inkSaving}
           />
           <FinancingImpact addOnTotal={grandTotal} inkSaving={inkSaving} />
-          <Disclosures inkSaving={inkSaving} />
+          <Disclosures inkSaving={inkSaving} language={disclosureLanguage} />
 
           {/* Signing QR Barcode — printed on every addendum for remote signing */}
           {addendumSigningUrl && (

@@ -156,10 +156,10 @@ const AppShell = ({ children }: AppShellProps) => {
       title: "PLATFORM",
       defaultOpen: false,
       items: isAdmin ? [
-        { label: "Tenants",        path: "/admin?tab=platform-tenants",      icon: Store },
-        { label: "Members",        path: "/admin?tab=platform-members",      icon: Users },
-        { label: "Entitlements",   path: "/admin?tab=platform-entitlements", icon: Award },
-        { label: "Platform Audit", path: "/admin?tab=platform-audit",        icon: ShieldCheck },
+        { label: "Tenants",        path: "/platform-admin?tab=tenants",      icon: Store },
+        { label: "Members",        path: "/platform-admin?tab=members",      icon: Users },
+        { label: "Entitlements",   path: "/platform-admin?tab=entitlements", icon: Award },
+        { label: "Platform Audit", path: "/platform-admin?tab=audit",        icon: ShieldCheck },
       ] : [],
     },
   };

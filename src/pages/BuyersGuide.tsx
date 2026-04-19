@@ -134,13 +134,24 @@ const BuyersGuide = () => {
     try {
       const { default: html2canvas } = await import("html2canvas-pro");
       const { default: jsPDF } = await import("jspdf");
+      const { archivePdf, persistArchivedPdf } = await import("@/lib/pdfArchive");
       const canvas = await html2canvas(card, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const pdfWidth = 8.5;
       const pdfHeight = (canvas.height / canvas.width) * pdfWidth;
       const pdf = new jsPDF({ unit: "in", format: [pdfWidth, pdfHeight], orientation: "portrait" });
       pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+      await archivePdf(pdf, { vehicle, guideType, lang }, {
+        tenantId: currentStore?.id || null,
+        tenantName: currentStore?.name || null,
+        vin: vehicle.vin || null,
+      });
       pdf.save(`Buyers-Guide-${vehicle.vin || "draft"}.pdf`);
+      persistArchivedPdf(pdf, {
+        docType: "buyers_guide",
+        entityId: vehicle.vin || `buyers-guide-${Date.now()}`,
+        vin: vehicle.vin || null,
+      }).catch(() => { /* archive best-effort */ });
     } catch (err) {
       console.error("PDF generation failed:", err);
     }

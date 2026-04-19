@@ -199,12 +199,24 @@ const NewCarSticker = () => {
     try {
       const { default: html2canvas } = await import("html2canvas-pro");
       const { default: jsPDF } = await import("jspdf");
+      const { archivePdf, persistArchivedPdf } = await import("@/lib/pdfArchive");
       const canvas = await html2canvas(cardRef.current, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const w = 8.5, h = (canvas.height / canvas.width) * w;
       const pdf = new jsPDF({ unit: "in", format: [w, h], orientation: "portrait" });
       pdf.addImage(imgData, "JPEG", 0, 0, w, h);
+      await archivePdf(pdf, { vehicle }, {
+        tenantId: currentStore?.id || null,
+        tenantName: currentStore?.name || null,
+        vin: vehicle.vin || null,
+        ymm: vehicle.ymm || null,
+      });
       pdf.save(`New-Car-Sticker-${vehicle.vin || "draft"}.pdf`);
+      persistArchivedPdf(pdf, {
+        docType: "sticker",
+        entityId: vehicle.vin || `sticker-${Date.now()}`,
+        vin: vehicle.vin || null,
+      }).catch(() => { /* archive best-effort */ });
     } catch { toast.error("PDF failed"); } finally { setGenerating(false); }
   };
 

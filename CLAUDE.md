@@ -73,8 +73,15 @@ read the same `onboarding_profiles(tenant_id)` and
      bundled "essential" tier silently.
    - Otherwise `<ActivatePaywall />` shows. Free/bundled tiers flip
      the entitlement directly; paid tiers route to
-     `stripe-checkout` → Stripe Checkout → `stripe-webhook` flips
-     the entitlement on `checkout.session.completed`.
+     `stripe-checkout` → Stripe Checkout. Entitlement state for paid
+     tiers is flipped by **Autocurb's** `stripe-webhook` calling our
+     `autocurb_sync_entitlements(p_tenant_id, p_items)` RPC. Our own
+     `stripe-webhook` is a shadow ledger only — it verifies the
+     signature and appends to `billing_events`, but does NOT mutate
+     `app_entitlements`. Single-writer rule: Autocurb is
+     authoritative; if you ever need to change entitlement shape,
+     change it in Autocurb's webhook and the RPC in
+     `20260419020000_billing_contract.sql`.
 4. Entitlement OK → app renders.
 
 **Reverse direction** (standalone-on-AutoLabels notification):

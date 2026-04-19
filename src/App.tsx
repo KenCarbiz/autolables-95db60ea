@@ -38,6 +38,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
 const Admin = lazy(() => import("./pages/Admin"));
+const PlatformAdmin = lazy(() => import("./pages/PlatformAdmin"));
 const Inventory = lazy(() => import("./pages/Inventory"));
 const VehicleFile = lazy(() => import("./pages/VehicleFile"));
 const SavedAddendums = lazy(() => import("./pages/SavedAddendums"));
@@ -127,6 +128,9 @@ const App = () => (
                           own settings; the platform-admin tabs are rendered
                           only when isAdmin is true via the tab list itself. */}
                       <Route path="/admin" element={<Gated><Admin /></Gated>} />
+                      {/* Platform-admin is a separate route gated on
+                          isAdmin role, not on an app entitlement. */}
+                      <Route path="/platform-admin" element={<AdminOnly><PlatformAdmin /></AdminOnly>} />
                       <Route path="/saved" element={<Gated><SavedAddendums /></Gated>} />
                       <Route path="/buyers-guide" element={<Gated><BuyersGuide /></Gated>} />
                       <Route path="/trade-up" element={<Gated><TradeUpSticker /></Gated>} />
