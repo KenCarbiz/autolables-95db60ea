@@ -8,8 +8,6 @@ import {
   Play,
   Phone,
   Share2,
-  Printer,
-  QrCode as QrIcon,
   Sparkles,
   Clock,
   Award,
@@ -29,7 +27,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Logo from "@/components/brand/Logo";
-import { QRCodeSVG } from "qrcode.react";
 import { useVehicleListing, type VehicleListing } from "@/hooks/useVehicleListing";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -153,27 +150,26 @@ const PublicListing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <header className="bg-white/90 backdrop-blur-sm border-b border-border sticky top-0 z-20">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+    <div className="min-h-screen bg-white">
+      {/* Slim, Tesla-style top bar: vehicle is hero, dealer is
+          secondary. No ornate chrome, no branded gradients. */}
+      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-20">
+        <div className="max-w-3xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 min-w-0">
             {dealer.logo_url ? (
-              <img src={dealer.logo_url} alt={dealer.name || "Dealer"} className="h-8 w-auto" />
+              <img src={dealer.logo_url} alt={dealer.name || "Dealer"} className="h-6 w-auto" />
             ) : (
-              <Logo variant="full" size={28} />
+              <Logo variant="full" size={22} />
             )}
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-foreground truncate">{dealer.name || "Your Dealership"}</p>
-              {dealer.phone && <p className="text-[10px] text-muted-foreground truncate">{dealer.phone}</p>}
-            </div>
+            <p className="text-[11px] font-semibold text-slate-700 truncate">{dealer.name || ""}</p>
           </div>
           <button
             onClick={handleShare}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-white text-xs font-semibold text-foreground hover:bg-muted transition-colors"
-            aria-label="Share vehicle"
+            className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+            aria-label={copied ? "Link copied" : "Share vehicle"}
+            title={copied ? "Link copied" : "Share"}
           >
-            <Share2 className="w-3.5 h-3.5" />
-            {copied ? "Copied" : "Share"}
+            <Share2 className="w-4 h-4" />
           </button>
         </div>
       </header>
@@ -196,6 +192,11 @@ const PublicListing = () => {
             weight; do-not-drive blocks publish upstream so we only
             have to handle "open but safe to drive" here. */}
         <RecallBanner listing={listing} />
+
+        {/* Availability band — the Tesla-style "when can you get it"
+            answer right under the trust proof. Pickup is always
+            available; delivery is a dealer-configurable soft claim. */}
+        <AvailabilityBand listing={listing} dealer={dealer} />
 
         {/* Drive-out price block — FTC 97-letter alignment. The
             number at the top is the real, no-asterisk total. The
@@ -353,64 +354,11 @@ const PublicListing = () => {
             able to take with them. */}
         <ProgramDocuments listing={listing} />
 
-        {/* Trust */}
-        <section className="rounded-2xl border border-border bg-card shadow-premium p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <h2 className="text-sm font-semibold text-foreground">Your Protection</h2>
-          </div>
-          <div className="space-y-2">
-            <TrustItem text="Every product is fully disclosed with pricing before you sign." />
-            <TrustItem text="Optional items can be declined with zero impact on your purchase or financing." />
-            <TrustItem text="All disclosures meet FTC federal requirements and your state's consumer protection laws." />
-            <TrustItem text="Your signature, initials, and selections are timestamped and stored in a tamper-evident audit trail." />
-            <TrustItem text="You will receive a copy of every signed document for your records." />
-          </div>
-        </section>
-
-        {/* Sticker QR + share */}
-        <section className="rounded-2xl border border-border bg-card shadow-premium p-5">
-          <div className="grid md:grid-cols-[auto,1fr] gap-5 items-center">
-            <div className="bg-white p-3 rounded-lg border border-border w-fit mx-auto md:mx-0">
-              <QRCodeSVG value={viewUrl} size={112} level="M" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <QrIcon className="w-4 h-4 text-[#1E90FF]" />
-                <h3 className="text-sm font-semibold text-foreground">Keep this vehicle handy</h3>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">
-                Scan or save this code to return to this addendum on any device.
-              </p>
-              <p className="text-[10px] text-muted-foreground font-mono break-all">{viewUrl}</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Contact */}
-        <section className="rounded-2xl border border-border bg-card shadow-premium p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-2">Questions about this vehicle?</h3>
-          <p className="text-[11px] text-muted-foreground mb-3">
-            Take your time reviewing everything above. When you're ready, your salesperson will walk you through each
-            item and answer any questions.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {dealer.phone && (
-              <a
-                href={`tel:${dealer.phone}`}
-                className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-[#0B2041] text-white text-sm font-semibold"
-              >
-                <Phone className="w-4 h-4" /> Call {dealer.name || "dealership"}
-              </a>
-            )}
-            <button
-              onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border border-border bg-white text-sm font-semibold text-foreground hover:bg-muted"
-            >
-              <Printer className="w-4 h-4" /> Print
-            </button>
-          </div>
-        </section>
+        {/* "Your Protection" block removed — the Trust Band above
+            already shows the same receipts with hashed proof. The
+            QR-to-revisit card and separate Contact card removed too;
+            the sticky CTA bar at the bottom is the single durable
+            affordance for both Reserve and Call. */}
 
         {/* Footer */}
         <footer className="text-center py-6 pb-32 md:pb-6">
@@ -422,26 +370,26 @@ const PublicListing = () => {
         </footer>
       </main>
 
-      {/* Sticky shopper CTA — thumbs-reach on mobile, anchored right
-          on desktop. Mobile rail uses backdrop-blur so page content
-          stays visible under the action buttons. */}
-      <div className="fixed bottom-0 inset-x-0 z-30 p-4 surface-blur border-t border-border md:bg-transparent md:border-t-0 md:backdrop-blur-0 md:pointer-events-none">
-        <div className="max-w-3xl mx-auto flex items-center justify-end gap-2 md:pointer-events-auto">
+      {/* Sticky Reserve bar — Tesla-style commitment verb. One
+          primary action (Reserve), one small fallback (Call). */}
+      <div className="fixed bottom-0 inset-x-0 z-30 p-3 md:p-4 bg-white/95 backdrop-blur-md border-t border-slate-200 md:bg-transparent md:border-t-0 md:backdrop-blur-0 md:pointer-events-none">
+        <div className="max-w-3xl mx-auto flex items-center gap-2 md:justify-end md:pointer-events-auto">
           {dealer.phone && (
             <a
               href={`tel:${dealer.phone}`}
-              className="h-12 px-4 rounded-xl bg-white border border-slate-200 text-slate-900 inline-flex items-center gap-1.5 shadow-premium hover:brightness-95 transition-all whitespace-nowrap"
+              className="h-12 w-12 md:w-auto md:px-4 rounded-full md:rounded-xl bg-white border border-slate-200 text-slate-800 inline-flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all flex-shrink-0"
+              title="Call dealership"
+              aria-label="Call dealership"
             >
               <Phone className="w-4 h-4 stroke-[2.5]" />
-              <span className="font-display font-bold tracking-tight">Call</span>
+              <span className="hidden md:inline font-display font-semibold tracking-tight">Call</span>
             </a>
           )}
           <button
             onClick={() => setInquiryOpen(true)}
-            className="h-12 px-5 rounded-xl bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white inline-flex items-center gap-1.5 shadow-premium hover:brightness-110 transition-all whitespace-nowrap"
+            className="flex-1 md:flex-initial h-12 px-6 rounded-xl bg-slate-950 text-white inline-flex items-center justify-center gap-2 hover:bg-slate-900 transition-all whitespace-nowrap"
           >
-            <MessageSquare className="w-4 h-4 stroke-[2.5]" />
-            <span className="font-display font-black tracking-tight text-[15px]">Request this vehicle</span>
+            <span className="font-display font-bold tracking-tight text-[15px]">Reserve this vehicle</span>
           </button>
         </div>
       </div>
@@ -569,8 +517,8 @@ const InquiryModal = ({ listing, dealer, onClose, onSent, sent }: InquiryModalPr
 
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
           <div>
-            <h3 className="text-base font-black font-display tracking-tight">
-              {sent ? "You're all set" : "Request this vehicle"}
+            <h3 className="text-lg font-black font-display tracking-tight">
+              {sent ? "Reserved" : "Reserve this vehicle"}
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
               {sent ? `${dealer.name || "The dealer"} will be in touch shortly.` : listing.ymm || listing.vin}
@@ -586,14 +534,12 @@ const InquiryModal = ({ listing, dealer, onClose, onSent, sent }: InquiryModalPr
 
         {sent ? (
           <div className="p-5 space-y-4">
-            <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-900 flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <div className="rounded-xl bg-slate-950 text-white p-5 flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0 text-emerald-400" />
               <div>
-                <p className="font-semibold">Request sent.</p>
-                <p className="text-xs mt-0.5">
-                  Your message is now in the dealer's inbox with a timestamp
-                  and the vehicle you were looking at. They usually respond
-                  within a few hours during business days.
+                <p className="font-bold text-base">Your vehicle is held.</p>
+                <p className="text-xs mt-1 text-white/80">
+                  The dealer has your request time-stamped and hashed into the audit trail. Expect contact shortly during business hours.
                 </p>
               </div>
             </div>
@@ -625,19 +571,22 @@ const InquiryModal = ({ listing, dealer, onClose, onSent, sent }: InquiryModalPr
             </button>
           </div>
         ) : (
-          <div className="p-5 space-y-3">
+          <div className="p-5 space-y-4">
+            <p className="text-[12px] text-slate-600 leading-relaxed">
+              Tell us what you'd like to do next. The dealer will reach out with next steps — no contract, no cost.
+            </p>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: "info", label: "More info", icon: MessageSquare },
+                { id: "info", label: "Hold for me", icon: ShieldCheck },
                 { id: "test_drive", label: "Test drive", icon: Calendar },
                 { id: "offer", label: "Make an offer", icon: DollarSign },
               ].map((i) => (
                 <button
                   key={i.id}
                   onClick={() => setIntent(i.id as typeof intent)}
-                  className={`h-14 rounded-xl border text-[11px] font-semibold inline-flex flex-col items-center justify-center gap-0.5 ${
+                  className={`h-16 rounded-xl border text-[11px] font-semibold inline-flex flex-col items-center justify-center gap-1 transition-all ${
                     intent === i.id
-                      ? "border-[#1E90FF] bg-[#1E90FF]/5 text-[#1E90FF]"
+                      ? "border-slate-950 bg-slate-950 text-white"
                       : "border-slate-200 text-slate-600 hover:bg-slate-50"
                   }`}
                 >
@@ -671,9 +620,9 @@ const InquiryModal = ({ listing, dealer, onClose, onSent, sent }: InquiryModalPr
             <button
               onClick={submit}
               disabled={submitting || !name.trim() || (!email.trim() && !phone.trim())}
-              className="w-full h-12 rounded-xl bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white font-display font-black text-sm inline-flex items-center justify-center gap-2 disabled:opacity-50 shadow-premium hover:brightness-110"
+              className="w-full h-12 rounded-xl bg-slate-950 text-white font-display font-bold text-sm inline-flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-slate-900 transition-colors"
             >
-              {submitting ? "Sending…" : (<><Send className="w-4 h-4 stroke-[2.5]" /> Send request</>)}
+              {submitting ? "Reserving…" : (<><Send className="w-4 h-4 stroke-[2.5]" /> Reserve now</>)}
             </button>
           </div>
         )}
@@ -773,37 +722,65 @@ interface DealerMini {
 
 const HeroSection = ({ listing, dealer }: { listing: VehicleListing; dealer: DealerMini }) => {
   const heroPhoto = listing.photos?.find((p) => p.kind === "hero") || listing.photos?.[0];
-  const conditionLabel =
-    listing.condition === "new"
-      ? "New Vehicle"
-      : listing.condition === "cpo"
-        ? "Certified Pre-Owned"
-        : "Pre-Owned Vehicle";
 
   return (
-    <section className="rounded-2xl border border-border overflow-hidden shadow-premium">
+    <section className="rounded-2xl overflow-hidden">
       <div
-        className="relative aspect-[16/9] w-full bg-slate-100"
+        className="relative aspect-[4/3] sm:aspect-[16/9] w-full bg-slate-950"
         style={
           heroPhoto
             ? { backgroundImage: `url(${heroPhoto.url})`, backgroundSize: "cover", backgroundPosition: "center" }
-            : { background: "linear-gradient(135deg, #0B2041 0%, #1E90FF 100%)" }
+            : undefined
         }
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-          <p className="text-[10px] uppercase tracking-label text-white/80 mb-1">{conditionLabel}</p>
-          <h1 className="text-2xl md:text-3xl font-black font-display tracking-tight">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/10" />
+        <div className="absolute inset-x-0 bottom-0 p-6 md:p-8 text-white">
+          <h1 className="text-3xl md:text-5xl font-black font-display tracking-[-0.03em] leading-[0.95]">
             {listing.ymm || "Vehicle"}
           </h1>
-          {listing.trim && <p className="text-sm text-white/90 mt-0.5">{listing.trim}</p>}
-          <div className="mt-2 flex items-center gap-3 text-[11px] text-white/80 flex-wrap">
-            <span className="font-mono">VIN {listing.vin}</span>
+          {listing.trim && (
+            <p className="text-base md:text-lg text-white/85 font-display mt-1 tracking-tight">{listing.trim}</p>
+          )}
+          <div className="mt-3 flex items-center gap-4 text-[11px] text-white/70 font-mono uppercase tracking-wider flex-wrap">
             {listing.mileage != null && <span>{listing.mileage.toLocaleString()} mi</span>}
+            <span>VIN · {listing.vin.slice(-8)}</span>
             {dealer.city && dealer.state && (
               <span>{dealer.city}, {dealer.state}</span>
             )}
           </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const AvailabilityBand = ({
+  listing,
+  dealer,
+}: {
+  listing: VehicleListing;
+  dealer: DealerMini;
+}) => {
+  // Pickup is always "ready" once the listing is published — the
+  // prep-gate guaranteed it. Delivery is a soft forward-looking
+  // claim, rendered only when the dealer has an address on file.
+  const pickupCity = dealer.city && dealer.state ? `${dealer.city}, ${dealer.state}` : null;
+  return (
+    <section className="rounded-2xl bg-slate-950 text-white p-5 md:p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-white/50 font-semibold">Pickup</p>
+          <p className="text-lg font-bold font-display mt-1">Ready now</p>
+          <p className="text-[12px] text-white/70 mt-0.5">
+            {pickupCity ? `Available today at ${dealer.name || "the dealership"} in ${pickupCity}.` : "Available today at the dealership."}
+          </p>
+        </div>
+        <div className="sm:border-l sm:border-white/15 sm:pl-4">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-white/50 font-semibold">Delivery</p>
+          <p className="text-lg font-bold font-display mt-1">On request</p>
+          <p className="text-[12px] text-white/70 mt-0.5">
+            Ask about home delivery within the dealer's service area.
+          </p>
         </div>
       </div>
     </section>
@@ -929,19 +906,16 @@ const PriceBlock = ({ listing }: { listing: VehicleListing }) => {
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-card shadow-premium overflow-hidden">
-      <div className="p-5">
-        <p className="text-[10px] uppercase tracking-label text-muted-foreground">
+    <section className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+      <div className="p-6 md:p-7">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-semibold">
           Drive-out price
-          <span className="ml-1.5 text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-            Before tax &amp; tag
-          </span>
         </p>
-        <p className="text-4xl font-black tracking-tight font-display tabular-nums text-foreground mt-1">
+        <p className="text-5xl md:text-6xl font-black tracking-[-0.03em] font-display tabular-nums text-slate-950 mt-1 leading-none">
           ${driveOut.toLocaleString()}
         </p>
-        <p className="text-[11px] text-muted-foreground mt-1.5">
-          Everything the dealer requires is in this number. No surprise add-ons at the F&amp;I desk — every mandatory item is disclosed below.
+        <p className="text-[12px] text-slate-600 mt-3 leading-relaxed max-w-md">
+          Every mandatory fee is in this number. Tax, tag, and registration are state-set and added at titling.
         </p>
       </div>
 
@@ -949,25 +923,22 @@ const PriceBlock = ({ listing }: { listing: VehicleListing }) => {
         <>
           <button
             onClick={() => setOpen((o) => !o)}
-            className="w-full flex items-center justify-between px-5 py-3 border-t border-border text-[12px] font-semibold text-foreground hover:bg-muted/40"
+            className="w-full flex items-center justify-between px-6 py-3 border-t border-slate-200 text-[12px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
           >
             <span>What's in this price</span>
             {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
           {open && (
-            <div className="px-5 pb-4 space-y-1.5">
+            <div className="px-6 pb-5 space-y-2">
               {lines.map((l, i) => (
-                <div key={i} className="flex items-start justify-between text-[12px]">
+                <div key={i} className="flex items-start justify-between text-[13px]">
                   <div className="min-w-0">
-                    <p className="text-foreground">{l.label}</p>
-                    {l.note && <p className="text-[10px] text-muted-foreground">{l.note}</p>}
+                    <p className="text-slate-900">{l.label}</p>
+                    {l.note && <p className="text-[10px] text-slate-500 mt-0.5">{l.note}</p>}
                   </div>
-                  <p className="font-bold tabular-nums">${l.value.toLocaleString()}</p>
+                  <p className="font-bold tabular-nums text-slate-950">${l.value.toLocaleString()}</p>
                 </div>
               ))}
-              <p className="text-[10px] text-muted-foreground italic pt-2 border-t border-border/60">
-                Tax, tag, and registration are state-set and added at titling. They are not discretionary dealer charges.
-              </p>
             </div>
           )}
         </>
