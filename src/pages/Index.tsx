@@ -28,7 +28,7 @@ import { useVehicleFiles } from "@/hooks/useVehicleFiles";
 import { QRCodeSVG } from "qrcode.react";
 import { ArrowLeft, Save, Send, Printer, Download } from "lucide-react";
 import ComplianceRedTeamPanel from "@/components/addendum/ComplianceRedTeamPanel";
-import { runComplianceRedTeam } from "@/lib/complianceRedTeam";
+import { runComplianceRedTeam, summarizeRedTeam } from "@/lib/complianceRedTeam";
 import StateRewriterPanel from "@/components/addendum/StateRewriterPanel";
 
 // Paper size map (width in inches)
@@ -314,6 +314,49 @@ const Index = () => {
     if (!user) { toast.error("Sign in first"); return; }
     if (!vehicle.ymm.trim()) { toast.error("Please enter Year/Make/Model first"); return; }
     if (!vehicle.vin.trim()) { toast.error("Please enter the VIN first"); return; }
+
+    // Hard-block: red-team `fail` findings must be cleared before a
+    // signing link is generated. Warnings pass through, but fails
+    // represent issues the FTC / state AG will use against the
+    // dealer in an audit (banned phrases, missing E-SIGN, missing
+    // Buyers Guide on a used car, un-initialled installed products).
+    const rtFindings = runComplianceRedTeam({
+      state: settings.doc_fee_state || "",
+      docFeeAmount: displayProducts?.find((p) => p.name.toLowerCase().includes("doc"))?.price,
+      stickerText: displayProducts
+        ?.map((p) => `${p.name} ${p.disclosure || ""}`)
+        .join(" ") || "",
+      products: displayProducts?.map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        badge_type: p.badge_type,
+        disclosure: p.disclosure || undefined,
+        separate_signoff: !!initials[p.id]?.trim(),
+      })) || [],
+      spanishVersion: false,
+      customerName: [customerInfo.buyer_first_name, customerInfo.buyer_last_name].filter(Boolean).join(" "),
+      initialsByProductId: initials,
+    });
+    const rtSummary = summarizeRedTeam(rtFindings);
+    if (rtSummary.blocker) {
+      const top = rtFindings.filter((f) => f.severity === "fail").slice(0, 2).map((f) => f.rule).join(" \u2022 ");
+      toast.error(`Compliance red-team blocked: ${top}${rtSummary.fail > 2 ? " \u2026" : ""}`);
+      if (user) log({
+        store_id: currentStore?.id || "",
+        user_id: user.id,
+        action: "compliance_block",
+        entity_type: "addendum",
+        entity_id: vehicle.vin,
+        details: {
+          source: "handleSendToCustomer",
+          fail_count: rtSummary.fail,
+          warn_count: rtSummary.warn,
+          rules: rtFindings.filter((f) => f.severity === "fail").map((f) => f.id),
+        },
+      });
+      return;
+    }
 
     setSaving(true);
     const token = crypto.randomUUID();

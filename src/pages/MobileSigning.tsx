@@ -13,6 +13,7 @@ import {
   hashPayload,
 } from "@/lib/esign";
 import { getStateRule, validateAddendum, summarizeFindings } from "@/lib/stateCompliance";
+import { runComplianceRedTeam, summarizeRedTeam } from "@/lib/complianceRedTeam";
 import { isSb766Applicable, type FinancingDisclosure } from "@/lib/sb766";
 import SB766DisclosurePanel from "@/components/addendum/SB766DisclosurePanel";
 
@@ -216,7 +217,7 @@ const MobileSigning = () => {
     const stateCode = (addendum.vehicle_state || "").toString().toUpperCase() || null;
     const stateRule = stateCode ? getStateRule(stateCode) : null;
 
-    const complianceFindings = validateAddendum({
+    const complianceDraft = {
       state: stateCode || "",
       vehiclePrice: addendum.vehicle_price,
       docFeeAmount: products.find((p) =>
@@ -233,8 +234,40 @@ const MobileSigning = () => {
       })),
       spanishVersion: consent.language?.startsWith("es") || false,
       threeDayAck: sb766ThreeDayAck,
-    });
+    };
+    const complianceFindings = validateAddendum(complianceDraft);
     const complianceSummary = summarizeFindings(complianceFindings);
+
+    // Red-team hard-block — defense in depth on top of the dealer-
+    // side block in Index.tsx. Re-running here with the customer's
+    // actual initials / esign consent / sign timestamp surfaces any
+    // fail-severity issues that aren't visible until the customer is
+    // in the flow (e.g. missing initials on installed products).
+    const redTeamFindings = runComplianceRedTeam({
+      ...complianceDraft,
+      customerName,
+      initialsByProductId: initials,
+      esignConsentAccepted: esignConsent,
+      signedAt: new Date().toISOString(),
+      // Only pass vehicleCondition / buyersGuideAttached if the
+      // addendum row has them explicitly populated. Omitting leaves
+      // those rules inert instead of false-failing on older rows.
+      ...(addendum.vehicle_condition ? { vehicleCondition: addendum.vehicle_condition } : {}),
+      ...(typeof addendum.buyers_guide_id !== "undefined"
+        ? { buyersGuideAttached: addendum.buyers_guide_id != null }
+        : {}),
+    });
+    const redTeamSummary = summarizeRedTeam(redTeamFindings);
+    if (redTeamSummary.blocker) {
+      // Shopper-side is the defense-in-depth layer. The dealer-side
+      // block in Index.tsx handles the primary enforcement (and
+      // logs `compliance_block` to audit_log with rule ids). If we
+      // land here it's an edge case \u2014 legacy link, dealer bypassed
+      // the builder, etc. Surface the top failing rules and stop.
+      const top = redTeamFindings.filter((f) => f.severity === "fail").slice(0, 2).map((f) => f.rule).join(" \u2022 ");
+      toast.error(`Blocked: ${top}${redTeamSummary.fail > 2 ? " \u2026" : ""}`);
+      return;
+    }
 
     // Canonical payload = everything that influenced the customer's
     // decision PLUS the dealer's compliance context. This is what the
