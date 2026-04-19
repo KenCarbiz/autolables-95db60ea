@@ -5,7 +5,8 @@ import PlatformTenants from "@/components/admin/PlatformTenants";
 import PlatformMembers from "@/components/admin/PlatformMembers";
 import PlatformEntitlements from "@/components/admin/PlatformEntitlements";
 import PlatformAudit from "@/components/admin/PlatformAudit";
-import { Store, Users, Award, ShieldCheck } from "lucide-react";
+import RecallRefreshTool from "@/components/admin/RecallRefreshTool";
+import { Store, Users, Award, ShieldCheck, RefreshCw } from "lucide-react";
 
 // ──────────────────────────────────────────────────────────────
 // PlatformAdmin — cross-tenant surfaces (Tenants, Members,
@@ -17,14 +18,15 @@ import { Store, Users, Award, ShieldCheck } from "lucide-react";
 // whole route on isAdmin = true.
 // ──────────────────────────────────────────────────────────────
 
-type PlatformTab = "tenants" | "members" | "entitlements" | "audit";
-const VALID: PlatformTab[] = ["tenants", "members", "entitlements", "audit"];
+type PlatformTab = "tenants" | "members" | "entitlements" | "audit" | "recalls";
+const VALID: PlatformTab[] = ["tenants", "members", "entitlements", "audit", "recalls"];
 
 const TABS: { id: PlatformTab; label: string; icon: typeof Store }[] = [
   { id: "tenants",      label: "Tenants",      icon: Store },
   { id: "members",      label: "Members",      icon: Users },
   { id: "entitlements", label: "Entitlements", icon: Award },
   { id: "audit",        label: "Platform Audit", icon: ShieldCheck },
+  { id: "recalls",      label: "Recall refresh", icon: RefreshCw },
 ];
 
 const PlatformAdmin = () => {
@@ -87,6 +89,7 @@ const PlatformAdmin = () => {
         {tab === "members"      && <PlatformMembers />}
         {tab === "entitlements" && <PlatformEntitlements />}
         {tab === "audit"        && <PlatformAudit />}
+        {tab === "recalls"      && <RecallRefreshTool />}
       </div>
     </div>
   );
