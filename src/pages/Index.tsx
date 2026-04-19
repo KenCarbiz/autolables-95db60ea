@@ -487,7 +487,7 @@ const Index = () => {
       // Register in vehicle file system — creates per-VIN compliance record + sticker tracking code
       if (vehicle.vin.trim().length === 17) {
         const ymmParts = vehicle.ymm.split(" ");
-        const file = getOrCreateFile({
+        const file = await getOrCreateFile({
           vin: vehicle.vin.trim().toUpperCase(),
           year: vehicleContext.year || ymmParts[0] || "",
           make: vehicleContext.make || ymmParts[1] || "",
@@ -498,14 +498,16 @@ const Index = () => {
           mileage: 0,
           created_by: user.id,
         });
-        registerSticker(file.id, "used_car_addendum", {
-          paper_size: settings.addendum_paper_size,
-          products_snapshot: displayProducts,
-          base_price: installedTotal,
-          accessories_total: optionalTotal,
-          doc_fee: docFeeAmount,
-          printed_by: user.id,
-        });
+        if (file) {
+          await registerSticker(file.id, "used_car_addendum", {
+            paper_size: settings.addendum_paper_size,
+            products_snapshot: displayProducts,
+            base_price: installedTotal,
+            accessories_total: optionalTotal,
+            doc_fee: docFeeAmount,
+            printed_by: user.id,
+          });
+        }
       }
     }
   };

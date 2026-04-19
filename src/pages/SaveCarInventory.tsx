@@ -91,14 +91,14 @@ const SaveCarInventory = () => {
     if (factory) setFactoryData(factory);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!decoded) { toast.error("Decode a VIN first"); return; }
     if (!stockNumber.trim()) { toast.error("Stock number is required"); return; }
     setSaving(true);
 
     try {
       // 1. Create the VehicleFile (VIN-specific permanent record)
-      const file = vehicleFiles.getOrCreateFile({
+      const file = await vehicleFiles.getOrCreateFile({
         vin: vin.trim().toUpperCase(),
         year: decoded.year,
         make: decoded.make,
@@ -111,6 +111,11 @@ const SaveCarInventory = () => {
         factory_equipment: factoryData?.standardEquipment || [],
         created_by: user?.id || "unknown",
       });
+      if (!file) {
+        toast.error("Couldn't create vehicle file");
+        setSaving(false);
+        return;
+      }
 
       // 2. Also add to inventory list
       inventory.addVehicle({
@@ -140,7 +145,7 @@ const SaveCarInventory = () => {
       });
 
       // 3. Attach FTC Buyers Guide to the vehicle file
-      vehicleFiles.attachDocument(file.id, {
+      await vehicleFiles.attachDocument(file.id, {
         type: "ftc_buyers_guide",
         label: "FTC Used Car Buyers Guide",
         data: {
@@ -159,7 +164,7 @@ const SaveCarInventory = () => {
 
       // 4. If CT, attach K-208 inspection form
       if (isConnecticut && condition === "used") {
-        vehicleFiles.attachDocument(file.id, {
+        await vehicleFiles.attachDocument(file.id, {
           type: "k208",
           label: "CT K-208 Vehicle Inspection",
           data: {

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import type {
   VehicleFile,
   StickerRecord,
@@ -10,17 +11,19 @@ import type {
   DealStatus,
 } from "@/types/vehicleFile";
 
-const STORAGE_KEY = "vehicle_files";
+// ──────────────────────────────────────────────────────────────
+// useVehicleFiles — Supabase-backed (Wave 10).
+//
+// Was the last big localStorage shadow. Now a single
+// public.vehicle_files row per (tenant, VIN) with nested JSONB
+// arrays for stickers / signings / aftermarket_installs /
+// attached_documents. The API shape is preserved so existing
+// consumers (Index.tsx, SaveCarInventory.tsx, Admin.tsx) don't
+// need rewrites beyond awaiting the previously-sync methods.
+// ──────────────────────────────────────────────────────────────
 
-/**
- * Generate a unique tracking code (UPC) for each sticker.
- * Format: AC-{STORE_PREFIX}-{VIN_LAST6}-{TYPE_CODE}-{TIMESTAMP_HEX}
- *
- * This code is printed on the sticker and can be scanned or typed
- * to retrieve the full vehicle file and its legal addendum.
- */
-function generateTrackingCode(vin: string, type: StickerType, storeId: string): string {
-  const storePrefix = storeId.slice(0, 4).toUpperCase();
+const generateTrackingCode = (vin: string, type: StickerType, storeId: string): string => {
+  const storePrefix = (storeId || "NONE").slice(0, 4).toUpperCase();
   const vinSuffix = vin.slice(-6).toUpperCase();
   const typeCode: Record<StickerType, string> = {
     new_car_addendum: "NA",
@@ -32,47 +35,41 @@ function generateTrackingCode(vin: string, type: StickerType, storeId: string): 
   };
   const ts = Date.now().toString(36).toUpperCase().slice(-6);
   return `AC-${storePrefix}-${vinSuffix}-${typeCode[type]}-${ts}`;
-}
+};
 
-/**
- * Generate a simple content hash for immutability verification.
- * In production, use SubtleCrypto.digest("SHA-256", ...) for a real hash.
- */
-function simpleHash(content: string): string {
-  let hash = 0;
+// Simple FNV-style content hash for immutability. SHA-256 would be
+// better; keeping the legacy helper shape so existing stickers
+// validate. Upgrade path: swap for SubtleCrypto.digest in a follow-up.
+const simpleHash = (content: string): string => {
+  let h = 0;
   for (let i = 0; i < content.length; i++) {
-    const char = content.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
+    const c = content.charCodeAt(i);
+    h = ((h << 5) - h) + c;
+    h |= 0;
   }
-  return Math.abs(hash).toString(16).padStart(8, "0");
-}
+  return Math.abs(h).toString(16).padStart(8, "0");
+};
 
 export const useVehicleFiles = (storeId: string) => {
   const [files, setFiles] = useState<VehicleFile[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    load();
+  const load = useCallback(async () => {
+    setLoading(true);
+    // RLS already scopes to the tenant; store_id filter narrows to
+    // the selected store when a dealer group has multiples.
+    const { data } = await (supabase as any)
+      .from("vehicle_files")
+      .select("*")
+      .order("updated_at", { ascending: false });
+    const all = (data as VehicleFile[]) || [];
+    setFiles(storeId ? all.filter((f) => f.store_id === storeId) : all);
+    setLoading(false);
   }, [storeId]);
 
-  const load = () => {
-    try {
-      const all: VehicleFile[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      setFiles(all.filter(f => f.store_id === storeId));
-    } catch { /* ignore */ }
-  };
+  useEffect(() => { load(); }, [load]);
 
-  const getAll = (): VehicleFile[] => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
-  };
-
-  const persist = (all: VehicleFile[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-    setFiles(all.filter(f => f.store_id === storeId));
-  };
-
-  // Get or create a vehicle file by VIN
-  const getOrCreateFile = useCallback((data: {
+  const getOrCreateFile = useCallback(async (data: {
     vin: string;
     year: string;
     make: string;
@@ -85,13 +82,16 @@ export const useVehicleFiles = (storeId: string) => {
     market_value?: number;
     factory_equipment?: string[];
     created_by: string;
-  }): VehicleFile => {
-    const all = getAll();
-    const existing = all.find(f => f.vin === data.vin && f.store_id === storeId);
+  }): Promise<VehicleFile | null> => {
+    // Look up existing by VIN. RLS ensures we only see this tenant's.
+    const { data: existing } = await (supabase as any)
+      .from("vehicle_files")
+      .select("*")
+      .eq("vin", data.vin)
+      .maybeSingle();
+
     if (existing) {
-      // Update mutable fields
-      const updated = {
-        ...existing,
+      const patch = {
         stock_number: data.stock_number || existing.stock_number,
         mileage: data.mileage || existing.mileage,
         msrp: data.msrp || existing.msrp,
@@ -99,49 +99,65 @@ export const useVehicleFiles = (storeId: string) => {
         factory_equipment: data.factory_equipment?.length
           ? data.factory_equipment
           : existing.factory_equipment,
-        updated_at: new Date().toISOString(),
       };
-      persist(all.map(f => f.id === existing.id ? updated : f));
-      return updated;
+      const { data: updated } = await (supabase as any)
+        .from("vehicle_files")
+        .update(patch)
+        .eq("id", existing.id)
+        .select()
+        .single();
+      await load();
+      return (updated as VehicleFile) || (existing as VehicleFile);
     }
 
-    const file: VehicleFile = {
-      id: crypto.randomUUID(),
-      store_id: storeId,
-      vin: data.vin,
-      year: data.year,
-      make: data.make,
-      model: data.model,
-      trim: data.trim,
-      stock_number: data.stock_number,
-      condition: data.condition,
-      mileage: data.mileage,
-      msrp: data.msrp || 0,
-      market_value: data.market_value || 0,
-      factory_equipment: data.factory_equipment || [],
-      aftermarket_installs: [],
-      stickers: [],
-      signings: [],
-      attached_documents: [],
-      deal_qr_token: crypto.randomUUID(),
-      deal_status: "stickered",
-      customer_name: "",
-      customer_phone: "",
-      customer_email: "",
-      cobuyer_name: "",
-      cobuyer_phone: "",
-      cobuyer_email: "",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      created_by: data.created_by,
-    };
+    const { data: inserted, error } = await (supabase as any)
+      .from("vehicle_files")
+      .insert({
+        store_id: storeId,
+        vin: data.vin,
+        year: data.year,
+        make: data.make,
+        model: data.model,
+        trim: data.trim,
+        stock_number: data.stock_number,
+        condition: data.condition,
+        mileage: data.mileage,
+        msrp: data.msrp || 0,
+        market_value: data.market_value || 0,
+        factory_equipment: data.factory_equipment || [],
+        created_by: data.created_by,
+      })
+      .select()
+      .single();
+    if (error || !inserted) return null;
+    await load();
+    return inserted as VehicleFile;
+  }, [storeId, load]);
 
-    persist([...all, file]);
-    return file;
-  }, [storeId]);
+  // Shared read-modify-write helper. All the nested-array mutators
+  // go through here so they share one concurrency story.
+  const mutateFile = useCallback(async (
+    fileId: string,
+    mutate: (file: VehicleFile) => Partial<VehicleFile>,
+  ): Promise<VehicleFile | null> => {
+    const { data: current } = await (supabase as any)
+      .from("vehicle_files")
+      .select("*")
+      .eq("id", fileId)
+      .maybeSingle();
+    if (!current) return null;
+    const patch = mutate(current as VehicleFile);
+    const { data: updated } = await (supabase as any)
+      .from("vehicle_files")
+      .update(patch)
+      .eq("id", fileId)
+      .select()
+      .single();
+    await load();
+    return (updated as VehicleFile) || null;
+  }, [load]);
 
-  // Register a printed sticker against a vehicle file
-  const registerSticker = useCallback((
+  const registerSticker = useCallback(async (
     fileId: string,
     type: StickerType,
     data: {
@@ -151,226 +167,186 @@ export const useVehicleFiles = (storeId: string) => {
       accessories_total: number;
       doc_fee: number;
       printed_by: string;
-    }
-  ): StickerRecord => {
-    const all = getAll();
-    const file = all.find(f => f.id === fileId);
-    if (!file) throw new Error("Vehicle file not found");
-
+    },
+  ): Promise<StickerRecord | null> => {
     const token = crypto.randomUUID();
-    const signingUrl = `${window.location.origin}/sign/${token}`;
+    const signingUrl = typeof window !== "undefined"
+      ? `${window.location.origin}/sign/${token}`
+      : `/sign/${token}`;
 
-    const sticker: StickerRecord = {
-      id: crypto.randomUUID(),
-      type,
-      tracking_code: generateTrackingCode(file.vin, type, storeId),
-      signing_url: signingUrl,
-      signing_token: token,
-      printed_at: new Date().toISOString(),
-      printed_by: data.printed_by,
-      paper_size: data.paper_size,
-      content_hash: simpleHash(JSON.stringify({
-        vin: file.vin,
+    let createdSticker: StickerRecord | null = null;
+    await mutateFile(fileId, (file) => {
+      const sticker: StickerRecord = {
+        id: crypto.randomUUID(),
         type,
-        products: data.products_snapshot,
-        prices: { base: data.base_price, acc: data.accessories_total, doc: data.doc_fee },
-        ts: new Date().toISOString(),
-      })),
-      products_snapshot: data.products_snapshot,
-      totals: {
-        base_price: data.base_price,
-        accessories_total: data.accessories_total,
-        doc_fee: data.doc_fee,
-        final_price: data.base_price + data.accessories_total + data.doc_fee,
-      },
-      status: "printed",
-    };
+        tracking_code: generateTrackingCode(file.vin, type, storeId),
+        signing_url: signingUrl,
+        signing_token: token,
+        printed_at: new Date().toISOString(),
+        printed_by: data.printed_by,
+        paper_size: data.paper_size,
+        content_hash: simpleHash(JSON.stringify({
+          vin: file.vin, type,
+          products: data.products_snapshot,
+          prices: { base: data.base_price, acc: data.accessories_total, doc: data.doc_fee },
+          ts: new Date().toISOString(),
+        })),
+        products_snapshot: data.products_snapshot,
+        totals: {
+          base_price: data.base_price,
+          accessories_total: data.accessories_total,
+          doc_fee: data.doc_fee,
+          final_price: data.base_price + data.accessories_total + data.doc_fee,
+        },
+        status: "printed",
+      };
+      createdSticker = sticker;
+      return { stickers: [...file.stickers, sticker] as any };
+    });
+    return createdSticker;
+  }, [storeId, mutateFile]);
 
-    const updatedFile = { ...file, stickers: [...file.stickers, sticker], updated_at: new Date().toISOString() };
-    persist(all.map(f => f.id === fileId ? updatedFile : f));
-    return sticker;
-  }, [storeId]);
-
-  // Record a signing event
-  const recordSigning = useCallback((
+  const recordSigning = useCallback(async (
     fileId: string,
     stickerId: string,
-    data: Omit<SigningRecord, "id" | "sticker_id" | "signed_at">
-  ): SigningRecord => {
-    const all = getAll();
-    const file = all.find(f => f.id === fileId);
-    if (!file) throw new Error("Vehicle file not found");
+    data: Omit<SigningRecord, "id" | "sticker_id" | "signed_at">,
+  ): Promise<SigningRecord | null> => {
+    let created: SigningRecord | null = null;
+    await mutateFile(fileId, (file) => {
+      const signing: SigningRecord = {
+        ...data,
+        id: crypto.randomUUID(),
+        sticker_id: stickerId,
+        signed_at: new Date().toISOString(),
+      };
+      created = signing;
+      return {
+        signings: [...file.signings, signing] as any,
+        stickers: file.stickers.map((s) =>
+          s.id === stickerId ? { ...s, status: "signed" as const } : s,
+        ) as any,
+        deal_status: "signed",
+        customer_name: data.customer_name,
+      };
+    });
+    return created;
+  }, [mutateFile]);
 
-    const signing: SigningRecord = {
-      ...data,
-      id: crypto.randomUUID(),
-      sticker_id: stickerId,
-      signed_at: new Date().toISOString(),
-    };
+  const updateDealStatus = useCallback(async (fileId: string, status: DealStatus) => {
+    await mutateFile(fileId, () => ({ deal_status: status }));
+  }, [mutateFile]);
 
-    const updatedStickers = file.stickers.map(s =>
-      s.id === stickerId ? { ...s, status: "signed" as const } : s
-    );
-    const updatedFile = {
-      ...file,
-      signings: [...file.signings, signing],
-      stickers: updatedStickers,
-      deal_status: "signed" as const,
-      customer_name: data.customer_name,
-      updated_at: new Date().toISOString(),
-    };
-    persist(all.map(f => f.id === fileId ? updatedFile : f));
-    return signing;
-  }, [storeId]);
-
-  // Update deal status
-  const updateDealStatus = useCallback((fileId: string, status: DealStatus) => {
-    const all = getAll();
-    const file = all.find(f => f.id === fileId);
-    if (!file) return;
-    persist(all.map(f => f.id === fileId ? { ...f, deal_status: status, updated_at: new Date().toISOString() } : f));
-  }, [storeId]);
-
-  // Update customer info
-  const updateCustomer = useCallback((fileId: string, data: {
+  const updateCustomer = useCallback(async (fileId: string, data: {
     customer_name?: string;
     customer_phone?: string;
     customer_email?: string;
   }) => {
-    const all = getAll();
-    const file = all.find(f => f.id === fileId);
-    if (!file) return;
-    const updated = {
-      ...file,
+    await mutateFile(fileId, () => ({
       ...(data.customer_name !== undefined ? { customer_name: data.customer_name } : {}),
       ...(data.customer_phone !== undefined ? { customer_phone: data.customer_phone } : {}),
       ...(data.customer_email !== undefined ? { customer_email: data.customer_email } : {}),
-      updated_at: new Date().toISOString(),
-    };
-    persist(all.map(f => f.id === fileId ? updated : f));
-  }, [storeId]);
+    }));
+  }, [mutateFile]);
 
-  // Void a sticker
-  const voidSticker = useCallback((fileId: string, stickerId: string, reason: string) => {
-    const all = getAll();
-    const file = all.find(f => f.id === fileId);
-    if (!file) return;
-    if (!file.stickers.find(s => s.id === stickerId)) return;
-    const updatedFile = {
-      ...file,
-      stickers: file.stickers.map(s => s.id === stickerId
-        ? { ...s, status: "voided" as const, voided_at: new Date().toISOString(), voided_reason: reason }
-        : s
-      ),
-      updated_at: new Date().toISOString(),
-    };
-    persist(all.map(f => f.id === fileId ? updatedFile : f));
-  }, [storeId]);
+  const voidSticker = useCallback(async (fileId: string, stickerId: string, reason: string) => {
+    await mutateFile(fileId, (file) => ({
+      stickers: file.stickers.map((s) =>
+        s.id === stickerId
+          ? { ...s, status: "voided" as const, voided_at: new Date().toISOString(), voided_reason: reason }
+          : s,
+      ) as any,
+    }));
+  }, [mutateFile]);
 
-  // Record an aftermarket install on a vehicle
-  const addAftermarketInstall = useCallback((fileId: string, data: Omit<AftermarketInstall, "id" | "created_at">): AftermarketInstall | null => {
-    const all = getAll();
-    const file = all.find(f => f.id === fileId);
-    if (!file) return null;
+  const addAftermarketInstall = useCallback(async (
+    fileId: string,
+    data: Omit<AftermarketInstall, "id" | "created_at">,
+  ): Promise<AftermarketInstall | null> => {
+    let created: AftermarketInstall | null = null;
+    await mutateFile(fileId, (file) => {
+      const install: AftermarketInstall = {
+        ...data,
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+      };
+      created = install;
+      return {
+        aftermarket_installs: [...(file.aftermarket_installs || []), install] as any,
+      };
+    });
+    return created;
+  }, [mutateFile]);
 
-    const install: AftermarketInstall = {
-      ...data,
-      id: crypto.randomUUID(),
-      created_at: new Date().toISOString(),
-    };
+  const attachDocument = useCallback(async (
+    fileId: string,
+    doc: {
+      type: AttachedDocType;
+      label: string;
+      data: any;
+      created_by: string;
+    },
+  ): Promise<AttachedDocument | null> => {
+    let created: AttachedDocument | null = null;
+    await mutateFile(fileId, (file) => {
+      const attached: AttachedDocument = {
+        id: crypto.randomUUID(),
+        type: doc.type,
+        label: doc.label,
+        data: doc.data,
+        created_at: new Date().toISOString(),
+        created_by: doc.created_by,
+      };
+      created = attached;
+      return {
+        attached_documents: [...(file.attached_documents || []), attached] as any,
+      };
+    });
+    return created;
+  }, [mutateFile]);
 
-    const updatedFile = {
-      ...file,
-      aftermarket_installs: [...(file.aftermarket_installs || []), install],
-      updated_at: new Date().toISOString(),
-    };
-    persist(all.map(f => f.id === fileId ? updatedFile : f));
-    return install;
-  }, [storeId]);
-
-  // Look up a vehicle file by tracking code
   const findByTrackingCode = useCallback((code: string): {
     file: VehicleFile;
     sticker: StickerRecord;
   } | null => {
-    const all = getAll();
-    for (const file of all) {
+    for (const file of files) {
       for (const sticker of file.stickers) {
-        if (sticker.tracking_code === code) {
-          return { file, sticker };
-        }
+        if (sticker.tracking_code === code) return { file, sticker };
       }
     }
     return null;
-  }, []);
-
-  // Look up by VIN
-  const findByVin = useCallback((vin: string): VehicleFile | null => {
-    return files.find(f => f.vin === vin) || null;
   }, [files]);
 
-  // Attach a compliance document (K-208, FTC Buyers Guide, etc.)
-  const attachDocument = useCallback((fileId: string, doc: {
-    type: AttachedDocType;
-    label: string;
-    data: any;
-    created_by: string;
-  }): AttachedDocument | null => {
-    const all = getAll();
-    const file = all.find(f => f.id === fileId);
-    if (!file) return null;
-
-    const attached: AttachedDocument = {
-      id: crypto.randomUUID(),
-      type: doc.type,
-      label: doc.label,
-      data: doc.data,
-      created_at: new Date().toISOString(),
-      created_by: doc.created_by,
-    };
-
-    const updatedFile = {
-      ...file,
-      attached_documents: [...(file.attached_documents || []), attached],
-      updated_at: new Date().toISOString(),
-    };
-    persist(all.map(f => f.id === fileId ? updatedFile : f));
-    return attached;
-  }, [storeId]);
-
-  // Look up by deal QR token (for the signing flow when car is sold)
-  const findByDealQrToken = useCallback((token: string): VehicleFile | null => {
-    const all = getAll();
-    return all.find(f => f.deal_qr_token === token) || null;
-  }, []);
-
-  // Look up by signing token
   const findBySigningToken = useCallback((token: string): {
     file: VehicleFile;
     sticker: StickerRecord;
   } | null => {
-    const all = getAll();
-    for (const file of all) {
+    for (const file of files) {
       for (const sticker of file.stickers) {
-        if (sticker.signing_token === token) {
-          return { file, sticker };
-        }
+        if (sticker.signing_token === token) return { file, sticker };
       }
     }
     return null;
-  }, []);
+  }, [files]);
 
-  // Stats
+  const findByDealQrToken = useCallback((token: string): VehicleFile | null => {
+    return files.find((f) => f.deal_qr_token === token) || null;
+  }, [files]);
+
+  const findByVin = useCallback((vin: string): VehicleFile | null => {
+    return files.find((f) => f.vin === vin) || null;
+  }, [files]);
+
   const stats = {
     totalFiles: files.length,
     totalStickers: files.reduce((sum, f) => sum + f.stickers.length, 0),
-    pendingSign: files.filter(f => f.deal_status === "pending_sign").length,
-    signed: files.filter(f => f.deal_status === "signed").length,
-    delivered: files.filter(f => f.deal_status === "delivered").length,
+    pendingSign: files.filter((f) => f.deal_status === "pending_sign").length,
+    signed: files.filter((f) => f.deal_status === "signed").length,
+    delivered: files.filter((f) => f.deal_status === "delivered").length,
   };
 
   return {
     files,
+    loading,
     stats,
     getOrCreateFile,
     registerSticker,
