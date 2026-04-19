@@ -34,12 +34,15 @@ import {
   Car,
   Award,
   Clock,
+  CreditCard,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { useDealerSettings } from "@/contexts/DealerSettingsContext";
 import { useAudit } from "@/contexts/AuditContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import Logo from "@/components/brand/Logo";
 import AppSwitcher from "@/components/layout/AppSwitcher";
 import CommandPalette, { useCommandPalette } from "@/components/layout/CommandPalette";
@@ -163,6 +166,26 @@ const AppShell = ({ children }: AppShellProps) => {
   const handleSignOut = async () => {
     await signOut();
     navigate("/login");
+  };
+
+  // Manage billing opens the Stripe Customer Portal via the
+  // billing-portal-session edge function. All four apps in the
+  // Autocurb family use the same Stripe Customer, so this works
+  // identically wherever the dealer clicks it.
+  const handleManageBilling = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "billing-portal-session",
+        { body: { return_url: window.location.href } }
+      );
+      if (error || !data?.url) {
+        toast.error("Couldn't open billing portal");
+        return;
+      }
+      window.location.href = data.url as string;
+    } catch {
+      toast.error("Couldn't open billing portal");
+    }
   };
 
   const handleToggleDark = () => {
@@ -540,6 +563,10 @@ const AppShell = ({ children }: AppShellProps) => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleManageBilling}>
+                    <CreditCard className="w-3.5 h-3.5 mr-2" />
+                    Manage billing
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/admin?tab=branding")}>
                     <Settings className="w-3.5 h-3.5 mr-2" />
                     Settings

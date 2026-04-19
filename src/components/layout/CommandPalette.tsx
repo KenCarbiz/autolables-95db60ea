@@ -29,9 +29,12 @@ import {
   Users,
   BarChart3,
   Store,
+  CreditCard,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useViewTransitionNavigate } from "@/lib/navigation";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -51,6 +54,23 @@ const CommandPalette = ({ open, onOpenChange }: CommandPaletteProps) => {
     onOpenChange(false);
     await signOut();
     navigate("/login");
+  };
+
+  const doManageBilling = async () => {
+    onOpenChange(false);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "billing-portal-session",
+        { body: { return_url: window.location.href } }
+      );
+      if (error || !data?.url) {
+        toast.error("Couldn't open billing portal");
+        return;
+      }
+      window.location.href = data.url as string;
+    } catch {
+      toast.error("Couldn't open billing portal");
+    }
   };
 
   return (
@@ -180,6 +200,10 @@ const CommandPalette = ({ open, onOpenChange }: CommandPaletteProps) => {
         <CommandSeparator />
 
         <CommandGroup heading="Account">
+          <CommandItem onSelect={doManageBilling}>
+            <CreditCard className="w-4 h-4 mr-2" />
+            Manage billing
+          </CommandItem>
           <CommandItem onSelect={doSignOut}>
             <LogOut className="w-4 h-4 mr-2" />
             Sign out
