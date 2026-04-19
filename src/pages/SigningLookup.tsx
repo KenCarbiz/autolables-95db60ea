@@ -9,18 +9,13 @@ import Logo from "@/components/brand/Logo";
 //
 // If a buyer lost their /sign/:token link (email auto-deleted,
 // phone switched, etc.) they enter VIN + the email or phone they
-// used at signing. Server validates the match; on hit, an email
-// is sent to the address on file with a fresh link to
-// /sign/:token. Anti-enumeration by design: UI always shows the
-// same "check your email" state regardless of match.
+// used at signing.
+//
+// Hardened: calls the request-signing-link edge function, which
+// wraps the RPC + send-email server-side so the dispatch envelope
+// (email + signing URL) NEVER reaches the browser. Response is
+// always { ok: true } — UI cannot distinguish hit from miss.
 // ──────────────────────────────────────────────────────────────
-
-interface DispatchEnvelope {
-  email?: string;
-  signing_url?: string;
-  ymm?: string;
-  dealer_name?: string;
-}
 
 const SigningLookup = () => {
   const [vin, setVin] = useState("");
@@ -32,34 +27,12 @@ const SigningLookup = () => {
     if (vin.trim().length !== 17 || contact.trim().length === 0) return;
     setSubmitting(true);
 
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://autolabels.io";
-    const { data } = await (supabase as any).rpc("request_signing_link_resend", {
-      _vin: vin.trim(),
-      _contact: contact.trim(),
-      _origin: origin,
-    });
-
-    const dispatch: DispatchEnvelope | undefined = (data as { dispatch?: DispatchEnvelope })?.dispatch;
-
-    // If the RPC matched, fire the email. Swallow failures silently.
-    // If no match, skip — UI always lands on the same "check your
-    // email" state so a scraper can't distinguish hit from miss.
-    if (dispatch?.email && dispatch?.signing_url) {
-      const dealerName = dispatch.dealer_name || "your dealership";
-      const html = `
-        <p>Here's your signing link for the <strong>${dispatch.ymm || "vehicle"}</strong> at ${dealerName}:</p>
-        <p><a href="${dispatch.signing_url}" style="display:inline-block;padding:12px 18px;background:#0f172a;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">Open your signing page</a></p>
-        <p style="font-size:12px;color:#555">Or paste this URL into your browser: ${dispatch.signing_url}</p>
-        <p style="font-size:11px;color:#888">This link is yours. Please do not share it.</p>
-      `;
-      supabase.functions.invoke("send-email", {
-        body: {
-          to: dispatch.email,
-          subject: `Your signing link${dispatch.ymm ? " — " + dispatch.ymm : ""}`,
-          html,
-        },
-      }).catch(() => { /* best-effort */ });
-    }
+    // Fire through the edge function. We intentionally don't read
+    // the response body — it's always { ok: true } and the UI lands
+    // on the same "check your email" state either way.
+    await supabase.functions.invoke("request-signing-link", {
+      body: { vin: vin.trim(), contact: contact.trim() },
+    }).catch(() => { /* always show the confirmation state */ });
 
     setSubmitting(false);
     setDone(true);
