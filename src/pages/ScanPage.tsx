@@ -99,7 +99,7 @@ const ScanPage = () => {
     }
   };
 
-  const handleAddToQueue = () => {
+  const handleAddToQueue = async () => {
     if (!decoded) {
       toast.error("Decode a VIN first");
       return;
@@ -109,19 +109,19 @@ const ScanPage = () => {
       return;
     }
 
-    const item = addToQueue(vin.trim().toUpperCase(), stockNumber, mileage, notes);
-
-    // Store decoded data alongside queue item
-    const queueData = JSON.parse(localStorage.getItem("vin_queue_data") || "{}");
-    queueData[item.id] = {
-      decoded,
-      factoryData,
-      condition,
-      mileage,
-      stockNumber,
+    // Supabase-backed. decoded_data + condition live on the row,
+    // not in a localStorage side-car, so any device in the tenant
+    // sees the queue the moment the lot scanner pushes it.
+    const saved = await addToQueue(vin.trim().toUpperCase(), stockNumber, mileage, {
       notes,
-    };
-    localStorage.setItem("vin_queue_data", JSON.stringify(queueData));
+      condition,
+      decoded_data: { decoded, factoryData },
+    });
+
+    if (!saved) {
+      toast.error("Couldn't save to the queue");
+      return;
+    }
 
     // Log the scan
     if (user) {

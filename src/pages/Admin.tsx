@@ -1323,8 +1323,8 @@ const Admin = () => {
                   </div>
 
                   {vinQueue.map(item => {
-                    const qData = JSON.parse(localStorage.getItem("vin_queue_data") || "{}")[item.id];
-                    const ymm = qData?.decoded?.ymm || `VIN: ${item.vin}`;
+                    const decoded = (item.decoded_data as any)?.decoded;
+                    const ymm = decoded?.ymm || `VIN: ${item.vin}`;
                     const isQueued = item.status === "queued";
                     const isCompleted = item.status === "completed";
 
@@ -1349,7 +1349,7 @@ const Admin = () => {
                               <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
                                 {item.stock_number && <span>Stock: {item.stock_number}</span>}
                                 {item.mileage && <span>{parseInt(item.mileage).toLocaleString()} mi</span>}
-                                {qData?.condition && <span className="capitalize">{qData.condition}</span>}
+                                {item.condition && <span className="capitalize">{item.condition}</span>}
                               </div>
                               <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">{item.vin}</p>
                               {item.notes && <p className="text-[10px] text-muted-foreground mt-0.5 italic">{item.notes}</p>}
