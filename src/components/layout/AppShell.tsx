@@ -310,7 +310,7 @@ const AppShell = ({ children }: AppShellProps) => {
             className="h-12 rounded-xl bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white inline-flex items-center justify-center gap-1.5 shadow-premium hover:brightness-110 transition-all"
           >
             <Car className="w-4 h-4 stroke-[2.5]" />
-            <span className="font-display font-black tracking-tight text-[15px]">Add Vehicle</span>
+            <span className="font-display font-black tracking-tight text-[15px] whitespace-nowrap">Add Vehicle</span>
           </button>
           <button
             onClick={() => {
@@ -321,7 +321,7 @@ const AppShell = ({ children }: AppShellProps) => {
             title="Scan a VIN barcode or windshield sticker"
           >
             <ScanLine className="w-4 h-4 stroke-[2.5]" />
-            <span className="font-display font-bold tracking-tight text-[15px]">Scan Vehicle</span>
+            <span className="font-display font-black tracking-tight text-[15px] whitespace-nowrap">Scan Vehicle</span>
           </button>
         </div>
 
