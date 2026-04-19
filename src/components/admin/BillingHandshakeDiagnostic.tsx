@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { RefreshCw, PlayCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { RefreshCw, PlayCircle, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 
 // ──────────────────────────────────────────────────────────────
 // BillingHandshakeDiagnostic — platform-admin only.
@@ -56,10 +56,11 @@ const BillingHandshakeDiagnostic = () => {
   const [tenantId, setTenantId] = useState("");
   const [entitlements, setEntitlements] = useState<Entitlement[]>([]);
   const [loading, setLoading] = useState(false);
+  const [reengageSchedule, setReengageSchedule] = useState<{ schedule: string | null; active: boolean } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [evRes, auditRes, tenantsRes] = await Promise.all([
+    const [evRes, auditRes, tenantsRes, schedRes] = await Promise.all([
       (supabase as any)
         .from("billing_events")
         .select("id, tenant_id, stripe_event_id, event_type, processed_at, created_at")
@@ -76,10 +77,13 @@ const BillingHandshakeDiagnostic = () => {
         .select("id, name")
         .order("name")
         .limit(50),
+      (supabase as any).rpc("get_reengage_schedule"),
     ]);
     setEvents((evRes.data as BillingEvent[]) || []);
     setAudit((auditRes.data as AuditEntry[]) || []);
     setTenants((tenantsRes.data as { id: string; name: string }[]) || []);
+    const schedRow = Array.isArray(schedRes.data) ? schedRes.data[0] : schedRes.data;
+    setReengageSchedule(schedRow ? { schedule: schedRow.schedule, active: !!schedRow.active } : { schedule: null, active: false });
     setLoading(false);
   }, []);
 
@@ -147,6 +151,24 @@ const BillingHandshakeDiagnostic = () => {
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </button>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex items-start gap-2">
+        <Clock className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" />
+        <div className="text-[12px] text-slate-700 leading-relaxed">
+          <span className="font-semibold">Abandoned-signing re-engagement: </span>
+          {reengageSchedule === null ? (
+            <span className="text-muted-foreground">checking\u2026</span>
+          ) : reengageSchedule.schedule ? (
+            <>
+              scheduled (<span className="font-mono">{reengageSchedule.schedule}</span>) &middot; {reengageSchedule.active ? "active" : "paused"}
+            </>
+          ) : (
+            <>
+              not scheduled. Call <span className="font-mono">SELECT public.schedule_reengage_abandoned_signings();</span> from psql once secrets are in vault.
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
