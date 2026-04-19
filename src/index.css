@@ -340,10 +340,13 @@
 
   /* Sidebar shimmer — deep navy→blue vertical roll that mirrors
      the Landing shimmer-hero but tuned for a tall chrome panel.
-     The ::after radial glow matches the hero's highlight pools so
-     the sidebar visually reads as the same blue family. */
+     The ::before radial glow matches the hero's highlight pools so
+     the sidebar visually reads as the same blue family. Note: we
+     deliberately do NOT set position here — the <aside> ships with
+     Tailwind's `fixed` utility, which is already a containing block
+     for ::before. Setting position: relative here fights `.fixed`
+     and collapses the sidebar into the mobile flex flow. */
   .shimmer-sidebar {
-    position: relative;
     background:
       linear-gradient(
         180deg,
