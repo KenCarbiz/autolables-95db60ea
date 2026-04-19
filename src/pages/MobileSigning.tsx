@@ -293,19 +293,26 @@ const MobileSigning = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground animate-pulse">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-mono uppercase tracking-[0.18em] text-slate-500">Loading</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <div className="text-center">
-          <div className="text-4xl mb-4">⚠️</div>
-          <h1 className="text-xl font-bold text-foreground mb-2">Cannot Open</h1>
-          <p className="text-muted-foreground">{error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-white p-6">
+        <div className="text-center max-w-sm">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+            <svg className="w-6 h-6 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+          </div>
+          <h1 className="text-2xl font-black font-display tracking-tight text-slate-950">Cannot open</h1>
+          <p className="text-sm text-slate-600 mt-2">{error}</p>
         </div>
       </div>
     );
@@ -316,72 +323,58 @@ const MobileSigning = () => {
     const dealerName = addendum?.dealer_snapshot?.name || "Your Dealership";
     const dealerPhone = addendum?.dealer_snapshot?.phone as string | undefined;
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-4">
-        <div className="max-w-lg mx-auto pt-8 space-y-4">
-          <div className="text-center space-y-3">
-            <div className="mx-auto w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-premium">
-              <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+      <div className="min-h-screen bg-white">
+        <div className="max-w-lg mx-auto px-4 pt-10 pb-10 space-y-6">
+          {/* Hero confirmation — one dark slab, no smiley checks,
+              no floating chrome. Tesla's "Order placed" cadence. */}
+          <div className="rounded-3xl bg-slate-950 text-white p-7 md:p-9 relative overflow-hidden">
+            <div className="relative">
+              <p className="text-[10px] uppercase tracking-[0.22em] text-emerald-400 font-semibold">Signed</p>
+              <h1 className="mt-2 text-4xl md:text-5xl font-black font-display tracking-[-0.03em] leading-[0.95]">
+                You're done.
+              </h1>
+              <p className="mt-3 text-[13px] text-white/75 leading-relaxed max-w-sm">
+                {dealerName} has a hashed, time-stamped copy. A signed packet is on its way to your email.
+              </p>
             </div>
-            <h1 className="text-2xl font-black tracking-tight font-display text-foreground">
-              Signed and sealed
-            </h1>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Your addendum is recorded. {dealerName} has a timestamped copy,
-              and so do you.
-            </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-card p-4 space-y-3">
+          {/* Receipt — mono-uppercase labels, tight meta grid */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-label text-slate-500">Vehicle</p>
-              <p className="text-sm font-semibold text-foreground mt-0.5">
-                {addendum.vehicle_ymm || "Vehicle"}
-              </p>
+              <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500">Vehicle</p>
+              <p className="text-sm font-bold text-slate-950 mt-1">{addendum.vehicle_ymm || "Vehicle"}</p>
               {addendum.vehicle_vin && (
-                <p className="text-[11px] text-muted-foreground font-mono">VIN {addendum.vehicle_vin}</p>
+                <p className="text-[10px] font-mono text-slate-500">VIN · {addendum.vehicle_vin.slice(-8)}</p>
               )}
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-label text-slate-500">Signed by</p>
-              <p className="text-sm font-semibold text-foreground mt-0.5">{customerName || "—"}</p>
-              <p className="text-[11px] text-muted-foreground">{signedAt}</p>
+              <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500">Signed by</p>
+              <p className="text-sm font-bold text-slate-950 mt-1">{customerName || "—"}</p>
+              <p className="text-[10px] font-mono text-slate-500">{signedAt}</p>
             </div>
           </div>
 
-          <div className="rounded-2xl bg-slate-900 text-white p-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-              <p className="text-xs font-bold uppercase tracking-label text-emerald-400">Legally binding record</p>
-            </div>
-            <p className="text-[11px] text-white/70 leading-relaxed">
-              Your signature is tamper-evident. Every product, price, initial,
-              consent, and acknowledgment you reviewed is hashed (SHA-256) and
-              stored with your IP and device info so it can be defended under
-              the federal E-SIGN Act and your state's UETA.
+          <div className="border-t border-slate-200" />
+
+          <div>
+            <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500">Legally binding</p>
+            <p className="text-[12px] text-slate-700 leading-relaxed mt-1">
+              Every product, price, initial, and consent you reviewed is SHA-256 hashed and stored with your IP and device info — defensible under the federal E-SIGN Act and your state's UETA.
             </p>
           </div>
 
-          {(dealerPhone || dealerName) && (
-            <div className="rounded-2xl border border-slate-200 bg-card p-4">
-              <p className="text-[10px] font-bold uppercase tracking-label text-slate-500">
-                Questions? Contact the dealer
-              </p>
-              <p className="text-sm font-semibold text-foreground mt-0.5">{dealerName}</p>
-              {dealerPhone && (
-                <a href={`tel:${dealerPhone}`} className="mt-2 inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-[#1E90FF] text-white text-sm font-display font-bold">
-                  Call {dealerPhone}
-                </a>
-              )}
-            </div>
+          {dealerPhone && (
+            <a
+              href={`tel:${dealerPhone}`}
+              className="block w-full h-12 rounded-xl border border-slate-200 text-slate-950 text-sm font-bold inline-flex items-center justify-center hover:bg-slate-50"
+            >
+              Call {dealerName}
+            </a>
           )}
 
-          <p className="text-center text-[10px] text-muted-foreground pb-6">
-            You can close this page safely. A copy has been archived with your
-            dealership. Keep an eye on your email for the signed packet.
+          <p className="text-center text-[10px] font-mono uppercase tracking-wider text-slate-400 pt-2">
+            You can close this page. A copy is on its way.
           </p>
         </div>
       </div>
@@ -406,36 +399,41 @@ const MobileSigning = () => {
   const progressPct = Math.round((doneCount / requirements.length) * 100);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sticky progress — always in view so the customer knows exactly how
-          far they have to go. Progress is computed from the required
-          completion criteria, not just scroll position. */}
-      <div className="sticky top-0 z-40 surface-blur border-b border-slate-200">
+    <div className="min-h-screen bg-white">
+      {/* Sticky progress — solid slate track, Tesla cadence. Label
+          reads as a step count so the customer always knows where
+          they are, not a decorative gradient. */}
+      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-lg mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-3 text-[11px]">
-            <span className="font-bold uppercase tracking-label text-slate-500">
-              Sign addendum
-            </span>
-            <span className="font-bold tabular-nums text-slate-900">
-              {doneCount} of {requirements.length} · {progressPct}%
+          <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.18em] font-semibold">
+            <span className="text-slate-500">Sign &amp; initial</span>
+            <span className="tabular-nums text-slate-950">
+              {doneCount}/{requirements.length} · {progressPct}%
             </span>
           </div>
-          <div className="mt-1.5 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+          <div className="mt-2 h-1 rounded-full bg-slate-100 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] transition-all duration-300"
+              className="h-full bg-slate-950 transition-all duration-300"
               style={{ width: `${progressPct}%` }}
             />
           </div>
         </div>
       </div>
 
-      <div className="p-4">
+      <div className="px-4 pt-6 pb-4">
         <div className="max-w-lg mx-auto space-y-6">
-          {/* Header */}
-          <div className="bg-card rounded-xl p-5 shadow-sm">
-            <h1 className="text-xl font-bold font-barlow-condensed text-foreground">Dealer Addendum — Sign & Initial</h1>
-            {addendum.vehicle_ymm && <p className="text-sm font-semibold text-foreground mt-1">{addendum.vehicle_ymm}</p>}
-            {addendum.vehicle_vin && <p className="text-xs text-muted-foreground">VIN: {addendum.vehicle_vin}</p>}
+          {/* Vehicle is the hero. No wrapper card, no drop shadow —
+              just confident typography. */}
+          <div>
+            {addendum.vehicle_ymm && (
+              <h1 className="text-3xl md:text-4xl font-black font-display tracking-[-0.03em] leading-[0.95] text-slate-950">
+                {addendum.vehicle_ymm}
+              </h1>
+            )}
+            <div className="mt-2 flex items-center gap-3 text-[11px] text-slate-500 font-mono uppercase tracking-wider flex-wrap">
+              <span>Dealer addendum</span>
+              {addendum.vehicle_vin && <span>VIN · {addendum.vehicle_vin.slice(-8)}</span>}
+            </div>
           </div>
 
         {/* Fill All Initials */}
@@ -754,14 +752,19 @@ const MobileSigning = () => {
           />
         </div>
 
-        {/* Submit */}
+        {/* Submit — Tesla-cadence commitment verb. Solid slate, no
+            chrome, no emoji. Once pressed, the addendum is hashed,
+            archived, and delivered. */}
         <button
           onClick={handleSubmit}
           disabled={submitting}
-          className="w-full h-14 bg-teal text-primary-foreground rounded-xl font-bold text-lg disabled:opacity-50"
+          className="w-full h-14 bg-slate-950 text-white rounded-xl font-display font-bold text-base tracking-tight disabled:opacity-50 hover:bg-slate-900 transition-colors"
         >
-          {submitting ? "Submitting..." : "✅ Submit Signature"}
+          {submitting ? "Signing…" : "Sign and finalize"}
         </button>
+        <p className="text-center text-[10px] font-mono uppercase tracking-wider text-slate-500">
+          By signing, you're hashed, archived, and legally bound.
+        </p>
         </div>
       </div>
     </div>
