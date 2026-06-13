@@ -10,6 +10,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { AccessoryInstallPanel } from "@/components/admin/AccessoryInstallPanel";
 import { EmailDistributionPanel } from "@/components/admin/EmailDistributionPanel";
+import { InventoryFeedHealth } from "@/components/admin/InventoryFeedHealth";
 import { useEmailDistribution } from "@/hooks/useEmailDistribution";
 import { PRODUCT_ICONS } from "@/components/addendum/ProductRow";
 import { STATE_DOC_FEES } from "@/data/docFees";
@@ -1725,6 +1726,12 @@ const Admin = () => {
         {/* ─── Vehicle Files Tab ─── */}
         {tab === "files" && (
           <div className="space-y-4">
+            {/* Wave 22 — feed health surfaces the cross-app
+                inventory contract above the file index so a
+                dealer who notices "I'm missing rows" can check
+                the pull status without leaving this tab. */}
+            <InventoryFeedHealth />
+
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
