@@ -261,6 +261,7 @@ const AppShell = ({ children }: AppShellProps) => {
         settings: "Feature Toggles",
         analytics: "Analytics",
         leads: "Leads",
+        funnel: "Signing Funnel",
         audit: "Audit Log",
         queue: "Print Queue",
         getready: "Get-Ready",
@@ -268,7 +269,7 @@ const AppShell = ({ children }: AppShellProps) => {
       };
       const sectionMap: Record<string, string> = {
         products: "Administration", rules: "Administration", branding: "Administration", settings: "Administration",
-        analytics: "Compliance", leads: "Compliance", audit: "Compliance",
+        analytics: "Compliance", leads: "Compliance", funnel: "Compliance", audit: "Compliance",
         queue: "Inventory", getready: "Inventory", files: "Inventory",
       };
       crumbs.push({ label: sectionMap[tab] || "Admin" });

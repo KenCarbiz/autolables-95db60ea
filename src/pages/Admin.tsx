@@ -73,7 +73,7 @@ interface Product {
   icon_type?: string;
 }
 
-type AdminTab = "home" | "products" | "rules" | "settings" | "branding" | "analytics" | "leads" | "audit" | "queue" | "files" | "getready" | "inventory" | "invoices" | "warranty";
+type AdminTab = "home" | "products" | "rules" | "settings" | "branding" | "analytics" | "leads" | "funnel" | "audit" | "queue" | "files" | "getready" | "inventory" | "invoices" | "warranty";
 
 const emptyProduct = {
   name: "",
@@ -130,7 +130,7 @@ const FEATURE_TOGGLES: { key: keyof DealerSettings; label: string; description: 
   { key: "feature_ai_descriptions", label: "AI Descriptions", description: "Generate vehicle descriptions automatically", status: "coming_soon" },
 ];
 
-const VALID_TABS: AdminTab[] = ["home", "products", "rules", "settings", "branding", "analytics", "leads", "audit", "queue", "files", "getready", "inventory", "invoices", "warranty"];
+const VALID_TABS: AdminTab[] = ["home", "products", "rules", "settings", "branding", "analytics", "leads", "funnel", "audit", "queue", "files", "getready", "inventory", "invoices", "warranty"];
 
 const Admin = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
@@ -298,6 +298,7 @@ const Admin = () => {
     { id: "branding", label: "Branding" },
     ...(settings.feature_analytics ? [{ id: "analytics" as const, label: "Analytics" }] : []),
     ...(settings.feature_lead_capture ? [{ id: "leads" as const, label: "Leads" }] : []),
+    { id: "funnel", label: "Signing Funnel" },
     { id: "queue", label: "Print Queue" },
     { id: "getready", label: "Get-Ready" },
     ...(settings.feature_inventory ? [{ id: "inventory" as const, label: "Inventory" }] : []),
@@ -1211,6 +1212,19 @@ const Admin = () => {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ─── Signing Funnel Tab (Wave 26) ─── */}
+        {/* Dedicated home for Process Dashboard FlowTile #4
+            "Out for sign." Was previously colocated under leads;
+            the dashboard linked at /admin?tab=funnel which never
+            existed (broken link). This tab consolidates the
+            funnel widget + an open-signings list so a manager
+            sees every shopper currently mid-flow at a glance. */}
+        {tab === "funnel" && (
+          <div className="space-y-4">
+            <SigningFunnelWidget />
           </div>
         )}
 
