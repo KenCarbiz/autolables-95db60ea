@@ -12,6 +12,7 @@ import { useVehicleListing } from "@/hooks/useVehicleListing";
 import { useRecallLookup } from "@/hooks/useRecallLookup";
 import RecallBanner from "@/components/addendum/RecallBanner";
 import { toast } from "sonner";
+import { PublishPriceGate } from "@/components/inventory/PublishPriceGate";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Printer, Download, Car, Fuel, Gauge, Cog, Sparkles, MapPin, Tag,
@@ -38,6 +39,8 @@ const UsedCarSticker = () => {
   const [generating, setGenerating] = useState(false);
   const [publishedSlug, setPublishedSlug] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  // Wave 23 — publish-price-gate state.
+  const [priceGateOpen, setPriceGateOpen] = useState(false);
   const [stopSale, setStopSale] = useState(false);
 
   const [mode, setMode] = useState<StickerMode>("full");
@@ -109,10 +112,19 @@ const UsedCarSticker = () => {
     if (user) log({ store_id: currentStore?.id || "", user_id: user.id, action: "addendum_printed", entity_type: "used_car_sticker", entity_id: vehicle.vin, details: { ymm: `${vehicle.year} ${vehicle.make} ${vehicle.model}`, mode, trackingCode } });
   };
 
-  const handlePublish = async () => {
+  // Wave 23 — handlePublish is gated by PublishPriceGate. The
+  // gate opens on click; doPublish runs only after the gate
+  // resolves (auto-proceed on match, recapture-then-proceed on
+  // drift/untracked, or written-justification-then-proceed).
+  const handlePublish = () => {
     if (!vehicle.vin) { toast.error("Enter a VIN first"); return; }
     if (!currentStore?.id) { toast.error("Select a store first"); return; }
     if (stopSale) { toast.error("Do-not-drive recall open. Cannot publish until remedied."); return; }
+    setPriceGateOpen(true);
+  };
+
+  const doPublish = async () => {
+    setPriceGateOpen(false);
     setPublishing(true);
     try {
       const ymm = `${vehicle.year} ${vehicle.make} ${vehicle.model}`.trim();
@@ -624,6 +636,18 @@ const UsedCarSticker = () => {
           </div>
         </div>
       </div>
+
+      {/* Wave 23 — publish-time price-drift gate. Match auto-
+          proceeds silently; drift requires recapture-or-justify;
+          untracked offers capture-or-acknowledge. */}
+      <PublishPriceGate
+        open={priceGateOpen}
+        vin={vehicle.vin}
+        stickerPrice={totalPrice}
+        storeId={currentStore?.id || ""}
+        onProceed={doPublish}
+        onCancel={() => setPriceGateOpen(false)}
+      />
     </div>
   );
 };
