@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { useVehicleFiles } from "@/hooks/useVehicleFiles";
 import { useGetReady } from "@/hooks/useGetReady";
+import { useAdvertisedPrices, assessDrift } from "@/hooks/useAdvertisedPrices";
 import {
   ScanLine, Wrench, Tag, Send, CheckCircle2,
   RotateCcw, ShieldCheck, AlertTriangle,
@@ -38,6 +39,7 @@ const ProcessDashboard = () => {
   //    TanStack Query, already realtime-synced in Wave 14.6).
   const { files: vehicleFiles } = useVehicleFiles(storeId);
   const { records: getReadyRecords } = useGetReady(storeId);
+  const { byVin: advertisedByVin } = useAdvertisedPrices(storeId);
 
   // ── Direct queries for tiles whose data lives in tables not
   //    yet wrapped in a domain hook. Each query is tenant-scoped
@@ -55,11 +57,11 @@ const ProcessDashboard = () => {
     staleTime: 30_000,
   });
 
-  const { data: listings = { draft: 0, published: 0 } } = useQuery({
+  const { data: listings = { draft: 0, published: 0, published_rows: [] as { vin: string; price: number | null }[] } } = useQuery({
     queryKey: ["dash", "listings", tenant?.id],
     enabled: !!tenant?.id,
     queryFn: async () => {
-      const [{ count: d }, { count: p }] = await Promise.all([
+      const [{ count: d }, { count: p }, pubRows] = await Promise.all([
         (supabase as any)
           .from("vehicle_listings")
           .select("id", { count: "exact", head: true })
@@ -68,11 +70,38 @@ const ProcessDashboard = () => {
           .from("vehicle_listings")
           .select("id", { count: "exact", head: true })
           .eq("status", "published"),
+        (supabase as any)
+          .from("vehicle_listings")
+          .select("vin, price")
+          .eq("status", "published")
+          .not("vin", "is", null)
+          .limit(500),
       ]);
-      return { draft: d || 0, published: p || 0 };
+      return {
+        draft: d || 0,
+        published: p || 0,
+        published_rows: (pubRows.data || []) as { vin: string; price: number | null }[],
+      };
     },
     staleTime: 30_000,
   });
+
+  // ── Wave 20 derived count: published listings whose sticker
+  //    drifts from the latest advertised snapshot. Untracked rows
+  //    (no advertised price on file) don't count as drift — they
+  //    surface separately as "untracked" so the dealer can
+  //    decide to capture.
+  const priceDrift = useMemo(() => {
+    let drift = 0;
+    let untracked = 0;
+    for (const row of listings.published_rows) {
+      const ap = advertisedByVin.get((row.vin || "").toUpperCase());
+      const a = assessDrift(row.price || 0, ap);
+      if (a.status === "drift") drift++;
+      if (a.status === "untracked") untracked++;
+    }
+    return { drift, untracked };
+  }, [listings.published_rows, advertisedByVin]);
 
   const { data: signings = { open: 0, recent: [] as any[], returnsOpen: 0 } } = useQuery({
     queryKey: ["dash", "signings", tenant?.id],
@@ -297,6 +326,41 @@ const ProcessDashboard = () => {
             countSuffix={missingBenefit === 1 ? "vehicle missing" : "vehicles missing"}
           />
         </div>
+
+        {/* Wave 20 — second row dedicated to price-match defense.
+            The 97-letter campaign cited this exact hook. */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+          <DefenseTile
+            icon={TrendingUp}
+            label="Price drift"
+            count={priceDrift.drift}
+            empty="sticker matches advertised on every published VIN"
+            href="/inventory"
+            cite="FTC §5 · March 2026 97-letter campaign"
+            tone={priceDrift.drift > 0 ? "rose" : "neutral"}
+            countSuffix={priceDrift.drift === 1 ? "published VIN" : "published VINs"}
+          />
+          <DefenseTile
+            icon={TrendingUp}
+            label="Untracked price"
+            count={priceDrift.untracked}
+            empty="every published VIN has an advertised price on file"
+            href="/inventory"
+            cite="2-yr retention · CA SB 766 §11713.21"
+            tone={priceDrift.untracked > 0 ? "amber" : "neutral"}
+            countSuffix={priceDrift.untracked === 1 ? "VIN no snapshot" : "VINs no snapshot"}
+          />
+          <DefenseTile
+            icon={ShieldCheck}
+            label="Audit-Defense ready"
+            count={signings.recent.length}
+            empty="—"
+            href="/compliance"
+            cite="self-contained · SHA-256 chain root"
+            tone="neutral"
+            countSuffix="VIN packets last 7d"
+          />
+        </div>
       </section>
 
       {/* Recent signed — top 6 with Defend exits matching the
@@ -367,8 +431,7 @@ const ProcessDashboard = () => {
           Roadmap surfaces · coming soon
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <RoadmapTile icon={Mail}        label="Email distribution" wave="Wave 19" detail="Get-ready emails to F&I; signed-doc packets to employee inboxes." />
-          <RoadmapTile icon={TrendingUp}  label="Advertised price match" wave="Wave 20" detail="Watch dealer website + AutoTrader for price drift before publish. The 97-letter answer." />
+          <RoadmapTile icon={ScanLine}    label="Lot capture queue polish" wave="Wave 21" detail="Status tagging (needs sticker / needs prep / needs photos), batch actions, V2 chrome." />
           <RoadmapTile icon={AlertTriangle} label="Inventory feed health" wave="Wave 22" detail="Autocurb push/pull status + manual sync button + last-synced timestamp." />
         </div>
       </section>
