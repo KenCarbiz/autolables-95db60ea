@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { AccessoryInstallPanel } from "@/components/admin/AccessoryInstallPanel";
+import { EmailDistributionPanel } from "@/components/admin/EmailDistributionPanel";
+import { useEmailDistribution } from "@/hooks/useEmailDistribution";
 import { PRODUCT_ICONS } from "@/components/addendum/ProductRow";
 import { STATE_DOC_FEES } from "@/data/docFees";
 import { format } from "date-fns";
@@ -166,7 +168,8 @@ const Admin = () => {
   const [fileSearch, setFileSearch] = useState("");
 
   // Get-Ready tracking
-  const { records: getReadyRecords, getPending: getPendingGetReady, validateTimeline, markAccessoryInstalled } = useGetReady(currentStore?.id || "");
+  const { records: getReadyRecords, getPending: getPendingGetReady, validateTimeline, markAccessoryInstalled, markInventory } = useGetReady(currentStore?.id || "");
+  const { sendGetReadyComplete, sending: emailSending } = useEmailDistribution(currentStore?.id || "");
 
   // Inventory, invoices, warranty
   const { vehicles: inventoryVehicles, importCsv, deleteVehicle: deleteInvVehicle } = useInventory(currentStore?.id || "");
@@ -1446,6 +1449,12 @@ const Admin = () => {
         {/* ─── Get-Ready Tab ─── */}
         {tab === "getready" && (
           <div className="space-y-4">
+            {/* Wave 19 — email distribution panel surfaces here
+                because get-ready completion is the workflow that
+                consumes the F&I list. Edits propagate via the
+                Wave 14.6 realtime sync. */}
+            <EmailDistributionPanel storeId={currentStore?.id || ""} />
+
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
@@ -1544,6 +1553,51 @@ const Admin = () => {
                                     await markAccessoryInstalled(recordId, productId, installedBy, proof);
                                   }}
                                 />
+                              </div>
+                            )}
+
+                            {/* Wave 19 — "Send to inventory + notify
+                                F&I". Fires the get-ready completion
+                                email to subscribed recipients, then
+                                marks the record as inventory. If no
+                                subscribers exist, the email no-ops
+                                quietly (with a toast nudge) but the
+                                inventory move still happens. */}
+                            {record.status === "ready" && (
+                              <div className="mt-3 flex items-center justify-end">
+                                <button
+                                  disabled={emailSending}
+                                  onClick={async () => {
+                                    const accessories = (record.accessoriesToInstall || []).map(a => ({
+                                      name: a.productName,
+                                      installed: a.installed,
+                                      installedDate: a.installedDate,
+                                      installedBy: a.installedBy,
+                                      photoCount: (a.install_photos || []).length,
+                                      signed: !!a.installer_signature_data,
+                                    }));
+                                    const sent = await sendGetReadyComplete({
+                                      dealerName: currentStore?.name || settings.dealer_name || "Your dealership",
+                                      vehicleYmm: record.ymm,
+                                      vehicleVin: record.vin,
+                                      stockNumber: record.stockNumber,
+                                      acquiredDate: record.acquiredDate,
+                                      getReadyStartDate: record.getReadyStartDate,
+                                      getReadyCompleteDate: record.getReadyCompleteDate || new Date().toISOString(),
+                                      accessories,
+                                      deepLinkUrl: `${window.location.origin}/admin?tab=files`,
+                                    });
+                                    await markInventory(record.id);
+                                    if (sent) {
+                                      toast.success("Notified F&I distribution · moved to inventory");
+                                    } else {
+                                      toast.info("Moved to inventory · no F&I subscribers on file yet");
+                                    }
+                                  }}
+                                  className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white text-xs font-display font-black shadow-premium hover:brightness-110 disabled:opacity-60"
+                                >
+                                  {emailSending ? "Sending…" : "Send to inventory · notify F&I"}
+                                </button>
                               </div>
                             )}
                           </div>
