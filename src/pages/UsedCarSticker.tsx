@@ -145,6 +145,10 @@ const UsedCarSticker = () => {
             price: p.price,
             price_label: p.price_label,
             disclosure: p.disclosure,
+            // Wave 27 — carry benefit text into the public
+            // shopper-portal snapshot so the QR landing reads the
+            // dealer's per-line "why this benefits the buyer."
+            benefit_justification: (p as { benefit_justification?: string }).benefit_justification || "",
           })),
           totals: {
             base_price: marketVal,

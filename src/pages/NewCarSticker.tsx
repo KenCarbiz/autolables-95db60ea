@@ -125,6 +125,7 @@ const NewCarSticker = () => {
             price: p.price,
             price_label: p.price_label,
             disclosure: p.disclosure,
+            benefit_justification: (p as { benefit_justification?: string }).benefit_justification || "",
           })),
           totals: {
             base_price: baseMsrp + destCharge,
