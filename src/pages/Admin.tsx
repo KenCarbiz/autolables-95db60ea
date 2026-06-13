@@ -8,6 +8,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { AccessoryInstallPanel } from "@/components/admin/AccessoryInstallPanel";
 import { PRODUCT_ICONS } from "@/components/addendum/ProductRow";
 import { STATE_DOC_FEES } from "@/data/docFees";
 import { format } from "date-fns";
@@ -165,7 +166,7 @@ const Admin = () => {
   const [fileSearch, setFileSearch] = useState("");
 
   // Get-Ready tracking
-  const { records: getReadyRecords, getPending: getPendingGetReady, validateTimeline } = useGetReady(currentStore?.id || "");
+  const { records: getReadyRecords, getPending: getPendingGetReady, validateTimeline, markAccessoryInstalled } = useGetReady(currentStore?.id || "");
 
   // Inventory, invoices, warranty
   const { vehicles: inventoryVehicles, importCsv, deleteVehicle: deleteInvVehicle } = useInventory(currentStore?.id || "");
@@ -1525,6 +1526,24 @@ const Admin = () => {
                                     <span className="flex-shrink-0">⚠</span> {w}
                                   </p>
                                 ))}
+                              </div>
+                            )}
+
+                            {/* Wave 17 — per-accessory install panel.
+                                Renders the photos + signature workflow
+                                for every pending accessory. Already-
+                                installed rows show as compact green
+                                summary chips with photo count + signed
+                                indicator. Provides install-time proof
+                                that flows into the Audit-Defense Packet. */}
+                            {record.accessoriesToInstall && record.accessoriesToInstall.length > 0 && (
+                              <div className="mt-3">
+                                <AccessoryInstallPanel
+                                  record={record}
+                                  onMarkInstalled={async (recordId, productId, installedBy, proof) => {
+                                    await markAccessoryInstalled(recordId, productId, installedBy, proof);
+                                  }}
+                                />
                               </div>
                             )}
                           </div>
