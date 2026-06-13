@@ -339,6 +339,10 @@ const Index = () => {
         badge_type: p.badge_type,
         disclosure: p.disclosure || undefined,
         separate_signoff: !!initials[p.id]?.trim(),
+        // Wave 16 — the red-team needs this to fire the new
+        // missing-benefit-justification rule before send.
+        benefit_justification:
+          (p as { benefit_justification?: string }).benefit_justification || "",
       })) || [],
       spanishVersion: false,
       customerName: [customerInfo.buyer_first_name, customerInfo.buyer_last_name].filter(Boolean).join(" "),
@@ -741,6 +745,25 @@ const Index = () => {
               {optional.length > 0 && ` | ${optional.length > 0 ? `Item #${installed.length + 1}${optional.length > 1 ? `–#${installed.length + optional.length}` : ""}: Optional` : ""}`}
             </p>
           </div>
+
+          {/* Wave 16 — voluntary disclosure. FTC §5 enforcement
+              actions (incl. the March 2026 97-dealer warning
+              letter campaign) repeatedly cite the absence of
+              this language as a deceptive-practice hook. Render
+              it whenever any OPTIONAL product appears, so the
+              customer sees the voluntary nature on the paper
+              artifact itself, not just at signing time. */}
+          {optional.length > 0 && (
+            <div className="text-[8px] leading-snug border border-foreground/15 rounded px-2 py-1.5 bg-foreground/[0.02]">
+              <span className="font-bold uppercase tracking-wider">Voluntary purchase notice — </span>
+              <span>
+                Items marked OPTIONAL are not required to purchase, finance, or
+                lease this vehicle. Your decision to accept or decline any
+                optional product is not a condition of credit approval. Each
+                optional item is itemized below with its price and benefit.
+              </span>
+            </div>
+          )}
 
           {/* Product Table Header */}
           <div className="flex text-[8px] font-bold text-muted-foreground border-b border-border-custom pb-0.5">

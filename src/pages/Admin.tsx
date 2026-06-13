@@ -227,6 +227,10 @@ const Admin = () => {
       disclosure: editing.disclosure || null,
       sort_order: Number(editing.sort_order) || 0,
       is_active: editing.is_active ?? true,
+      // Wave 16 — benefit justification seeds the per-addendum
+      // line at build time. Required on installed products
+      // before the red-team will release a signing link.
+      benefit_justification: editing.benefit_justification || "",
     };
 
     if (editing.id) {
@@ -1902,6 +1906,26 @@ const Admin = () => {
               <div>
                 <label className="text-xs font-semibold text-muted-foreground">Disclosure Text</label>
                 <textarea value={editing.disclosure || ""} onChange={(e) => setEditing({ ...editing, disclosure: e.target.value })} className="w-full px-3 py-2 border border-border-custom rounded text-sm" rows={3} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-foreground inline-flex items-center gap-1.5">
+                  Benefit Justification
+                  <span className="text-[9px] font-bold uppercase tracking-[0.12em] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                    Required — installed
+                  </span>
+                </label>
+                <textarea
+                  value={editing.benefit_justification || ""}
+                  onChange={(e) => setEditing({ ...editing, benefit_justification: e.target.value })}
+                  className="w-full px-3 py-2 border border-border-custom rounded text-sm"
+                  rows={2}
+                  placeholder="e.g. Ceramic coating extends the factory clear-coat life by 5+ years and reduces buyer's long-term reconditioning cost."
+                />
+                <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
+                  Seeds the per-addendum line. Dealers can edit per vehicle at addendum time.
+                  Required on installed (pre-installed) products before the compliance red-team
+                  releases a signing link — answers FTC §5 and CA SB 766 §11713.21.
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" checked={editing.is_active ?? true} onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })} />
