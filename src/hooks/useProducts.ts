@@ -12,6 +12,12 @@ export interface Product {
   disclosure: string | null;
   sort_order: number;
   is_active: boolean;
+  // Wave 16 — seeded into the per-addendum products_snapshot
+  // line; dealers can override per-vehicle at addendum time.
+  // Required on installed products before the compliance red-
+  // team will release a signing link (FTC §5 + CA SB 766
+  // §11713.21).
+  benefit_justification: string;
 }
 
 export const useProducts = () => {
