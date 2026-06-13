@@ -152,7 +152,7 @@ const AppShell = ({ children }: AppShellProps) => {
         { label: "Saved Addendums", path: "/saved", icon: FolderOpen },
         { label: "Get-Ready", path: "/admin?tab=getready", icon: Clock },
         { label: "Vehicle Files", path: "/admin?tab=files", icon: FolderOpen },
-        { label: "Print Queue", path: "/admin?tab=queue", icon: Printer },
+        { label: "Lot Queue", path: "/queue", icon: ScanLine },
       ],
     },
     admin: {
