@@ -9,8 +9,8 @@ import { useGetReady } from "@/hooks/useGetReady";
 import { useAdvertisedPrices, assessDrift } from "@/hooks/useAdvertisedPrices";
 import {
   ScanLine, Wrench, Tag, Send, CheckCircle2,
-  RotateCcw, ShieldCheck, AlertTriangle,
-  ArrowRight, Camera, FileSignature, Mail, TrendingUp,
+  RotateCcw, ShieldCheck,
+  ArrowRight, Camera, FileSignature, TrendingUp,
 } from "lucide-react";
 
 // ──────────────────────────────────────────────────────────────
@@ -423,18 +423,9 @@ const ProcessDashboard = () => {
         )}
       </section>
 
-      {/* Quietly-deferred surfaces — the dashboard names them so
-          the dealer sees what's coming next, with explicit
-          "Wave 19 / 20" framing for transparency. */}
-      <section>
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground mb-2">
-          Roadmap surfaces · coming soon
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <RoadmapTile icon={ScanLine}    label="Lot capture queue polish" wave="Wave 21" detail="Status tagging (needs sticker / needs prep / needs photos), batch actions, V2 chrome." />
-          <RoadmapTile icon={AlertTriangle} label="Inventory feed health" wave="Wave 22" detail="Autocurb push/pull status + manual sync button + last-synced timestamp." />
-        </div>
-      </section>
+      {/* Wave 22 — the original 7-wave plan is complete. The
+          roadmap row is retired; if/when new dimensions land
+          they can be added back. */}
     </div>
   );
 };
@@ -538,25 +529,5 @@ const DefenseTile = ({ icon: Icon, label, count, empty, href, cite, tone, countS
     </Link>
   );
 };
-
-interface RoadmapTileProps {
-  icon: typeof Mail;
-  label: string;
-  wave: string;
-  detail: string;
-}
-
-const RoadmapTile = ({ icon: Icon, label, wave, detail }: RoadmapTileProps) => (
-  <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 opacity-80">
-    <div className="flex items-center justify-between gap-2 mb-1.5">
-      <Icon className="w-4 h-4 text-muted-foreground" strokeWidth={1.75} />
-      <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground bg-card border border-border px-1.5 py-0.5 rounded">
-        {wave}
-      </span>
-    </div>
-    <p className="text-sm font-semibold text-foreground">{label}</p>
-    <p className="text-[10px] text-muted-foreground mt-1 leading-snug">{detail}</p>
-  </div>
-);
 
 export default ProcessDashboard;
