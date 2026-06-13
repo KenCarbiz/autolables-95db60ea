@@ -44,6 +44,7 @@ const AdminLayout = () => (
 // Lazy-loaded pages — each becomes its own chunk
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ProcessDashboard = lazy(() => import("./pages/ProcessDashboard"));
+const LotCaptureQueue = lazy(() => import("./pages/LotCaptureQueue"));
 const Index = lazy(() => import("./pages/Index"));
 const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
@@ -150,6 +151,11 @@ const App = () => (
                             recent signings. /inventory still renders
                             the inventory list directly. */}
                         <Route path="/dashboard" element={<ProcessDashboard />} />
+                        {/* Wave 21 — Lot Capture Queue: the
+                            polished V2 surface for FlowTile #1.
+                            /scan still opens the mobile scanner
+                            directly; /queue is the triage view. */}
+                        <Route path="/queue" element={<LotCaptureQueue />} />
                         <Route path="/inventory" element={<Inventory />} />
                         <Route path="/dashboard-legacy" element={<Dashboard />} />
                         <Route path="/vehicle-file/:id" element={<VehicleFile />} />

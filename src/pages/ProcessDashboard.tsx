@@ -234,7 +234,7 @@ const ProcessDashboard = () => {
             count={vinQueueCount}
             unit="queued"
             empty="lot scanned"
-            href="/scan"
+            href="/queue"
             tone="sky"
             blurb="VINs picked up by the scanner waiting to be triaged."
           />
