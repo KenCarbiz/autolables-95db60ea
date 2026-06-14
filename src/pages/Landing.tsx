@@ -119,17 +119,17 @@ const Hero = ({ onPrimary }: { onPrimary: () => void }) => (
       <div className="mx-auto max-w-3xl text-center">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          FTC §5 · CA SB 766 · 50-state ready
+          FTC §5 aligned · CA CARS Act ready · 50-state engine
         </div>
         <h1 className="font-display text-[44px] font-semibold leading-[1.05] tracking-[-0.025em] text-slate-900 sm:text-6xl lg:text-7xl">
-          The compliance layer
+          Every price matched.
           <br />
-          every dealership <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">should have.</span>
+          Every deal <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">defensible.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-          AutoLabels protects your dealership from FTC actions, advertised-price drift, and audit risk —
-          on every vehicle, automatically. One platform turns regulatory exposure into a defensible
-          paper trail you can produce in seconds.
+          AutoLabels puts a signed customer disclosure on every window sticker and addendum, verifies
+          it against the price you advertise online, and seals it in a geo-stamped, tamper-evident
+          record. Every other sticker tool just prints. AutoLabels proves the deal was fair.
         </p>
         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <button
@@ -201,20 +201,21 @@ const Problem = () => (
       <div className="mx-auto mt-16 grid max-w-5xl gap-6 sm:grid-cols-3">
         <Stat
           number="97"
-          label="dealers received FTC warning letters in a single March 2026 sweep"
+          label="dealer groups the FTC warned in March 2026 for advertising one price, then charging another"
         />
         <Stat
-          number="$50K+"
-          label="typical exposure per non-compliant advertised-price dispute"
+          number="$1.5M–$10M"
+          label="refunds and penalties in recent FTC cases against dealers who didn't honor advertised prices"
         />
         <Stat
-          number="2 yrs"
-          label="record retention required under CA SB 766 (effective Oct 2026)"
+          number="Oct 2026"
+          label="California's CARS Act takes effect: up-front total pricing, no-benefit add-on ban, 24-month records"
         />
       </div>
 
       <p className="mx-auto mt-12 max-w-2xl text-center text-sm text-slate-500">
-        Sources: FTC enforcement actions Q1 2026 · CA Vehicle Code §11713.21 · 16 CFR Part 455
+        Sources: FTC press release, Mar 13 2026 · FTC v. Napleton ($10M, 2022), Passport ($3.38M, 2022),
+        Bronx Honda ($1.5M, 2020) · CA SB 766, Chapter 354, Statutes of 2025
       </p>
     </div>
   </section>
@@ -256,7 +257,7 @@ const Pillars = () => (
         <Pillar
           icon={FileCheck}
           title="Capture"
-          body="Customer acknowledgments, installation photos, and price snapshots are captured in real time and timestamped on a tamper-evident chain."
+          body="The customer signs off that the deal was fair — at the point of sale, on their own device. We stamp it with IP, approximate location, device, consent text, and time on a tamper-evident chain."
         />
         <Pillar
           icon={ShieldCheck}
@@ -314,8 +315,8 @@ const ProductShot = () => (
             </div>
             <div className="grid gap-6 p-8 sm:grid-cols-3 sm:gap-8 sm:p-12">
               <PacketBlock label="Vehicle record" value="2024 Honda Pilot" caption="VIN ending 0012" />
-              <PacketBlock label="Sold" value="Jun 02, 2026" caption="Signed at 14:08 PDT" />
-              <PacketBlock label="Hash root" value="0x4e8a…b21f" caption="SHA-256 chain verified" />
+              <PacketBlock label="Sold" value="Jun 02, 2026" caption="Signed 14:08 PDT · Glendale, CA" />
+              <PacketBlock label="Hash root" value="0x4e8a…b21f" caption="SHA-256 chain · geo-stamped" />
               <PacketBlock label="Disclosures" value="14 / 14" caption="All checks passed" />
               <PacketBlock label="Signatures" value="3 captured" caption="Customer · F&I · Sales" />
               <PacketBlock label="Price drift" value="$0" caption="Sticker = advertised" />
@@ -350,23 +351,24 @@ const DeepFeatures = () => (
   <section id="compliance" className="bg-slate-50/60">
     <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8 lg:py-32 space-y-24">
       <FeatureBlock
-        eyebrow="Advertised-price defense"
-        title="Catch the mismatch before the regulator does."
-        body="AutoLabels watches your own dealer site every night and reconciles every public listing against the price your sticker is committed to. When they drift, you get a flag — not a letter."
+        eyebrow="Advertised-price match"
+        title="Your sticker and your ad agree — or you hear about it first."
+        body="The FTC's March 2026 letters went to 97 dealer groups who advertised one price and charged another. AutoLabels crawls your own listings every night and reconciles each one against the price on the sticker. Drift gets flagged to you — not mailed to you by a regulator."
         bullets={[
-          "Nightly crawl of dealer-website prices",
-          "Tolerance gate ($50 default) flags drift before publish",
-          "Two-year snapshot history per VIN — CA SB 766 ready",
+          "Nightly crawl of your dealer-website and marketplace prices",
+          "Tolerance gate flags any mismatch before the customer sees it",
+          "Two-year price-snapshot history per VIN — CA CARS Act ready",
         ]}
       />
       <FeatureBlock
-        eyebrow="Tamper-evident sign-off"
-        title="The signature your attorney will love."
-        body="Every customer acknowledgment is hashed, timestamped, and chained. The result is an E-SIGN compliant record that survives a deposition — not a screenshot of a PDF."
+        eyebrow="Signed, geo-stamped sign-off"
+        title="The customer signs the deal was fair — and it sticks."
+        body="At delivery, the customer signs a plain-language disclosure that the price matched, the add-ons were optional, and nothing was hidden. Each signature is captured with IP, approximate location, device, consent text, and time, then SHA-256 hashed into a tamper-evident chain. It is the contemporaneous, presumptively-valid record under ESIGN and UETA that documents informed consent — the evidence courts actually rely on when a signature is challenged."
         bullets={[
-          "SHA-256 hash chain anchored at each signing",
-          "Customer IP, user-agent, and consent text captured",
-          "Bilingual disclosures for Spanish-conducted sales",
+          "Signed at the point of sale on the customer's own device",
+          "IP, location, device, consent text, and timestamp captured",
+          "SHA-256 hash chain — tamper-evident, self-authenticating record",
+          "Bilingual disclosures for Spanish-conducted sales (16 CFR 455)",
         ]}
         reverse
       />
@@ -445,7 +447,7 @@ const TrustAndSecurity = () => (
         <TrustCard
           icon={ShieldCheck}
           title="Tamper-evident records"
-          body="Every signing produces a SHA-256 hash anchored to the prior signing — the chain root is what survives the deposition."
+          body="Every signing produces a SHA-256 hash anchored to the prior signing, stamped with IP, approximate location, and time — the chain root is what survives the deposition."
         />
         <TrustCard
           icon={TrendingUp}
@@ -624,11 +626,15 @@ const FAQ = () => {
     },
     {
       q: "Does AutoLabels replace my window-sticker provider?",
-      a: "Yes. The compliant sticker + addendum + customer disclosure live in one platform with one source of truth. No more two-vendor reconciliation.",
+      a: "Yes — and it does the part they don't. Every other sticker tool stops at the printout: a label in the window, then it walks away. AutoLabels prints the compliant sticker, addendum, and Buyers Guide, then captures the customer's signed sign-off, checks the price against your online ad, and seals the whole deal in one defensible record. One source of truth, no two-vendor reconciliation.",
     },
     {
       q: "How are advertised-price mismatches detected?",
       a: "A nightly crawler reads your own dealer-website listings and reconciles each one against the sticker price on file. Drift past the tolerance you set produces a flag — before publish, before customer, before regulator.",
+    },
+    {
+      q: "Does a signed disclosure guarantee we're FTC-compliant?",
+      a: "No tool can promise that — and be skeptical of any that does. The FTC is explicit that a signature alone is not a safe harbor, and compliance depends on how you actually sell. What AutoLabels gives you is the contemporaneous, tamper-evident evidence that you disclosed clearly and the customer acknowledged it: a record that is presumptively valid under ESIGN and UETA and designed to strengthen your position under FTC Act Section 5 if a deal is ever questioned. Compliance is how you sell; we make it provable.",
     },
     {
       q: "Is my customer data isolated from other dealerships?",
@@ -732,8 +738,9 @@ const Footer = ({ onNav }: { onNav: (to: string) => void }) => (
       <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-slate-100 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center">
         <p>© {new Date().getFullYear()} AutoLabels.io · All rights reserved.</p>
         <p>
-          AutoLabels is FTC-aligned and a 50-state disclosure engine. This site does not constitute
-          legal advice — work with your dealer counsel.
+          AutoLabels is FTC-aligned and a 50-state disclosure engine. It captures and preserves an
+          evidentiary record; it does not provide legal advice or guarantee the outcome of any
+          dispute. Work with your dealer counsel.
         </p>
       </div>
     </div>
