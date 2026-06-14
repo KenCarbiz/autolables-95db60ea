@@ -11,6 +11,7 @@ import {
   ScanLine, Wrench, Tag, Send, CheckCircle2,
   RotateCcw, ShieldCheck,
   ArrowRight, Camera, FileSignature, TrendingUp,
+  Activity, Sparkles,
 } from "lucide-react";
 
 // ──────────────────────────────────────────────────────────────
@@ -176,51 +177,89 @@ const ProcessDashboard = () => {
   const inFlight = vinQueueCount + getReadyInFlight + listings.draft + signings.open;
   const attentionCount = signings.returnsOpen + missingInstallPhotos + missingBenefit;
 
+  // ── Outcome-centric health line. The dealer reads this as
+  //    "where do I stand today" — compliant when nothing needs
+  //    attention; otherwise a single number summarising the work.
+  const health = attentionCount === 0
+    ? { tone: "ok" as const, headline: "Your dealership is compliant", sub: inFlight > 0 ? `${inFlight} ${inFlight === 1 ? "vehicle" : "vehicles"} moving through the pipeline` : "No vehicles in the pipeline right now" }
+    : { tone: "warn" as const, headline: `${attentionCount} item${attentionCount === 1 ? "" : "s"} need${attentionCount === 1 ? "s" : ""} your attention`, sub: `${inFlight} ${inFlight === 1 ? "vehicle" : "vehicles"} in flight · review the action center below` };
+
   return (
-    <div className="p-4 lg:p-6 max-w-[1400px] mx-auto space-y-6">
-      {/* Hero band — greeting + day-level summary. Reads as the
-          first sentence of the dealer's day. */}
-      <div className="rounded-2xl bg-gradient-to-br from-[#0B2041] via-[#1E3A5F] to-[#1E90FF] text-white px-6 py-5 shadow-premium">
-        <div className="flex items-end justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/65">
+    <div className="p-4 lg:p-8 max-w-[1400px] mx-auto space-y-6">
+      {/* Hero — Autocurb-style outcome-centric landing.
+          White surface, generous whitespace, headline reads as the
+          dealer's status not a feature label. */}
+      <section className="rounded-[18px] bg-card border border-border px-6 lg:px-8 py-6 lg:py-7 shadow-sm">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               {currentStore?.name || tenant?.name || "Your dealership"}
             </p>
-            <h1 className="font-display text-2xl md:text-3xl font-black tracking-tight mt-0.5">
+            <h1 className="font-display text-[28px] lg:text-[32px] font-bold tracking-tight text-foreground mt-1">
               {greeting}, {capitalized}.
             </h1>
-            <p className="text-sm text-white/80 mt-1.5">
-              <span className="font-semibold text-white">{inFlight}</span> {inFlight === 1 ? "vehicle" : "vehicles"} in flight
-              {attentionCount > 0 && (
-                <>
-                  {" · "}
-                  <span className="font-semibold text-amber-300">
-                    {attentionCount} need{attentionCount === 1 ? "s" : ""} your attention today
-                  </span>
-                </>
-              )}
-              {attentionCount === 0 && inFlight > 0 && (
-                <> · <span className="font-semibold text-emerald-300">queue clear</span></>
-              )}
-            </p>
+            <div className="mt-3 inline-flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold ${
+                health.tone === "ok"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  : "bg-amber-50 text-amber-800 border border-amber-200"
+              }`}>
+                <Activity className="w-3 h-3" strokeWidth={2.5} />
+                {health.headline}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">{health.sub}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => navigate("/scan")}
-              className="h-11 px-4 rounded-xl bg-gradient-to-r from-[#3BB4FF] to-[#1E90FF] text-white inline-flex items-center gap-1.5 shadow-premium hover:brightness-110 transition-all"
+              className="h-10 px-4 rounded-xl bg-[#2563EB] text-white inline-flex items-center gap-1.5 shadow-sm hover:bg-[#1D4ED8] transition-colors"
             >
               <ScanLine className="w-4 h-4 stroke-[2.5]" />
-              <span className="font-display font-black tracking-tight text-sm">Scan a VIN</span>
+              <span className="font-display font-semibold tracking-tight text-sm">Scan a VIN</span>
             </button>
             <button
               onClick={() => navigate("/inventory?add=1")}
-              className="h-11 px-4 rounded-xl bg-white/15 backdrop-blur border border-white/20 text-white inline-flex items-center gap-1.5 hover:bg-white/25 transition-all"
+              className="h-10 px-4 rounded-xl bg-card border border-border text-foreground inline-flex items-center gap-1.5 hover:bg-muted transition-colors"
             >
-              <span className="font-display font-bold tracking-tight text-sm">Add vehicle</span>
+              <span className="font-display font-semibold tracking-tight text-sm">Add vehicle</span>
             </button>
           </div>
         </div>
-      </div>
+
+        {/* Four KPI cards — outcome metrics, not feature counts.
+            Icon chip top-right, huge metric, soft caption. */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mt-6">
+          <KpiCard
+            label="In flight"
+            value={inFlight}
+            caption={inFlight === 1 ? "vehicle" : "vehicles"}
+            icon={Activity}
+            iconTone="sky"
+          />
+          <KpiCard
+            label="Needs attention"
+            value={attentionCount}
+            caption={attentionCount === 0 ? "all clear" : (attentionCount === 1 ? "open item" : "open items")}
+            icon={Sparkles}
+            iconTone={attentionCount > 0 ? "amber" : "emerald"}
+          />
+          <KpiCard
+            label="Published listings"
+            value={listings.published}
+            caption={listings.published === 1 ? "live sticker" : "live stickers"}
+            icon={Tag}
+            iconTone="indigo"
+          />
+          <KpiCard
+            label="Signed this week"
+            value={signings.recent.length}
+            caption="audit-defense ready"
+            icon={ShieldCheck}
+            iconTone="emerald"
+          />
+        </div>
+      </section>
 
       {/* Process flow — five numbered tiles tracing the linear
           workflow. The number is the wayfinding cue: "where is
@@ -431,6 +470,44 @@ const ProcessDashboard = () => {
       {/* Wave 22 — the original 7-wave plan is complete. The
           roadmap row is retired; if/when new dimensions land
           they can be added back. */}
+    </div>
+  );
+};
+
+// ──────────────────────────────────────────────────────────────
+// KpiCard — Autocurb-style outcome metric. White surface, icon
+// chip in the top-right corner, oversized tabular metric, soft
+// caption. Sits inside the hero so it reads as part of the
+// dealer's status line.
+// ──────────────────────────────────────────────────────────────
+
+interface KpiCardProps {
+  label: string;
+  value: number;
+  caption: string;
+  icon: typeof ScanLine;
+  iconTone: "sky" | "amber" | "indigo" | "violet" | "emerald";
+}
+
+const KpiCard = ({ label, value, caption, icon: Icon, iconTone }: KpiCardProps) => {
+  const chip =
+    iconTone === "sky"     ? "bg-sky-100 text-sky-700"       :
+    iconTone === "amber"   ? "bg-amber-100 text-amber-700"   :
+    iconTone === "indigo"  ? "bg-indigo-100 text-indigo-700" :
+    iconTone === "violet"  ? "bg-violet-100 text-violet-700" :
+                             "bg-emerald-100 text-emerald-700";
+  return (
+    <div className="rounded-[14px] border border-border bg-card p-5 flex flex-col gap-2 hover:shadow-sm transition-shadow">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+        <span className={`w-8 h-8 rounded-lg ${chip} inline-flex items-center justify-center`}>
+          <Icon className="w-4 h-4" strokeWidth={2.25} />
+        </span>
+      </div>
+      <p className="font-display text-[32px] lg:text-[36px] font-bold tabular-nums leading-none text-foreground">
+        {value}
+      </p>
+      <p className="text-[11px] text-muted-foreground">{caption}</p>
     </div>
   );
 };
