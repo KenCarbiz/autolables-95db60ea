@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { AccessoryInstallPanel } from "@/components/admin/AccessoryInstallPanel";
 import { EmailDistributionPanel } from "@/components/admin/EmailDistributionPanel";
 import { InventoryFeedHealth } from "@/components/admin/InventoryFeedHealth";
+import { OpenSigningsList } from "@/components/admin/OpenSigningsList";
 import { useEmailDistribution } from "@/hooks/useEmailDistribution";
 import { PRODUCT_ICONS } from "@/components/addendum/ProductRow";
 import { STATE_DOC_FEES } from "@/data/docFees";
@@ -1226,6 +1227,10 @@ const Admin = () => {
         {tab === "funnel" && (
           <div className="space-y-4">
             <SigningFunnelWidget />
+            {/* Wave 29 — per-row visibility under the aggregate
+                widget. Dealers see WHICH shoppers hold unsigned
+                links + can copy/re-engage/defend per row. */}
+            <OpenSigningsList />
           </div>
         )}
 
