@@ -107,17 +107,22 @@ const ProcessDashboard = () => {
     queryKey: ["dash", "signings", tenant?.id],
     enabled: !!tenant?.id,
     queryFn: async () => {
-      // Out for sign — addendum_signings whose return path
-      // isn't closed yet (rough proxy: signed_at IS NULL).
+      // Wave 29 — fixed: "Out for sign" lives on addendums
+      // (signing_token issued, customer_signed_at NULL). The
+      // prior shape queried addendum_signings.signed_at IS NULL
+      // which always returned 0 because that column is NOT NULL.
+      // Recent signed reads addendum_signings (the per-signing
+      // provenance table) — unchanged.
       const [openRes, recentRes, returnsRes] = await Promise.all([
         (supabase as any)
-          .from("addendum_signings")
+          .from("addendums")
           .select("id", { count: "exact", head: true })
-          .is("signed_at", null),
+          .not("signing_token", "is", null)
+          .is("customer_signed_at", null)
+          .neq("status", "signed"),
         (supabase as any)
           .from("addendum_signings")
           .select("id, vin, signer_name, signed_at, content_hash")
-          .not("signed_at", "is", null)
           .order("signed_at", { ascending: false })
           .limit(6),
         (supabase as any)
