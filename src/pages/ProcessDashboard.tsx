@@ -414,7 +414,7 @@ const ProcessDashboard = () => {
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
             Recent signings · last 7 days
           </p>
-          <Link to="/saved" className="text-[11px] font-semibold text-[#1E90FF] hover:underline">
+          <Link to="/saved" className="text-[11px] font-semibold text-[#2563EB] hover:underline">
             View all →
           </Link>
         </div>
@@ -557,7 +557,7 @@ const FlowTile = ({ num, icon: Icon, label, count, unit, empty, href, tone, blur
       <p className="text-[10px] text-muted-foreground mt-2 leading-snug line-clamp-2 group-hover:text-foreground/70 transition-colors">
         {blurb}
       </p>
-      <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-[#1E90FF] opacity-0 group-hover:opacity-100 transition-opacity">
+      <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-[#2563EB] opacity-0 group-hover:opacity-100 transition-opacity">
         Open <ArrowRight className="w-3 h-3" />
       </span>
     </Link>
